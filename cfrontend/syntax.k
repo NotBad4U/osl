@@ -83,7 +83,7 @@ module C-SYNTAX
 
     syntax ListDeclarationSpecifier ::= List{DeclarationSpecifier, " "}
  
-    syntax Declaration ::= ListDeclarationSpecifier InitDeclarator ";"
+    syntax Declaration ::= ListDeclarationSpecifier InitDeclarator // ";"
 
     syntax Declarator ::= DirectDeclarator
                         | Pointer DirectDeclarator
@@ -126,14 +126,22 @@ module C-SYNTAX
     // TODO finish and/or/etc-expression
 
     syntax Expression ::= AssignmentExpression
-               //| Expression "," AssignmentExpression
+                        //| Expression "," AssignmentExpression TODO: add the support of this cas
+
+
+    
 
     /* Statement **********************************************/
     syntax Stmt ::= SelectionStmt
                     | ExpressionStmt
-                    //| <compound-statement> // TODO
                     | IterationStmt
                     | JumpStmt
+
+    syntax Stmts ::= List{Stmt,""}
+
+    syntax Declarations ::= List{Declaration,";"}
+
+    syntax CompoundStmt ::= Declarations Stmts
 
     // NOTE just here to simplify the syntax rules below. Maybe remove this in the futur
     syntax ExpressionStmt ::= "{" Stmt "}" [bracket]
@@ -158,4 +166,11 @@ module C-SYNTAX
 
 
     /* Function **************************************** */
+
+    syntax FunctionDefinition ::=  DeclarationSpecifiers Declarator "(" ListDeclaration ")" Stmts
+
+    syntax DeclarationSpecifiers ::= List{DeclarationSpecifier, " "}
+
+    syntax ListDeclaration ::= List{Declaration, ","} 
+
 endmodule
