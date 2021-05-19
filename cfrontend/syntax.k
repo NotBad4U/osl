@@ -20,8 +20,6 @@ module C-SYNTAX
                             | "signed"
                             | "unsigned"
                             | StructOrUnionSpecifier
-
-    syntax TypeQualifier ::= "const"
                             | "volatile"
 
     syntax UnaryOperator ::= "&"
@@ -42,6 +40,9 @@ module C-SYNTAX
                                 | "&="
                                 | "^="
                                 | "|="
+
+    syntax TypeQualifier ::= "const"
+                            | "volatile"
 
     syntax ListTypeQualifier ::= List{TypeQualifier, " "}
 
@@ -125,7 +126,7 @@ module C-SYNTAX
     // TODO finish and/or/etc-expression
 
     syntax Expression ::= AssignmentExpression
-               | Expression "," AssignmentExpression
+               //| Expression "," AssignmentExpression
 
     /* Statement **********************************************/
     syntax Stmt ::= SelectionStmt
@@ -134,21 +135,25 @@ module C-SYNTAX
                     | IterationStmt
                     | JumpStmt
 
-    syntax ExpressionStmt ::= "{" Expression "}" [bracket]
+    // NOTE just here to simplify the syntax rules below. Maybe remove this in the futur
+    syntax ExpressionStmt ::= "{" Stmt "}" [bracket]
+                            | "{" Expression "}" [bracket] 
+                            | "(" Expression ")" [bracket]
+                            | Expression
     
-    syntax SelectionStmt ::= "#if" "(" Expression ")" Stmt  
-                            | "#if" "(" Expression ")" Stmt "#else" Stmt
-                            | "#switch" "(" Expression ")" Stmt
+    syntax SelectionStmt ::= "if" ExpressionStmt Stmt
+                            | "if" ExpressionStmt Stmt "else" Stmt // if ( _ ) { _ } else { _ }
+                            | "switch" Expression Stmt
 
-    syntax IterationStmt ::= "#while" "(" Expression ")" Stmt
-                            | "#do" Stmt "#while" "(" Expression ")" ";"
-                            | "#for" "(" Expression ";" Expression ";" Expression ")" Stmt
+    syntax IterationStmt ::= "while" ExpressionStmt Stmt // while ( _ ) { _ }
+                            | "do" Stmt "while" ExpressionStmt ";" // do { _ } while ( _ )
+                            | "for" ExpressionStmt ";" ExpressionStmt ";" ExpressionStmt Stmt // for ( _ ; _ ; _ ) _
 
-    syntax JumpStmt ::= "#goto" Id ";"
-                        | "#continue" ";"
-                        | "#break" ";"
-                        | "#return" Expression ";"
-                        | "#return" ";"             // TODO improve this case with an optional
+    syntax JumpStmt ::= "goto" Id ";"
+                        | "continue" ";"
+                        | "break" ";"
+                        | "return" Expression ";"
+                        | "return" ";"             // TODO improve this case with an optional
 
 
 
