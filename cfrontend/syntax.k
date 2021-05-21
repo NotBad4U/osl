@@ -1,251 +1,274 @@
 module C-SYNTAX 
 
-    imports DOMAINS
+imports DOMAINS
 
-    /* Lexer *************************************/
+syntax TranslationUnit ::= ListExternalDeclaration
 
-    syntax TranslationUnit ::= List{ExternalDeclaration,""}
+syntax ListExternalDeclaration ::= List{ExternalDeclaration,""}
 
-    syntax ExternalDeclaration ::= FunctionDefinition
-                                | Declaration
+syntax ExternalDeclaration ::= FunctionDefinition
+                         | Declaration
 
-    syntax FunctionDefinition ::=  ListDeclarationSpecifier Declarator ListDeclaration CompoundStmt
+syntax FunctionDefinition ::= ListDeclarationSpecifier Declarator ListDeclaration CompoundStatement
 
-    syntax ListDeclarationSpecifier ::= List{DeclarationSpecifier, ""}
+syntax ListDeclarationSpecifier ::= List{DeclarationSpecifier,""}
 
-    syntax ListDeclaration ::= List{Declaration,""} 
-
-    syntax DeclarationSpecifier ::= StorageClassSpecifier
-                                | TypeSpecifier
-                                | TypeQualifier
-
-    syntax StorageClassSpecifier ::= "auto"
-                                    | "register"
-                                    | "static"
-                                    | "extern"
-                                    | "typedef"
-
-    syntax TypeSpecifier ::= "void"
-                            | "char"
-                            | "short"
-                            | "int"
-                            | "long"
-                            | "float"
-                            | "double"
-                            | "signed"
-                            | "unsigned"
-                            | StructOrUnionSpecifier
-                            | "volatile"
-
-    syntax StructOrUnionSpecifier ::= StructOrUnion Id "{" ListStructDeclaration "}"
-                            | StructOrUnion "{" ListStructDeclaration "}"
-                            | StructOrUnion Id
-    
-    syntax ListStructDeclaration ::= List{StructDeclaration,""}
-
-    syntax StructOrUnion ::= "struct"
-                            | "union"
-
-    syntax StructDeclaration ::= ListSpecifierQualifier StructDeclaratorList
-
-    syntax ListSpecifierQualifier ::= List{SpecifierQualifier,""} 
-
-    syntax SpecifierQualifier ::= TypeSpecifier
-                                | TypeQualifier
-
-    syntax StructDeclaratorList ::= StructDeclarator
-                                    | StructDeclaratorList "," StructDeclarator
-
-    syntax StructDeclarator ::= Declarator
-                                | Declarator ":" ConstantExpression
-                                | ":" ConstantExpression
-
-   syntax Declarator ::= DirectDeclarator
-                        | Pointer DirectDeclarator
+syntax ListDeclaration ::= List{Declaration,""}
 
 
-    syntax Pointer ::= "*" ListTypeQualifier
-                        | "*" ListTypeQualifier Pointer
+syntax DeclarationSpecifier ::= StorageClassSpecifier
+                          | TypeSpecifier
+                          | TypeQualifier
 
-    syntax ListTypeQualifier ::= List{TypeQualifier,""}
+syntax StorageClassSpecifier ::= "auto"
+                            | "register"
+                            | "static"
+                            | "extern"
+                            | "typedef"
 
-    syntax TypeQualifier ::= "const"
-                            | "volatile"
-    
-    syntax DirectDeclarator ::= Id
-                                | "(" Declarator ")"
-                                | DirectDeclarator "[" ConstantExpression "]"
-                                | DirectDeclarator "[" "]"
-                                | DirectDeclarator "(" ParameterTypeList  ")"
-                                | DirectDeclarator "(" Ids ")"
+syntax TypeSpecifier ::= "void"
+                   | "char"
+                   | "short"
+                   | "int"
+                   | "long"
+                   | "float"
+                   | "double"
+                   | "signed"
+                   | "unsigned"
+                   | StructOrFunionSpecifier
+                   | EnumOfspecifier
+                   | TypedefOfname
 
-    syntax Ids ::= List{Id,""}
+syntax StructOrFunionSpecifier ::= StructOrUnion Id "{" ListStructDeclaration "}"
+                              | StructOrUnion "{" ListStructDeclaration "}"
+                              | StructOrUnion Id
 
-    syntax ConstantExpression ::= ConditionalExpression
+syntax ListStructDeclaration ::= List{StructDeclaration,""}
 
-    syntax ConditionalExpression ::= LogicalOrExpression
-                                    | LogicalOrExpression "?" Expression ":" ConditionalExpression
+syntax StructOrUnion ::= "struct"
+                    | "union"
 
-    syntax LogicalOrExpression ::= LogicalAndExpression
-                                | LogicalOrExpression "||" LogicalAndExpression
+syntax StructDeclaration ::= ListSpecifierQualifier StructDeclaratorList
 
-    syntax LogicalAndExpression ::= InclusiveOrExpression
-                                | LogicalAndExpression "&&" InclusiveOrExpression
+syntax ListSpecifierQualifier ::= List{SpecifierQualifier,""}
 
-    syntax InclusiveOrExpression ::= ExclusiveOrExpression
-                                | InclusiveOrExpression "|" ExclusiveOrExpression
 
-    syntax ExclusiveOrExpression ::= AndExpression
-                                | ExclusiveOrExpression "^" AndExpression
+syntax SpecifierQualifier ::= TypeSpecifier
+                        | TypeQualifier
 
-    syntax AndExpression ::= EqualityExpression
-                            | AndExpression "&" EqualityExpression
+syntax StructDeclaratorList ::= StructDeclarator
+                           | StructDeclaratorList "," StructDeclarator
 
-    syntax EqualityExpression ::= RelationalExpression
-                                | EqualityExpression "==" RelationalExpression
-                                | EqualityExpression "!=" RelationalExpression
+syntax StructDeclarator ::= Declarator
+                      | Declarator ":" ConstantExpression
+                      | ":" ConstantExpression
 
-    syntax RelationalExpression ::= ShiftExpression
-                                | RelationalExpression "<" ShiftExpression
-                                | RelationalExpression ">" ShiftExpression
-                                | RelationalExpression "<=" ShiftExpression
-                                | RelationalExpression ">=" ShiftExpression
+syntax Declarator ::= DirectDeclarator
+                    | Pointer DirectDeclarator
 
-    syntax ShiftExpression ::= AdditiveExpression
-                            | ShiftExpression "<<" AdditiveExpression
-                            | ShiftExpression ">>" AdditiveExpression
+syntax Pointer ::= "*" ListTypeQualifier Pointer
+                | "*" ListTypeQualifier
 
-    syntax AdditiveExpression ::= MultiplicativeExpression
-                                | AdditiveExpression "+" MultiplicativeExpression
-                                | AdditiveExpression "-" MultiplicativeExpression
+syntax ListTypeQualifier ::= List{TypeQualifier,""}
 
-    syntax MultiplicativeExpression ::= CastExpression
-                                    MultiplicativeExpression "*" CastExpression 
-                                    | MultiplicativeExpression "/" CastExpression
-                                    | MultiplicativeExpression "%" CastExpression
 
-    syntax CastExpression ::= UnaryExpression
+syntax TypeQualifier ::= "const"
+                   | "volatile"
+
+syntax DirectDeclarator ::= Id
+                      | "(" Declarator ")"
+                      | DirectDeclarator "[" ConstantExpression "]"
+                      | DirectDeclarator "[" "]"
+                      | DirectDeclarator "(" ParameterTypeList ")"
+                      | DirectDeclarator "(" Ids ")"
+
+syntax Ids ::= List{Id,""}
+
+
+syntax ConstantExpression ::= ConditionalExpression
+
+syntax ConditionalExpression ::= LogicalOforExpression
+                           | LogicalOforExpression "?" Expression ":" ConditionalExpression
+
+syntax LogicalOforExpression ::= LogicalOfandExpression
+                          | LogicalOforExpression "||" LogicalOfandExpression
+
+syntax LogicalOfandExpression ::= InclusiveOforExpression
+                           | LogicalOfandExpression "&&" InclusiveOforExpression
+
+syntax InclusiveOforExpression ::= ExclusiveOforExpression
+                            | InclusiveOforExpression "|" ExclusiveOforExpression
+
+syntax ExclusiveOforExpression ::= AndExpression
+                            | ExclusiveOforExpression "^" AndExpression
+
+syntax AndExpression ::= EqualityExpression
+                   | AndExpression "&" EqualityExpression
+
+syntax EqualityExpression ::= RelationalExpression
+                        | EqualityExpression "==" RelationalExpression
+                        | EqualityExpression "!=" RelationalExpression
+
+syntax RelationalExpression ::= ShiftExpression
+                          | RelationalExpression "<"  ShiftExpression
+                          | RelationalExpression ">"  ShiftExpression
+                          | RelationalExpression "<=" ShiftExpression
+                          | RelationalExpression ">=" ShiftExpression
+
+syntax ShiftExpression ::= AdditiveExpression
+                     | ShiftExpression ">>" AdditiveExpression
+                     | ShiftExpression "<<"  AdditiveExpression
+
+syntax AdditiveExpression ::= MultiplicativeExpression
+                        | AdditiveExpression "+" MultiplicativeExpression
+                        | AdditiveExpression "-" MultiplicativeExpression
+
+syntax MultiplicativeExpression ::= CastExpression
+                              | MultiplicativeExpression "*" CastExpression
+                              | MultiplicativeExpression "/" CastExpression
+                              | MultiplicativeExpression "%" CastExpression
+
+syntax CastExpression ::= UnaryExpression
                     | "(" TypeName ")" CastExpression
 
-    syntax UnaryExpression ::= 
-                            PostfixExpression
-                            | "++" UnaryExpression
-                            | "--" UnaryExpression
-                            | UnaryOperator CastExpression
-                            | "sizeof" UnaryExpression
-                            | "sizeof" TypeName
+syntax UnaryExpression ::= PostfixExpression
+                     | "++" UnaryExpression
+                     | "--" UnaryExpression
+                     | UnaryOperator CastExpression
+                     | "sizeof" UnaryExpression
+                     | "sizeof" TypeName
 
-    syntax PostfixExpression ::= PrimaryExpression
-                                | PostfixExpression "[" Expression "]"
-                                | PostfixExpression "(" AssignmentExpression ")"
-                                | PostfixExpression "." Id
-                                | PostfixExpression "->" Id
-                                | PostfixExpression "++"
-                                | PostfixExpression "--"
-    
-    syntax PrimaryExpression ::= Id
-                                | Int
-                                | Float
-                                | "(" Expression ")"
+syntax PostfixExpression ::= PrimaryExpression
+                       | PostfixExpression "[" Expression "]"
+                       | PostfixExpression "(" ListAssignmentExpression ")"
+                       | PostfixExpression "." Id
+                       | PostfixExpression "-" Id
+                       | PostfixExpression "++"
+                       | PostfixExpression "--"
 
-    syntax Expression ::= AssignmentExpression
-                        | Expression "," AssignmentExpression
+syntax ListAssignmentExpression ::= List{AssignmentExpression,""}
 
-    syntax AssignmentExpression ::= ConditionalExpression
-                        | UnaryExpression AssignmentOperator AssignmentExpression
+syntax PrimaryExpression ::= Id
+                       | Constant
+                       | "(" Expression ")"
 
-    syntax AssignmentOperator ::= "="
-                                | "*="
-                                | "/="
-                                | "%="
-                                | "+="
-                                | "-="
-                                | "<<="
-                                | ">>="
-                                | "&="
-                                | "^="
-                                | "|="
+syntax Constant ::= Int
+             | Float
+             | EnumerationConstant
 
-    syntax UnaryOperator ::= "&"
-                            | "*"
-                            | "+"
-                            | "-"
-                            | "~"
-                            | "!"
+syntax EnumerationConstant ::= Id
 
-    syntax TypeName ::= ListSpecifierQualifier AbstractDeclarator
-                        | ListSpecifierQualifier
+syntax Expression ::= AssignmentExpression
+               | Expression "," AssignmentExpression
 
-    syntax ParameterTypeList ::= ParameterList
+syntax AssignmentExpression ::= ConditionalExpression
+                          | UnaryExpression AssignmentOperator AssignmentExpression
+
+syntax AssignmentOperator ::= "="
+                        | "*="
+                        | "/="
+                        | "%="
+                        | "+="
+                        | "Of="
+                        | "="
+                        | "="
+                        | "&="
+                        | "^="
+                        | "|="
+
+syntax UnaryOperator ::= "&"
+                   | "*"
+                   | "+"
+                   | "-"
+                   | "~"
+                   | "!"
+
+syntax TypeName ::= ListSpecifierQualifier AbstractDeclarator
+                    | ListSpecifierQualifier
+
+syntax ListSpecifierQualifier ::= List{SpecifierQualifier,""}
+
+syntax ParameterTypeList ::= ParameterList
                         | ParameterList "," "..."
 
-    syntax ParameterList ::= ParameterDeclaration
-                        | ParameterList "," ParameterDeclaration
+syntax ParameterList ::= ParameterDeclaration
+                   | ParameterList "," ParameterDeclaration
 
-    syntax ParameterDeclaration ::= ListDeclarationSpecifier Declarator
-                                | ListDeclarationSpecifier AbstractDeclarator
-                                | ListDeclarationSpecifier
+syntax ParameterDeclaration ::= ListDeclarationSpecifier Declarator
+                          | ListDeclarationSpecifier AbstractDeclarator
+                          | ListDeclarationSpecifier
 
-    syntax AbstractDeclarator ::= Pointer
-                            | Pointer DirectAbstractDeclarator
-                            | DirectAbstractDeclarator
+syntax ListDeclarationSpecifier ::= List{DeclarationSpecifier,""}
 
-    syntax DirectAbstractDeclarator ::=  "(" AbstractDeclarator ")"
+syntax AbstractDeclarator ::= Pointer
+                        | Pointer DirectAbstractDeclarator
+                        | DirectAbstractDeclarator
+
+syntax DirectAbstractDeclarator ::=  "(" AbstractDeclarator ")"
                                | DirectAbstractDeclarator "[" ConstantExpression "]"
                                | DirectAbstractDeclarator "[" "]"
+                               | "[" ConstantExpression "]"
+                               | "[" "]"
                                | DirectAbstractDeclarator "(" ParameterTypeList ")"
                                | DirectAbstractDeclarator "(" ")"
+                               | "(" ParameterTypeList ")"
+                               | "(" ")"
 
-    syntax TypedefName ::= Id
-    
-    syntax Declaration ::= ListDeclarationSpecifier ListInitDeclarator ";"
+syntax EnumOfspecifier ::= "enum" Id "{" EnumeratorList "}"
+                   | "enum" "{" EnumeratorList "}"
+                   | "enum" Id
 
-    syntax ListInitDeclarator ::= List{InitDeclarator,""}
+syntax EnumeratorList ::= Enumerator
+                    | EnumeratorList "," Enumerator
 
-    syntax ListDeclarationSpecifier ::= List{DeclarationSpecifier,""}
+syntax Enumerator ::= Id
+               | Id "=" ConstantExpression
 
-    syntax InitDeclarator ::= Declarator
-                            | Declarator "=" Initializer 
+syntax TypedefOfname ::= Id
 
-    syntax Initializer ::= AssignmentExpression
-                        | "{" InitializerList "}"
-                        | "{" InitializerList "," "}"
+syntax Declaration ::=  ListDeclarationSpecifier ListInitDeclarator ";"
 
-    syntax InitializerList ::= Initializer
+syntax ListInitDeclarator ::= List{Initdeclarator,""}
+
+syntax Initdeclarator ::= Declarator
+                    | Declarator "=" Initializer
+
+syntax Initializer ::= AssignmentExpression
+                | "{" InitializerList "}"
+                | "{" InitializerList "," "}"
+
+syntax InitializerList ::= Initializer
                      | InitializerList "," Initializer
 
-    syntax CompoundStmt ::= "{" ListDeclaration Stmts "}"
+syntax CompoundStatement ::= "{" ListDeclaration ListStatement "}"
 
-    syntax ListDeclaration ::= List{Declaration,""}
+syntax ListStatement ::= List{Statement,""}
 
-    syntax Stmts ::= List{Stmt,""}
+syntax Statement ::= LabeledStatement
+              | ExpressionStatement
+              | CompoundStatement
+              | SelectionStatement
+              | IterationStatement
+              | JumpStatement
 
-    syntax Stmt ::= LabeledStmt
-                    | ExpressionStmt
-                    | CompoundStmt
-                    | SelectionStmt
-                    | IterationStmt
-                    | JumpStmt
+syntax LabeledStatement ::= Id ":" Statement
+                      | "case" ConstantExpression ":" Statement
+                      | "default" ":" Statement
 
-    syntax LabeledStmt ::= Id ":" Stmt
-                        | "case" ConstantExpression ":" Stmt
-                        | "default :" Stmt
+syntax ExpressionStatement ::= Expression ";"
+                                | ";"
 
-    syntax ExpressionStmt ::= Expression ";"
+syntax SelectionStatement ::= "if" "(" Expression ")" Statement
+                        | "if" "(" Expression ")" Statement "else" Statement
+                        | "switch" "(" Expression ")" Statement
 
-    
-    syntax SelectionStmt ::= "if" "(" Expression ")" Stmt
-                            | "if" "(" Expression ")" Stmt "else" Stmt
-                            | "switch" "(" Expression ")" Stmt
+syntax IterationStatement ::= "while" "(" Expression ")" Statement
+                        | "do" Statement "while" "(" Expression ")" ";"
+                        | "for" "(" Expression ";" Expression ";" Expression ")" Statement
 
-    syntax IterationStmt ::= "while" "(" Expression ")" Stmt
-                            | "do" Stmt "while"  "(" Expression ")" ";"
-                            | "for" "(" Expression ";" Expression ";" Expression ")" Stmt
-
-    syntax JumpStmt ::= "goto" Id ";"
-                        | "continue" ";"
-                        | "break" ";"
-                        | "return" Expression ";"
-                        | "return" ";" // TODO improve this case with an optional
+syntax JumpStatement ::= "goto" Id ";"
+                   | "continue" ";"
+                   | "break" ";"
+                   | "return" Expression ";"
 
 endmodule
