@@ -7,7 +7,7 @@ module C
 
     configuration
         <T color="yellow">
-            <k color="green"> $PGM </k>
+            <k color="green"> $PGM:TranslationUnit </k>
             <osl color="red"> .K </osl>
         </T>
 

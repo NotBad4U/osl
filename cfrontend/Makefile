@@ -1,17 +1,17 @@
 COMPILEDIR=cfrontend
-BACKEND=ocaml
+BACKEND=llvm
 KBINPATH=../k/bin
 
 all: cfrontend-kompiled
 
 cfrontend-kompiled: *.k
-	$(KBINPATH)/kompile c.k --backend $(BACKEND) -d $(COMPILEDIR)
+	kompile c.k --backend $(BACKEND) -d $(COMPILEDIR)
 
 test:
-	$(KBINPATH)/krun --directory ./$(COMPILEDIR) test.c
+	krun --directory ./$(COMPILEDIR) test.c
 
 ast:
-	$(KBINPATH)/kast --directory ./$(COMPILEDIR) test.c
+	kast --directory ./$(COMPILEDIR) test.c
 
 
 .PHONY: clean

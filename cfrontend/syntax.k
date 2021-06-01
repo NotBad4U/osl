@@ -2,6 +2,8 @@ module C-SYNTAX
 
 imports DOMAINS
 
+syntax Bool ::= isKResult(K) [symbol, function]
+
 syntax TranslationUnit ::= ListExternalDeclaration
 
 syntax ListExternalDeclaration ::= List{ExternalDeclaration,""}
@@ -83,7 +85,6 @@ syntax DirectDeclarator ::= Id
                       | DirectDeclarator "(" Ids ")"
 
 syntax Ids ::= List{Id,""}
-
 
 syntax ConstantExpression ::= ConditionalExpression
 
