@@ -13,8 +13,6 @@ syntax ExternalDeclaration ::= FunctionDefinition
 
 syntax FunctionDefinition ::= ListDeclarationSpecifier Declarator ListDeclaration CompoundStatement
 
-syntax ListDeclarationSpecifier ::= List{DeclarationSpecifier,""}
-
 syntax ListDeclaration ::= List{Declaration,""}
 
 
@@ -39,7 +37,7 @@ syntax TypeSpecifier ::= "void"
                    | "unsigned"
                    | StructOrFunionSpecifier
                    | EnumOfspecifier
-                   | TypedefOfname
+                   //| TypedefOfname
 
 syntax StructOrFunionSpecifier ::= StructOrUnion Id "{" ListStructDeclaration "}"
                               | StructOrUnion "{" ListStructDeclaration "}"
@@ -143,15 +141,16 @@ syntax PostfixExpression ::= PrimaryExpression
                        | PostfixExpression "[" Expression "]"
                        | PostfixExpression "(" ListAssignmentExpression ")"
                        | PostfixExpression "." Id
-                       | PostfixExpression "-" Id
+                       | PostfixExpression "->" Id
                        | PostfixExpression "++"
                        | PostfixExpression "--"
 
 syntax ListAssignmentExpression ::= List{AssignmentExpression,""}
 
 syntax PrimaryExpression ::= Id
-                       | Constant
-                       | "(" Expression ")"
+                        | String
+                        | Constant
+                        | "(" Expression ")"
 
 syntax Constant ::= Int
              | Float
@@ -199,7 +198,7 @@ syntax ParameterDeclaration ::= ListDeclarationSpecifier Declarator
                           | ListDeclarationSpecifier AbstractDeclarator
                           | ListDeclarationSpecifier
 
-syntax ListDeclarationSpecifier ::= List{DeclarationSpecifier,""}
+syntax ListDeclarationSpecifier ::= NeList{DeclarationSpecifier,""}
 
 syntax AbstractDeclarator ::= Pointer
                         | Pointer DirectAbstractDeclarator
@@ -219,17 +218,19 @@ syntax EnumOfspecifier ::= "enum" Id "{" EnumeratorList "}"
                    | "enum" "{" EnumeratorList "}"
                    | "enum" Id
 
-syntax EnumeratorList ::= Enumerator
-                    | EnumeratorList "," Enumerator
+/*syntax EnumeratorList ::= Enumerator
+                    | EnumeratorList "," Enumerator*/
+
+syntax EnumeratorList ::= List{Enumerator, ","}
 
 syntax Enumerator ::= Id
-               | Id "=" ConstantExpression
+                    |  Id "=" Int
 
 syntax TypedefOfname ::= Id
 
-syntax Declaration ::=  ListDeclarationSpecifier ListInitDeclarator ";"
+syntax Declaration ::= ListDeclarationSpecifier ListInitDeclarator ";"
 
-syntax ListInitDeclarator ::= List{Initdeclarator,""}
+syntax ListInitDeclarator ::= List{Initdeclarator,","}
 
 syntax Initdeclarator ::= Declarator
                     | Declarator "=" Initializer
