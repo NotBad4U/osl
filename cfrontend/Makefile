@@ -5,13 +5,13 @@ KBINPATH=../k/bin
 all: cfrontend-kompiled
 
 cfrontend-kompiled: *.k
-	kompile c.k --backend $(BACKEND) -d $(COMPILEDIR)
+	kompile c.k --backend $(BACKEND)
 
 test:
-	krun --directory ./$(COMPILEDIR) test.c
+	krun test.c
 
 ast:
-	kast --directory ./$(COMPILEDIR) test.c
+	kast test.c
 
 
 .PHONY: clean

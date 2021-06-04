@@ -39,11 +39,12 @@ syntax TypeSpecifier ::= "void"
                    | EnumOfspecifier
                    //| TypedefOfname
 
-syntax StructOrFunionSpecifier ::= StructOrUnion Id "{" ListStructDeclaration "}"
-                              | StructOrUnion "{" ListStructDeclaration "}"
-                              | StructOrUnion Id
+syntax StructOrFunionSpecifier ::= StructOrUnion Id "{" ListStructDeclaration ";" "}"
+                              | StructOrUnion "{" ListStructDeclaration ";" "}"
+                              > StructOrUnion Id
+                              > StructOrUnion Id "{" "}" // NOTE: fix the problem of trailing semicolon
 
-syntax ListStructDeclaration ::= List{StructDeclaration,""}
+syntax ListStructDeclaration ::= List{StructDeclaration,";"}
 
 syntax StructOrUnion ::= "struct"
                     | "union"
@@ -145,7 +146,7 @@ syntax PostfixExpression ::= PrimaryExpression
                        | PostfixExpression "++"
                        | PostfixExpression "--"
 
-syntax ListAssignmentExpression ::= List{AssignmentExpression,""}
+syntax ListAssignmentExpression ::= List{AssignmentExpression,","}
 
 syntax PrimaryExpression ::= Id
                         | String
