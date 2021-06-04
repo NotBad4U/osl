@@ -1,5 +1,5 @@
 struct MaStructure {
-    int Age;
+    int Age: 10;
     char Sexe;
     char Nom[12];
     float MoyenneScolaire;
@@ -12,3 +12,26 @@ typedef struct Books {
    char subject[100];
    int book_id;
 } Book;
+
+typedef struct linkedList {
+    int count;
+    struct msgNode *front;
+    struct msgNode *back;
+    void (*addMSG)(unsigned char *, int, struct linkedList *);
+} msgList;
+
+struct TreeNode
+{
+    int data;
+    struct node* left;
+    struct node* right;
+};
+
+typedef struct{
+        char const * const Name[2];
+        const int MaxValue;
+        const int Type;
+        const int EppromLocation;
+        const int NextID;
+        const int PreviousID;
+} Parameters_t;

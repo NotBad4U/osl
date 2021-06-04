@@ -1,0 +1,82 @@
+default: &id001
+  action:
+  - 3387
+  - []
+specializations:
+- - kseq{}
+  - default: *id001
+    specializations:
+    - - dotk{}
+      - default: *id001
+        specializations:
+        - - inj{SortAssignmentExpression{}, SortKItem{}}
+          - &id002
+            action:
+            - 3388
+            - []
+          - [STRING.String]
+        - - inj{SortShiftExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortFloat{}, SortKItem{}}
+          - *id002
+          - [FLOAT.Float]
+        - - inj{SortPrimaryExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortAndExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortPostfixExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortRelationalExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortAdditiveExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortId{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortEqualityExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortCastExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortInclusiveOforExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortLogicalOforExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortInt{}, SortKItem{}}
+          - *id002
+          - [INT.Int]
+        - - inj{SortMultiplicativeExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortConditionalExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortLogicalOfandExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortString{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortExclusiveOforExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        - - inj{SortUnaryExpression{}, SortKItem{}}
+          - *id002
+          - [STRING.String]
+        sort: STRING.String
+        occurrence: ['0', '1']
+      - []
+    sort: STRING.String
+    occurrence: ['1', '1']
+  - [STRING.String, STRING.String]
+sort: STRING.String
+occurrence: ['1']

@@ -1,0 +1,53 @@
+default: fail
+specializations:
+- - kseq{}
+  - default: fail
+    specializations:
+    - - dotk{}
+      - default: fail
+        specializations:
+        - - inj{SortAdditiveExpression{}, SortKItem{}}
+          - action:
+            - 3580
+            - - - ['0', '0', '1']
+                - STRING.String
+          - [STRING.String]
+        - - inj{SortFloat{}, SortKItem{}}
+          - &id001
+            action:
+            - 3580
+            - - - &id002 ['0', '1']
+                - STRING.String
+          - [FLOAT.Float]
+        - - inj{SortPrimaryExpression{}, SortKItem{}}
+          - *id001
+          - [STRING.String]
+        - - inj{SortPostfixExpression{}, SortKItem{}}
+          - *id001
+          - [STRING.String]
+        - - inj{SortId{}, SortKItem{}}
+          - *id001
+          - [STRING.String]
+        - - inj{SortCastExpression{}, SortKItem{}}
+          - *id001
+          - [STRING.String]
+        - - inj{SortInt{}, SortKItem{}}
+          - *id001
+          - [INT.Int]
+        - - inj{SortMultiplicativeExpression{}, SortKItem{}}
+          - *id001
+          - [STRING.String]
+        - - inj{SortString{}, SortKItem{}}
+          - *id001
+          - [STRING.String]
+        - - inj{SortUnaryExpression{}, SortKItem{}}
+          - *id001
+          - [STRING.String]
+        sort: STRING.String
+        occurrence: *id002
+      - []
+    sort: STRING.String
+    occurrence: ['1', '1']
+  - [STRING.String, STRING.String]
+sort: STRING.String
+occurrence: ['1']

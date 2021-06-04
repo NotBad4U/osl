@@ -8,33 +8,33 @@ readonly red='\e[31m'
 readonly green='\e[32m'
 readonly lightgreen='\e[92m'
 readonly reset='\033[0m'
-readonly semanticdir='..'
+readonly semanticdir='/home/alessio/Project/osl/cfrontend'
+readonly testdir='/home/alessio/Project/osl/cfrontend/test'
+readonly CHECK_MARK="\033[0;32m\xE2\x9C\x94\033[0m"
 
-ktest() {
-    krun --directory "${semanticdir}" $1 > /dev/null
-    printf "test ${1} ... ${green}ok${reset} \n" 1>&2
-}
+cd $testdir
 
-#get-tests() {
-#     echo "$#"
-#    if [ "$#" -eq 0 ]; then
-#        echo "tti"
-#        myArray=( $( ls *.c ) )
-#    else
-#        echo "toto"
-#        myArray=( "$@" )
-#    fi
-#}
+# If argument specified, only run the krun command on this files 
+if [ "$#" -eq 0 ]; then
+    cfiles=( $( ls *.c ) )
+else
+    cfiles=( "$@" )
+fi
 
-__main() {
-    array=( $( ls *.c ) )
+printf "running ${#cfiles[@]} tests\n"
 
-    printf "running ${#array[@]} tests\n"
+count=1
 
-    for i in "${array[@]}"; do
-        [ -f "$i" ] || break
-        ktest $i
-    done
-}
+for i in "${cfiles[@]}"; do
+    [ -f "$i" ] || break
 
-__main
+    echo -n "$count/${#cfiles[@]}  test ${i} ..."
+
+    krun --directory "${semanticdir}" $i > /dev/null
+
+    echo -e "\\r$count/${#cfiles[@]}  test ${i} ... ${green}ok${reset}"
+
+    let count+=1
+done
+
+printf "test result: ${green}ok${reset}. ${#cfiles[@]} passed;\n" 

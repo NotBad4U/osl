@@ -1,4 +1,3 @@
-COMPILEDIR=cfrontend
 BACKEND=llvm
 KBINPATH=../k/bin
 
@@ -8,13 +7,16 @@ cfrontend-kompiled: *.k
 	kompile c.k --backend $(BACKEND)
 
 test:
-	krun test.c
+	krun test.c	
+
+tests:
+	./test/run.sh	
 
 ast:
 	kast test.c
 
 
-.PHONY: clean
+.PHONY: all test tests clean
 
 clean:
 	@rm -rf $(COMPILEDIR)
