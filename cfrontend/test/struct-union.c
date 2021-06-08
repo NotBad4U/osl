@@ -1,9 +1,12 @@
 struct MaStructure {
     int Age: 10;
+    int a, b, c: 10;
+    int a, b:4, d,  c: 10;
     char Sexe;
     char Nom[12];
-    float MoyenneScolaire;
+    //float MoyenneScolaire;
     struct AutreStructure StructBis;
+    Foo t;
 };
 
 typedef struct Books {

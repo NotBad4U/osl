@@ -1,10 +1,40 @@
-int main()
+enum week{Mon, Tue, Wed, Thur, Fri, Sat, Sun};
+
+typedef struct Books {
+   char title[50];
+   char author[50];
+   char subject[100];
+   int book_id;
+   struct Book t;
+} Book;
+
+struct MaStructure {
+    int Age;
+    char Sexe;
+    char Nom[12];
+    float MoyenneScolaire;
+    struct AutreStructure StructBis;
+};
+
+
+typedef struct Books {
+   char title[50];
+   char author[50];
+   char subject[100];
+   int book_id;
+   struct Book t;
+} Book;
+
+int main(Book book)
 {
+    struct s t1 = { 0 };
+    struct s *s1 = malloc(sizeof (struct s) + 64);
     double first, second, temp;
     printf("Enter first number: ");
     scanf("%lf", &first);
     printf("Enter second number: ");
     scanf("%lf", &second);
+
 
     // Value of first is assigned to temp
     temp = first;
@@ -21,7 +51,7 @@ int main()
     return 0;
 }
 
-int checkleapyear()
+int checkleapyear(int a, int b)
 {
     int year;
     printf("Enter a year: ");
@@ -93,7 +123,7 @@ int gcd()
     return 0;
 }
 
-int main()
+int main(const int * a)
 {
     int i, space, rows, k = 0;
     printf("Enter the number of rows: ");

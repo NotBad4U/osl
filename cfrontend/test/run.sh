@@ -37,4 +37,4 @@ for i in "${cfiles[@]}"; do
     let count+=1
 done
 
-printf "test result: ${green}ok${reset}. ${#cfiles[@]} passed;\n" 
+printf "test result: ${green}ok${reset}. ${#cfiles[@]} passed;\n"

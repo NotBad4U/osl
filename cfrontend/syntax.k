@@ -37,12 +37,12 @@ syntax TypeSpecifier ::= "void"
                    | "unsigned"
                    | StructOrFunionSpecifier
                    | EnumOfspecifier
-                   //| TypedefOfname
+                   | TypedefOfname
 
 syntax StructOrFunionSpecifier ::= StructOrUnion Id "{" ListStructDeclaration ";" "}"
                               | StructOrUnion "{" ListStructDeclaration ";" "}"
-                              > StructOrUnion Id
-                              > StructOrUnion Id "{" "}" // NOTE: fix the problem of trailing semicolon
+                              | StructOrUnion Id
+                              | StructOrUnion Id "{" "}" // NOTE: fix the problem of trailing semicolon
 
 syntax ListStructDeclaration ::= List{StructDeclaration,";"}
 
@@ -57,12 +57,16 @@ syntax ListSpecifierQualifier ::= List{SpecifierQualifier,""}
 syntax SpecifierQualifier ::= TypeSpecifier
                         | TypeQualifier
 
-syntax StructDeclaratorList ::= StructDeclarator
-                           | StructDeclaratorList "," StructDeclarator
+// syntax StructDeclaratorList ::= StructDeclarator
+//                            | StructDeclaratorList "," StructDeclarator
+
+syntax StructDeclaratorList ::= NeList{StructDeclarator, ","}
+                           //| StructDeclaratorList "," StructDeclarator
+
 
 syntax StructDeclarator ::= Declarator
                       | Declarator ":" ConstantExpression
-                      | ":" ConstantExpression
+                      //| ":" ConstantExpression
 
 syntax Declarator ::= DirectDeclarator
                     | Pointer DirectDeclarator
@@ -80,7 +84,7 @@ syntax DirectDeclarator ::= Id
                       | "(" Declarator ")"
                       | DirectDeclarator "[" ConstantExpression "]"
                       | DirectDeclarator "[" "]"
-                      | DirectDeclarator "(" ParameterTypeList ")"
+                      | DirectDeclarator "(" ParameterTypeList ")"      [prefer]
                       | DirectDeclarator "(" Ids ")"
 
 syntax Ids ::= List{Id,""}
@@ -195,9 +199,9 @@ syntax ParameterTypeList ::= ParameterList
 syntax ParameterList ::= ParameterDeclaration
                    | ParameterList "," ParameterDeclaration
 
-syntax ParameterDeclaration ::= ListDeclarationSpecifier Declarator
-                          | ListDeclarationSpecifier AbstractDeclarator
-                          | ListDeclarationSpecifier
+syntax ParameterDeclaration ::= ListDeclarationSpecifier Declarator        [prefer]
+                            | ListDeclarationSpecifier
+                            | ListDeclarationSpecifier AbstractDeclarator
 
 syntax ListDeclarationSpecifier ::= NeList{DeclarationSpecifier,""}
 
@@ -230,8 +234,9 @@ syntax Enumerator ::= Id
 syntax TypedefOfname ::= Id
 
 syntax Declaration ::= ListDeclarationSpecifier ListInitDeclarator ";"
+                    | ListDeclarationSpecifier Id ";"   [prefer]
 
-syntax ListInitDeclarator ::= List{Initdeclarator,","}
+syntax ListInitDeclarator ::= List{Initdeclarator, ","}
 
 syntax Initdeclarator ::= Declarator
                     | Declarator "=" Initializer
