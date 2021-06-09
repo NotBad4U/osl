@@ -42,7 +42,7 @@ syntax TypeSpecifier ::= "void"
 syntax StructOrFunionSpecifier ::= StructOrUnion Id "{" ListStructDeclaration ";" "}"
                               | StructOrUnion "{" ListStructDeclaration ";" "}"
                               | StructOrUnion Id
-                              | StructOrUnion Id "{" "}" // NOTE: fix the problem of trailing semicolon
+                              | StructOrUnion Id "{" "}"
 
 syntax ListStructDeclaration ::= List{StructDeclaration,";"}
 
@@ -57,16 +57,10 @@ syntax ListSpecifierQualifier ::= List{SpecifierQualifier,""}
 syntax SpecifierQualifier ::= TypeSpecifier
                         | TypeQualifier
 
-// syntax StructDeclaratorList ::= StructDeclarator
-//                            | StructDeclaratorList "," StructDeclarator
-
 syntax StructDeclaratorList ::= NeList{StructDeclarator, ","}
-                           //| StructDeclaratorList "," StructDeclarator
-
 
 syntax StructDeclarator ::= Declarator
                       | Declarator ":" ConstantExpression
-                      //| ":" ConstantExpression
 
 syntax Declarator ::= DirectDeclarator
                     | Pointer DirectDeclarator
@@ -223,9 +217,6 @@ syntax DirectAbstractDeclarator ::=  "(" AbstractDeclarator ")"
 syntax EnumOfspecifier ::= "enum" Id "{" EnumeratorList "}"
                    | "enum" "{" EnumeratorList "}"
                    | "enum" Id
-
-/*syntax EnumeratorList ::= Enumerator
-                    | EnumeratorList "," Enumerator*/
 
 syntax EnumeratorList ::= List{Enumerator, ","}
 
