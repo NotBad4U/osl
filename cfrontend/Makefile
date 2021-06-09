@@ -6,9 +6,6 @@ all: cfrontend-kompiled
 cfrontend-kompiled: *.k
 	kompile c.k --backend $(BACKEND)
 
-test:
-	krun test.c	
-
 tests:
 	./test/run.sh	
 
