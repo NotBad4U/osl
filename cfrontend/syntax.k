@@ -272,11 +272,19 @@ syntax SelectionStatement ::= "if" "(" Expression ")" Statement
 
 syntax IterationStatement ::= "while" "(" Expression ")" Statement
                         | "do" Statement "while" "(" Expression ")" ";"
-                        | "for" "(" Expression ";" Expression ";" Expression ")" Statement
+                        | "for" "(" ForInitClause ";" OptionalExpression ";" OptionalExpression ")" Statement
+
+syntax ForInitClause ::= Expression
+                | Declaration
+                | ListDeclarationSpecifier ListInitDeclarator
+                | ListDeclarationSpecifier Id
+                | "" [klabel(none)]
 
 syntax JumpStatement ::= "goto" Id ";"
                    | "continue" ";"
                    | "break" ";"
-                   | "return" Expression ";"
+                   | "return" OptionalExpression ";"
+
+syntax OptionalExpression ::= "" [klabel(none)] | Expression [klabel(some)]
 
 endmodule
