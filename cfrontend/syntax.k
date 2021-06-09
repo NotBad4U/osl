@@ -1,6 +1,11 @@
+module C-SORT
+    syntax HexConstant ::= r"(0x|0X)[0-9a-fA-F]+" [token]
+endmodule
+
 module C-SYNTAX 
 
 imports DOMAINS
+imports C-SORT
 
 syntax Bool ::= isKResult(K) [symbol, function]
 
@@ -152,9 +157,10 @@ syntax PrimaryExpression ::= Id
                         | "(" Expression ")"
 
 syntax Constant ::= Int
-             | Float
-             | EnumerationConstant
-             | "NULL"
+                | HexConstant
+                | Float
+                | EnumerationConstant
+                | "NULL"
 
 syntax EnumerationConstant ::= Id
 
