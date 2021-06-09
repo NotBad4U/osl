@@ -160,6 +160,7 @@ syntax PrimaryExpression ::= Id
 syntax Constant ::= Int
              | Float
              | EnumerationConstant
+             | "NULL"
 
 syntax EnumerationConstant ::= Id
 
