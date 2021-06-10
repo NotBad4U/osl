@@ -14,6 +14,7 @@ report/main\.synctex\.gz
 
 
 model/osl-kompiled
+model/*.rs
 
 *.blg
 
@@ -31,3 +32,4 @@ k
 
 cfrontend/c-kompiled
 cfrontend/.krun-*
+cfrontend/*.c
