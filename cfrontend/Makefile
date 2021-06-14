@@ -7,7 +7,11 @@ cfrontend-kompiled: *.k
 	kompile c.k --backend $(BACKEND)
 
 tests:
-	./test/run.sh	
+	./test/run.sh
+
+
+test:
+	krun test.c
 
 ast:
 	kast test.c

@@ -7,9 +7,9 @@ module C
 
     configuration
         <T color="yellow">
-            <k color="green"> $PGM:TranslationUnit </k>
+            <k color="green"> $PGM</k>
+            <state color="red"> .Map </state>
             <osl color="red"> .K </osl>
         </T>
-
 endmodule
 
