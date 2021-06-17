@@ -89,8 +89,9 @@ syntax BranchTmp
 syntax LOCK
        ::= #compare(K)
 
-syntax Int
-       ::= #cint(Int,Int)
+// FIXME: Can't hook on Int with the new Kframework version
+//syntax Int
+//       ::= #cint(Int,Int)
 
 syntax BorrowItem
        ::= #br(Int,Int, Exp)
