@@ -34,6 +34,7 @@ syntax NeListDeclarationSpecifier ::= NeList{DeclarationSpecifier,""}
 
 syntax CStmt ::= Declaration
                 | DeclarationDesugar
+                | Stmt
 
 syntax CStmts ::= List{CStmt,""}
 
@@ -44,11 +45,50 @@ syntax Declaration ::=  NeListDeclarationSpecifier OptionalPointer Declarator ";
 
 syntax DeclarationDesugar ::= RefCapability Declarator ";"
 
-
 syntax Declarator ::=  Id
 
 syntax   RefCapability ::=  "#Imm"      [klabel(#imm), symbol]
                         |   "#Mut"      [klabel(#mut), symbol]
                         |   "#RefImm"   [symbol]
                         |   "#RefMut"   [symbol]
+
+
+syntax Stmt ::= ExpressionStmt
+
+syntax ExpressionStmt ::= Expression ";"
+
+
+syntax Expression ::= AssignmentExpression
+                    | PrimaryExpression
+                    | UnaryExpression
+
+syntax UnaryExpression ::= UnaryOperator PrimaryExpression
+
+syntax PrimaryExpression ::= Id
+                            | Constant
+                            | String
+                            | "(" PrimaryExpression ")" [bracket]
+
+// TODO: Add support of conditionnal assignment (ternary operator)
+syntax AssignmentExpression ::= Id AssignmentOperator Expression
+
+syntax AssignmentOperator ::= "="
+                        | "*="
+                        | "/="
+                        | "%="
+                        | "+="
+                        | "-="
+                        | "<<="
+                        | ">>="
+                        | "&="
+                        | "^="
+                        | "|="
+
+syntax UnaryOperator ::= "&"
+                        | "*"
+                        | "+"
+                        | "-"
+                        | "~"
+                        | "!"
+
 endmodule
