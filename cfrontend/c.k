@@ -57,5 +57,19 @@ module C
     rule <k> #RefMut X:Id ; => . ... </k>
         <caps> Map => Map[X <- #RefMut] </caps>
 
+    // Immutable borrow of Y to X
+    // X need to be declared as #RefIm
+    // Y can be declared as #Mut or #Imm
+    rule <k> X:Id = & Y:Id ; => . ... </k>
+        <caps> ... X |-> #RefImm ... </caps>
+        <stack> . => #pushTerm(X borrow Y ;)  </stack>
+
+    // Mutable borrow of Y to X
+    // X need to be declared as #RefMut
+    // Y need to be declared as #Mut
+    rule <k> X:Id = & Y:Id ; => . ... </k>
+        <caps> ... (X |-> #RefMut) (Y |-> M) ... </caps>
+        <stack> . => #pushTerm(X mborrow Y ;)  </stack>
+        requires M =/=K #Imm
 endmodule
 
