@@ -8,7 +8,7 @@ import OSL-SYNTAX
 import CONFIGURATION
 
 
-rule #branch(B:Block, Bs:Blocks) => #secondBranch(Bs) ~> B
+rule @ B:Block, Bs:Blocks ; => #secondBranch(Bs) ~> B
 
 rule <k> @ B:Block, Bs:Blocks ; => #secondBranch(Bs) ... </k>
      <tmp> .List => ListItem(B) ... </tmp>

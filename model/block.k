@@ -10,7 +10,7 @@ import CONFIGURATION
 syntax BlockItem
        ::= "#blockend"
 
-rule <k> #block(Ss:Stmts) => Ss ~> #blockend ... </k>
+rule <k> ({ Ss:Stmts }):Block => Ss ~> #blockend ... </k>
      <env> ENV:Map </env>
      <stack> .List => ListItem(ENV) ... </stack>
 

@@ -89,8 +89,8 @@ syntax BranchTmp
 syntax LOCK
        ::= #compare(K)
 
-syntax Int
-       ::= #cint(Int,Int)
+//syntax Int
+//       ::= #cint(Int,Int)
 
 syntax BorrowItem
        ::= #br(Int,Int, Exp)

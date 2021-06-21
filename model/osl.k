@@ -76,8 +76,8 @@ syntax Bool
        ::= #inProps(Prop, Props)			[function]
 
 
-rule #inProps(P, #props(P, Ps)) => true
-rule #inProps(P1, #props(P, Ps)) => #inProps(P1, Ps)
+rule #inProps(P, (P:Prop, Ps:Props)) => true
+rule #inProps(P1, (P:Prop, Ps:Props)) => #inProps(P1, Ps)
      requires P1 =/=K P
 rule #inProps(P, .Props) => false
 
@@ -92,7 +92,7 @@ syntax Bool
 
 rule #existRef(R:K, SetItem(#rs(_)) S:Set, C:Int) => #existRef(R, S, C)
 rule #existRef(R:K, SetItem(#uninit) S:Set, C:Int) => #existRef(R, S, C)
-rule #existRef(R:K, SetItem(#br(_,C1:Int,R)) S:Set, C:Int) => (C1 >=Int C) andBool true
+rule #existRef(R, SetItem(#br(_,C1:Int,R)) S:Set, C:Int) => (C1 >=Int C) andBool true
 rule #existRef(R:K, SetItem(#br(_,C1:Int,R1)) S:Set, C:Int) => #existRef(R,S,C)
      requires R =/=K R1
      
@@ -114,7 +114,7 @@ rule <k> #Transfer(#loc(F:Int), #loc(L:Int)) => #TransferV(#loc(F), #loc(L)) ...
 
 
 rule <k> #Transfer(#rs(R:Props), #loc(L)) => . ... </k>
-     <store> ... L |-> (_ => #rs(R)) ... </store>
+     <store> Map => Map[L <- #rs(R)] </store>
 
 
 rule <k> #TransferV(#loc(F), #loc(L)) => #Transfer(#rs(PS), #loc(L)) ... </k>
@@ -127,8 +127,8 @@ rule <k> #TransferV(#loc(F), #loc(L)) => #Transfer(#rs(PS), #loc(L)) ... </k>
      requires #inProps(copy, PS)
 
 syntax Exp
-       ::= #TransferIB(K,K)		[strict(1)]
-         | #TransferMB(K,K)		[strict(1)]
+       ::= #TransferIB(KItem,KItem)		[strict(1)]
+         | #TransferMB(KItem,KItem)		[strict(1)]
 	 | #uninitialize(Exp)
 
 rule <k> #TransferV(#loc(F), #loc(L)) => #TransferIB(read(#loc(F)), #loc(L)) ... </k>
@@ -140,7 +140,7 @@ rule <k> #TransferV(#loc(F), #loc(L)) =>
      <store> ... F |-> #br(BEG,END,#mutRef(L1)) ... </store>
 
 rule <k> #TransferIB(#loc(F), #loc(L)) => . ... </k>
-     <store> ... L |-> (_ => #br(C,C,#immRef(F))) ... </store>
+     <store> Map => Map[ L <- #br(C,C,#immRef(F)) ] </store>
      <indexes> #indexes(C:Int, _:Int) </indexes>
 
 
@@ -154,8 +154,8 @@ rule <k> #uninitialize(#loc(F:Int)) => . ... </k>
 rule X:Id => read(X)
 
 
-rule <k> read(X:Id) => read(#loc(L)) ... </k>
-     <env> ... X |-> L:Int ...  </env>
+rule <k> read ( X ) => 1 ... </k>
+     <env> ... X |-> L ... </env>
 
 rule <k> read(#loc(L:Int)) => #rs(N) ...  </k>
      <store> ... L |-> #rs(N:Props) ... </store>
@@ -164,7 +164,7 @@ rule <k> read(#loc(L:Int)) => #Read(#borrowImmCK(L,BEG,END,L1)) ~> #loc(L1) ... 
      <store> ... L |-> #br(BEG:Int, END:Int, #immRef(L1:Int)) ... </store>
 
 syntax OItem
-       ::= #Read(K)		[strict]
+       ::= #Read(KItem)		[strict]
 
 rule #Read(#loc(L:Int)) => #Read(read(#loc(L)))
 
