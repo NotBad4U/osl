@@ -2,7 +2,7 @@ OSL: An Operational Semantics for Rust Language
 
 ## Introduction
 
-OSL semantics is an operational semantics implemented by K-Framework,
+OSL semantics is an operational semantics implemented in K-Framework,
 
 which is a rewrite logic based formal modeling tool.
 
