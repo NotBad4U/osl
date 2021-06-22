@@ -52,7 +52,7 @@ cd model
 ../k/bin/kompile osl.k --backend ocaml [ARGS]
 ```
 
-**3. Run the example **
+**3. Run the example**
 
 The project provide some demos.
 You can try OSL by running this command in the `model` folder:
