@@ -30,6 +30,5 @@ model/*.rs
 
 k
 
-cfrontend/c-kompiled
-cfrontend/.krun-*
+cfrontend/target
 cfrontend/*.c
