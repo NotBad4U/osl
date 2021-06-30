@@ -5,9 +5,11 @@ use std::process::exit;
 use lang_c::driver::Config;
 use lang_c::visit::Visit;
 
+mod context;
 mod osl;
 
-use crate::osl::CVisitorToOsl;
+
+use crate::osl::Transformer;
 
 fn main() {
     env_logger::init();
@@ -45,8 +47,9 @@ fn main() {
 
     match lang_c::driver::parse(&config, &source) {
         Ok(parse) => {
-            let mut cvisitor = CVisitorToOsl{};
-            cvisitor.visit_translation_unit(&parse.unit);
+            let mut cvisitor = Transformer::new();
+            cvisitor.transform_translation_unit(&parse.unit);
+            info!("{:?}", cvisitor.stmts);
         }
         Err(err) => {
             error!("{}", err);

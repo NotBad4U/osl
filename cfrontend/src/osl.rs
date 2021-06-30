@@ -1,40 +1,70 @@
-use lang_c::ast;
+use std::collections::HashMap;
+
+use lang_c::ast::*;
 use lang_c::span;
-use lang_c::visit;
 
 type Id = String;
 
 #[derive(Debug)]
-struct Parameter {}
+pub struct Parameter {}
+
+type Block = Vec<Stmt>;
 
 #[derive(Debug)]
-struct Block {
-    stmts: Vec<Stmt>,
-}
-
-#[derive(Debug)]
-enum Stmt {
+pub enum Stmt {
     Function(Id, Vec<Parameter>, Block),
 }
 
-pub struct CVisitorToOsl {}
+#[derive(Debug)]
+pub struct Transformer {
+    pub stmts: Vec<Stmt>,
+}
 
-impl<'ast> visit::Visit<'ast> for CVisitorToOsl {
-    fn visit_function_definition(
+impl Transformer {
+    pub fn new() -> Self {
+        Self { stmts: Vec::new() }
+    }
+
+    pub fn transform_translation_unit<'ast>(&mut self, translation_unit: &'ast TranslationUnit) {
+        for element in &translation_unit.0 {
+            self.transform_external_declaration(&element.node, &element.span);
+        }
+    }
+
+    pub fn transform_function_def<'ast>(&mut self, function_def: &'ast FunctionDefinition) {
+        debug!("{:#?}", function_def);
+
+        let fn_id = match function_def.declarator.node.kind.node {
+            DeclaratorKind::Identifier(ref i) => i.node.name.to_string(),
+            _ => panic!("function without identifier"),
+        };
+
+        let stmts = transform_statement(&function_def.statement.node);
+        self.stmts.push(Stmt::Function(fn_id, vec![], stmts));
+    }
+
+    pub fn transform_external_declaration<'ast>(
         &mut self,
-        function_definition: &'ast ast::FunctionDefinition,
-        span: &'ast span::Span,
+        external_declaration: &'ast ExternalDeclaration,
+        _span: &'ast span::Span,
     ) {
-        info!("{:?}", function_definition.declarator.node.kind);
-        visit::visit_function_definition(self, function_definition, span);
+        match *external_declaration {
+            ExternalDeclaration::FunctionDefinition(ref f) => {
+                self.transform_function_def(&f.node);
+            }
+            _ => {}
+        }
     }
+}
 
-    fn visit_declaration(&mut self, decl: &'ast ast::Declaration, span: &'ast span::Span) {
-        info!("{:#?}", decl);
-        visit::visit_declaration(self, decl, span);
-    }
+pub fn transform_statement<'ast>(statement: &'ast Statement) -> Vec<Stmt> {
+    let stmts = Vec::new();
 
-    fn visit_translation_unit(&mut self, translation_unit: &'ast ast::TranslationUnit) {
-        visit::visit_translation_unit(self, translation_unit);
-    }
+    match *statement {
+        Statement::Compound(ref c) => for item in c {},
+        Statement::Return(Some(ref r)) => {}
+        _ => {}
+    };
+
+    stmts
 }
