@@ -1,21 +1,32 @@
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 
 use lang_c::driver::Config;
 
+mod ast;
 mod context;
-mod osl;
+mod transpiler;
 
-use crate::osl::Transformer;
+use crate::transpiler::Transpiler;
+
+use env_logger::Builder;
+use log::LevelFilter;
+
+const TEST_C_FILE: &str = "test.c";
 
 fn main() {
-    env_logger::init();
+    let mut builder = Builder::from_default_env();
+
+    builder.filter(None, LevelFilter::Info).init();
 
     let config = Config::default();
 
-    let parsed_ast = lang_c::driver::parse(&config, "test.c").unwrap();
+    let parsed_ast = lang_c::driver::parse(&config, TEST_C_FILE).unwrap();
 
-    let mut transpiler = Transformer::new();
-    transpiler.transform_translation_unit(&parsed_ast.unit);
+    println!("{:#?}", parsed_ast);
 
-    info!("{}", osl::Stmts(transpiler.stmts));
+    let mut transpiler = Transpiler::new();
+    transpiler.transpile_translation_unit(&parsed_ast.unit);
+
+    info!("\n{}", ast::Stmts(transpiler.stmts));
 }
