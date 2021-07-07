@@ -10,11 +10,20 @@ pub struct Parameter {}
 #[derive(Debug)]
 pub struct Stmts(pub Vec<Stmt>);
 
+impl From<Stmt> for Stmts {
+    fn from(stmt: Stmt) -> Self {
+        Stmts(vec![stmt])
+    }
+}
+
 #[derive(Debug)]
 pub enum Stmt {
     Declaration(Id, Option<Type>),
     Function(Id, Vec<Parameter>, Type,  Stmts),
+    Transfer(Exp, Exp),
     Val(Exp),
+    Borrow(Exp, Exp),
+    MBorrow(Exp, Exp),
 }
 
 #[derive(Debug)]
@@ -53,4 +62,5 @@ impl ops::Deref for Props {
 #[derive(Debug)]
 pub enum Exp {
     NewRessource(Props),
+    Id(String),
 }

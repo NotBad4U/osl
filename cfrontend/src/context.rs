@@ -63,7 +63,7 @@ impl MutabilityContext {
     }
 
     /// Try to get the mutability of an identifier declared insides blocks scopes
-    fn get_variable_mutability(&self, id: &str) -> Option<Mutability> {
+    pub fn get_variable_mutability(&self, id: &str) -> Option<Mutability> {
         self.context.iter().rev().find_map(|scope| {
             scope.get(id).and_then(|mut_var| match mut_var {
                 MutabilityContextItem::Variable(vm) => Some(vm.clone()),

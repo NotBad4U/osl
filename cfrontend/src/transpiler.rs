@@ -73,9 +73,135 @@ pub fn transpile_statement<'ast>(
     statement: &'ast Statement,
 ) -> Stmts {
     match *statement {
-        Statement::Return(Some(ref r)) => Stmts(vec![transpile_return_statement(context, &r.node)]),
+        Statement::Expression(Some(ref e)) => Stmts::from(transpile_expression(context, &e.node)),
+        Statement::Return(Some(ref r)) => Stmts::from(transpile_return_statement(context, &r.node)),
         Statement::Compound(ref block_items) => transpile_block_items(context, block_items),
         _ => unimplemented!(),
+    }
+}
+
+fn transpile_expression(context: &mut MutabilityContext, exp: &Expression) -> Stmt {
+    match exp {
+        Expression::Call(box Node { node: call_exp, .. }) => unimplemented!(),
+        Expression::BinaryOperator(box Node { node: bin_op, .. }) => transpile_binary_operator(context, bin_op),
+        e => unimplemented!("{:?}", e),
+    }
+}
+
+fn transpile_binary_operator(
+    context: &mut MutabilityContext,
+    bop: &BinaryOperatorExpression,
+) -> Stmt {
+    let left = &bop.lhs.node;
+    let right = &bop.rhs.node;
+    let operator = &bop.operator.node;
+
+    match (left, operator, right) {
+        // Basic assignment a = b;
+        (
+            Expression::Identifier(box Node { node: left_id, .. }),
+            BinaryOperator::Assign,
+            Expression::Identifier(box Node { node: right_id, .. }),
+        ) => transpile_assignment(context, left_id, right_id),
+        // Address assignment a = &b;
+        // We should consider this as a borrow
+        (
+            Expression::Identifier(box Node { node: left_id, .. }),
+            BinaryOperator::Assign,
+            Expression::UnaryOperator(box Node {
+                node:
+                    UnaryOperatorExpression {
+                        operator:
+                            Node {
+                                node: UnaryOperator::Address,
+                                ..
+                            },
+                        operand:
+                            box Node {
+                                node: Expression::Identifier(box Node { node: right_id, .. }),
+                                ..
+                            },
+                    },
+                ..
+            }),
+        ) => transpile_ref_assignment(context, left_id, right_id),
+        _ => unimplemented!(),
+    }
+}
+
+fn transpile_assignment(
+    context: &mut MutabilityContext,
+    lhs: &Identifier,
+    rhs: &Identifier,
+) -> Stmt {
+    let left_mut = context
+        .get_variable_mutability(lhs.name.as_str())
+        .unwrap_or_else(|| {
+            panic!(
+                "The variable {} has not been catched by the transpiler during processing",
+                lhs.name.as_str()
+            )
+        });
+    context
+        .get_variable_mutability(rhs.name.as_str())
+        .unwrap_or_else(|| {
+            panic!(
+                "The variable {} has not been catched by the transpiler during processing",
+                rhs.name.as_str()
+            )
+        });
+
+    match left_mut {
+        Mutability::ImmOwner => {
+            Stmt::Transfer(Exp::NewRessource(Props(vec![])), Exp::Id(lhs.name.clone()))
+        }
+        Mutability::MutOwner => Stmt::Transfer(
+            Exp::NewRessource(Props(vec![Prop::Mut])),
+            Exp::Id(lhs.name.clone()),
+        ),
+        Mutability::ImmRef => Stmt::Transfer(
+            Exp::NewRessource(Props(vec![Prop::Mut])),
+            Exp::Id(lhs.name.clone()),
+        ),
+        Mutability::MutRef => Stmt::Transfer(
+            Exp::NewRessource(Props(vec![Prop::Mut])),
+            Exp::Id(lhs.name.clone()),
+        ),
+    }
+}
+
+fn transpile_ref_assignment(
+    context: &mut MutabilityContext,
+    lhs: &Identifier,
+    rhs: &Identifier,
+) -> Stmt {
+    let left_mut = context
+        .get_variable_mutability(lhs.name.as_str())
+        .unwrap_or_else(|| {
+            panic!(
+                "The variable {} has not been catched by the transpiler during processing",
+                lhs.name.as_str()
+            )
+        });
+    context
+        .get_variable_mutability(rhs.name.as_str())
+        .unwrap_or_else(|| {
+            panic!(
+                "The variable {} has not been catched by the transpiler during processing",
+                rhs.name.as_str()
+            )
+        });
+    
+    match left_mut {
+        Mutability::ImmRef => Stmt::Borrow(
+            Exp::Id(lhs.name.clone()),
+            Exp::Id(rhs.name.clone()),
+        ),
+        Mutability::MutRef => Stmt::MBorrow(
+            Exp::Id(lhs.name.clone()),
+            Exp::Id(rhs.name.clone()),
+        ),
+        _ => panic!("This should be a reference"),
     }
 }
 
