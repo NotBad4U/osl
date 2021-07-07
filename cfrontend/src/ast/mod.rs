@@ -4,10 +4,10 @@ mod printer;
 
 type Id = String;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Parameter {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Stmts(pub Vec<Stmt>);
 
 impl From<Stmt> for Stmts {
@@ -16,7 +16,7 @@ impl From<Stmt> for Stmts {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Declaration(Id, Option<Type>),
     Function(Id, Vec<Parameter>, Type,  Stmts),
@@ -26,7 +26,7 @@ pub enum Stmt {
     MBorrow(Exp, Exp),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Type {
     Own(Props),
     //Ref(Lifetime, Box<Type>),
@@ -41,13 +41,13 @@ impl ops::Deref for Stmts {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Prop {
     Copy,
     Mut,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Props(pub Vec<Prop>);
 
 impl ops::Deref for Props {
@@ -59,7 +59,7 @@ impl ops::Deref for Props {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Exp {
     NewRessource(Props),
     Id(String),
