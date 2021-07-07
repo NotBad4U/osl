@@ -82,8 +82,12 @@ pub fn transpile_statement<'ast>(
 
 fn transpile_expression(context: &mut MutabilityContext, exp: &Expression) -> Stmt {
     match exp {
-        Expression::Call(box Node { node: call_exp, .. }) => unimplemented!(),
-        Expression::BinaryOperator(box Node { node: bin_op, .. }) => transpile_binary_operator(context, bin_op),
+        Expression::Call(box Node {
+            node: _call_exp, ..
+        }) => unimplemented!(),
+        Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
+            transpile_binary_operator(context, bin_op)
+        }
         e => unimplemented!("{:?}", e),
     }
 }
@@ -191,39 +195,38 @@ fn transpile_ref_assignment(
                 rhs.name.as_str()
             )
         });
-    
+
     match left_mut {
-        Mutability::ImmRef => Stmt::Borrow(
-            Exp::Id(lhs.name.clone()),
-            Exp::Id(rhs.name.clone()),
-        ),
-        Mutability::MutRef => Stmt::MBorrow(
-            Exp::Id(lhs.name.clone()),
-            Exp::Id(rhs.name.clone()),
-        ),
+        Mutability::ImmRef => Stmt::Borrow(Exp::Id(lhs.name.clone()), Exp::Id(rhs.name.clone())),
+        Mutability::MutRef => Stmt::MBorrow(Exp::Id(lhs.name.clone()), Exp::Id(rhs.name.clone())),
         _ => panic!("This should be a reference"),
     }
 }
 
+/// Transpile a list of statement in a block
 fn transpile_block_items(
     context: &mut MutabilityContext,
     block_items: &Vec<Node<BlockItem>>,
 ) -> Stmts {
-    block_items
+    let stmts = block_items
         .iter()
-        .fold(Stmts(Vec::new()), |mut acc, item| match item.node {
-            BlockItem::Statement(Node { node: ref stmt, .. }) => {
-                let mut stmts = transpile_statement(context, stmt);
-                acc.0.append(&mut stmts.0);
-                acc
-            }
-            BlockItem::Declaration(ref declaration) => {
-                transpile_declaration(context, &declaration.node)
-            }
-            _ => unimplemented!(),
-        })
+        .fold(Vec::<Stmt>::new(), |mut acc, item| {
+            acc.append(&mut match item.node {
+                BlockItem::Statement(Node { node: ref stmt, .. }) => {
+                    transpile_statement(context, stmt).0
+                }
+                BlockItem::Declaration(ref declaration) => {
+                    transpile_declaration(context, &declaration.node).0
+                }
+                _ => unimplemented!(),
+            });
+            acc
+        });
+
+    Stmts(stmts)
 }
 
+/// This function return a Stmts because it is possible to declare multiple variables with same type in one line
 fn transpile_declaration(context: &mut MutabilityContext, declaration: &Declaration) -> Stmts {
     let decl_mut = get_mutability_of_declaration(declaration);
 
@@ -240,6 +243,12 @@ fn transpile_declaration(context: &mut MutabilityContext, declaration: &Declarat
         )
         .collect();
 
+    // store the new variables in the context map
+    ids.iter().for_each(|id| {
+        context.insert_in_last_scope(id, MutabilityContextItem::Variable(decl_mut.clone()))
+    });
+
+    // create the AST Stmt node
     match decl_mut {
         Mutability::ImmOwner => Stmts(
             ids.into_iter()
@@ -251,7 +260,11 @@ fn transpile_declaration(context: &mut MutabilityContext, declaration: &Declarat
                 .map(|id| Stmt::Declaration(id, Some(Type::Own(Props(vec![Prop::Mut])))))
                 .collect(),
         ),
-        _ => unimplemented!(),
+        Mutability::ImmRef | Mutability::MutRef => Stmts(
+            ids.into_iter()
+                .map(|id| Stmt::Declaration(id, None))
+                .collect(),
+        ),
     }
 }
 
