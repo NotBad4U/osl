@@ -3,7 +3,7 @@ use super::*;
 impl fmt::Display for Stmts {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.iter().fold(Ok(()), |result, stmt| {
-            result.and_then(|_| writeln!(f, "{}", stmt))
+            result.and_then(|_| write!(f, "{}", stmt))
         })
     }
 }
