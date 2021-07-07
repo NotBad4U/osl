@@ -2,8 +2,8 @@ use lang_c::ast::*;
 use lang_c::span;
 use lang_c::span::Node;
 
-use crate::context::*;
 use crate::ast::*;
+use crate::context::*;
 
 #[derive(Debug)]
 pub struct Transpiler {
@@ -49,7 +49,8 @@ impl Transpiler {
         let block_stmts = transpile_statement(&mut self.context, &function_def.statement.node);
 
         // Create the AST OSL corresponding node
-        self.stmts.push(Stmt::Function(fn_id, vec![], return_type, block_stmts));
+        self.stmts
+            .push(Stmt::Function(fn_id, vec![], return_type, block_stmts));
         self.context.pop_last_scope();
     }
 
@@ -85,24 +86,47 @@ fn transpile_block_items(
     block_items
         .iter()
         .fold(Stmts(Vec::new()), |mut acc, item| match item.node {
-            BlockItem::Statement(Node { node: ref stmt, .. })  => {
+            BlockItem::Statement(Node { node: ref stmt, .. }) => {
                 let mut stmts = transpile_statement(context, stmt);
                 acc.0.append(&mut stmts.0);
                 acc
-            },
-            BlockItem::Declaration(ref declaration) => Stmts(vec![transpile_declaration(context, &declaration.node)]),
+            }
+            BlockItem::Declaration(ref declaration) => {
+                transpile_declaration(context, &declaration.node)
+            }
             _ => unimplemented!(),
         })
 }
 
+fn transpile_declaration(context: &mut MutabilityContext, declaration: &Declaration) -> Stmts {
+    let decl_mut = get_mutability_of_declaration(declaration);
 
-fn transpile_declaration(
-    context: &mut MutabilityContext,
-    declaration: &Declaration,
-) -> Stmt {
-    let specifiers = &declaration.specifiers;
-    let declarators = &declaration.declarators;
-    unimplemented!()
+    // get the list of identifiers
+    // T a = x, b = x => [a, b]
+    let ids: Vec<String> = declaration
+        .declarators
+        .iter()
+        .map(
+            |Node {
+                 node: InitDeclarator { declarator, .. },
+                 ..
+             }| get_declarator_id(&declarator.node).unwrap(),
+        )
+        .collect();
+
+    match decl_mut {
+        Mutability::ImmOwner => Stmts(
+            ids.into_iter()
+                .map(|id| Stmt::Declaration(id, Some(Type::Own(Props(vec![])))))
+                .collect(),
+        ),
+        Mutability::MutOwner => Stmts(
+            ids.into_iter()
+                .map(|id| Stmt::Declaration(id, Some(Type::Own(Props(vec![Prop::Mut])))))
+                .collect(),
+        ),
+        _ => unimplemented!(),
+    }
 }
 
 fn transpile_return_statement(context: &mut MutabilityContext, _exp: &Expression) -> Stmt {
@@ -127,12 +151,30 @@ fn convert_mutability_to_type(mutability: &Mutability) -> Type {
     }
 }
 
+// FIXME: support multiple init declarator
+fn get_mutability_of_declaration(declaration: &Declaration) -> Mutability {
+    let specifiers = &declaration.specifiers;
+    let declarator = &declaration
+        .declarators
+        .first()
+        .unwrap()
+        .node
+        .declarator
+        .node;
 
-fn get_mutability_of_declaration(decl: &Declaration) -> Mutability {
-    let specifiers = &decl.specifiers;
-    let declarator = &decl.declarators;
-
-    Mutability::ImmOwner
+    if is_a_ref(declarator) {
+        if is_a_ref_const(declarator) {
+            Mutability::ImmRef
+        } else {
+            Mutability::MutRef
+        }
+    } else {
+        if is_const(specifiers) {
+            Mutability::ImmOwner
+        } else {
+            Mutability::MutOwner
+        }
+    }
 }
 
 /// extract the mutability value from a C function definition
@@ -205,6 +247,16 @@ fn is_a_ref_const(declarator: &Declarator) -> bool {
                 ]
             )
     )
+}
+
+fn get_declarator_id(decl: &Declarator) -> Option<String> {
+    match &decl.kind.node {
+        DeclaratorKind::Identifier(Node {
+            node: Identifier { ref name },
+            ..
+        }) => Some(name.to_string()),
+        _ => None,
+    }
 }
 
 #[cfg(test)]

@@ -12,18 +12,18 @@ impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Stmt::Declaration(id, None) => {
-               writeln!(f, "decl {};", id)
+                write!(f, "decl {};", id)
             }
             Stmt::Declaration(id, Some(r#type)) => {
-                writeln!(f, "decl {}: {};", id, r#type)
+                write!(f, "decl {}: {};", id, r#type)
             }
             Stmt::Function(id, _params, return_type,  stmts) => {
                 writeln!(f, "fn {}() -> {} {{", id, return_type).unwrap();
-                write!(f, "\t{}", stmts).unwrap();
+                write!(f, "{}", stmts).unwrap();
                 writeln!(f, "}}")
             }
             Stmt::Val(exp) => {
-                writeln!(f, "val({})", exp)
+                write!(f, "val({})", exp)
             }
         }
     }
@@ -51,9 +51,8 @@ impl fmt::Display for Prop {
 
 impl fmt::Display for Props {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.iter().fold(Ok(()), |result, prop| {
-            result.and_then(|_| write!(f, "{},", prop))
-        })
+        let props_str = self.iter().map(|prop| format!("{}", prop)).collect::<Vec<String>>().join("s");
+        write!(f, "{}", props_str)
     }
 }
 
