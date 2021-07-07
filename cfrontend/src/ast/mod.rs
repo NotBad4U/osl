@@ -5,7 +5,18 @@ mod printer;
 type Id = String;
 
 #[derive(Debug, Clone)]
-pub struct Parameter {}
+pub struct Parameter(pub Id, pub Type);
+
+#[derive(Debug, Clone)]
+pub struct Parameters(pub Vec<Parameter>);
+
+impl ops::Deref for Parameters {
+    type Target = Vec<Parameter>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Stmts(pub Vec<Stmt>);
@@ -19,17 +30,19 @@ impl From<Stmt> for Stmts {
 #[derive(Debug, Clone)]
 pub enum Stmt {
     Declaration(Id, Option<Type>),
-    Function(Id, Vec<Parameter>, Type,  Stmts),
+    Function(Id, Parameters, Type, Stmts),
     Transfer(Exp, Exp),
     Val(Exp),
     Borrow(Exp, Exp),
     MBorrow(Exp, Exp),
 }
 
+type LifetimeMarker = String;
+
 #[derive(Debug, Clone)]
 pub enum Type {
     Own(Props),
-    //Ref(Lifetime, Box<Type>),
+    Ref(LifetimeMarker, Box<Type>),
     VoidTy,
 }
 
@@ -50,6 +63,18 @@ pub enum Prop {
 #[derive(Debug, Clone)]
 pub struct Props(pub Vec<Prop>);
 
+impl From<Prop> for Props {
+    fn from(prop: Prop) -> Self {
+        Props(vec![prop])
+    }
+}
+
+impl Props {
+    pub fn new() -> Self {
+        Self(vec![])
+    }
+}
+
 impl ops::Deref for Props {
     type Target = Vec<Prop>;
 
@@ -57,7 +82,6 @@ impl ops::Deref for Props {
         &self.0
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub enum Exp {

@@ -1,4 +1,5 @@
 #![feature(box_patterns)]
+#![feature(box_syntax)]
 
 #[macro_use]
 extern crate log;
@@ -24,8 +25,6 @@ fn main() {
     let config = Config::default();
 
     let parsed_ast = lang_c::driver::parse(&config, TEST_C_FILE).unwrap();
-
-    //println!("{:#?}", parsed_ast);
 
     let mut transpiler = Transpiler::new();
     transpiler.transpile_translation_unit(&parsed_ast.unit);

@@ -21,7 +21,6 @@ impl Transpiler {
 
     pub fn transpile_translation_unit<'ast>(&mut self, translation_unit: &'ast TranslationUnit) {
         for element in &translation_unit.0 {
-            debug!("{:#?}", element.node);
             self.transpile_external_declaration(&element.node, &element.span);
         }
     }
@@ -30,27 +29,27 @@ impl Transpiler {
         self.context.create_new_scope();
 
         // Extract ownership information from the function definition
-
-        let fn_id = match function_def.declarator.node.kind.node {
-            DeclaratorKind::Identifier(ref i) => i.node.name.to_string(),
-            _ => panic!("function without identifier"),
-        };
-
+        let fn_id = get_declarator_id(&function_def.declarator.node).unwrap();
         let mut_return_type = get_return_fun_mutability_from_fun_def(function_def);
-
-        let return_type = convert_mutability_to_type(&mut_return_type);
 
         self.context.insert_in_last_scope(
             fn_id.clone(),
-            MutabilityContextItem::Function(mut_return_type),
+            MutabilityContextItem::Function(mut_return_type.clone()),
         );
 
         // Inductive recursion on the compound statements
         let block_stmts = transpile_statement(&mut self.context, &function_def.statement.node);
 
         // Create the AST OSL corresponding node
-        self.stmts
-            .push(Stmt::Function(fn_id, vec![], return_type, block_stmts));
+        self.stmts.push(Stmt::Function(
+            fn_id,
+            transpile_parameters_declaration(&get_function_parameters_from_declarator(
+                &function_def.declarator.node,
+            )),
+            convert_mutability_to_type(&mut_return_type),
+            block_stmts,
+        ));
+
         self.context.pop_last_scope();
     }
 
@@ -65,6 +64,57 @@ impl Transpiler {
             }
             _ => {}
         }
+    }
+}
+
+fn get_function_parameters_from_declarator(declaration: &Declarator) -> Vec<ParameterDeclaration> {
+    match &declaration.derived.first().unwrap().node {
+        DerivedDeclarator::Function(Node {
+            node: FunctionDeclarator { parameters, .. },
+            ..
+        }) => parameters
+            .into_iter()
+            .map(|param| param.node.clone())
+            .collect(),
+        _ => vec![],
+    }
+}
+
+fn transpile_parameters_declaration(params: &Vec<ParameterDeclaration>) -> Parameters {
+    params
+        .iter()
+        .fold(Parameters(Vec::new()), |mut acc, param| {
+            acc.0.push(transpile_parameter_declaration(param));
+            acc
+        })
+}
+
+fn transpile_parameter_declaration(param: &ParameterDeclaration) -> Parameter {
+    let declarator = &param.declarator.as_ref().unwrap().node;
+    let id = get_declarator_id(&declarator).unwrap();
+
+    let mutability = if is_a_ref(declarator) {
+        if is_a_ref_const(declarator) {
+            Mutability::ImmRef
+        } else {
+            Mutability::MutRef
+        }
+    } else {
+        if is_const(param.specifiers.as_slice()) {
+            Mutability::ImmOwner
+        } else {
+            Mutability::MutOwner
+        }
+    };
+
+    match mutability {
+        Mutability::MutOwner => Parameter(id, Type::Own(Props::from(Prop::Mut))),
+        Mutability::ImmOwner => Parameter(id, Type::Own(Props::new())),
+        Mutability::MutRef => Parameter(
+            id,
+            Type::Ref("a".into(), box Type::Own(Props::from(Prop::Mut))),
+        ),
+        Mutability::ImmRef => Parameter(id, Type::Ref("a".into(), box Type::Own(Props::new()))),
     }
 }
 

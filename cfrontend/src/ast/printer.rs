@@ -8,13 +8,30 @@ impl fmt::Display for Stmts {
     }
 }
 
+impl fmt::Display for Parameters {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let args_str = self
+            .iter()
+            .map(|param| format!("{}", param))
+            .collect::<Vec<String>>()
+            .join(",");
+        write!(f, "{}", args_str)
+    }
+}
+
+impl fmt::Display for Parameter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}:{}", self.0, self.1)
+    }
+}
+
 impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Stmt::Declaration(id, None) => writeln!(f, "decl {};", id),
             Stmt::Declaration(id, Some(r#type)) => writeln!(f, "decl {}: {};", id, r#type),
-            Stmt::Function(id, _params, return_type, stmts) => {
-                writeln!(f, "fn {}() -> {} {{", id, return_type).unwrap();
+            Stmt::Function(id, params, return_type, stmts) => {
+                writeln!(f, "fn {}({}) -> {} {{", id, params, return_type).unwrap();
                 write!(f, "{}", stmts).unwrap();
                 writeln!(f, "}}")
             }
@@ -31,6 +48,7 @@ impl fmt::Display for Type {
         match self {
             Type::Own(props) => write!(f, "#own({})", props),
             Type::VoidTy => write!(f, "#voidTy"),
+            Type::Ref(lft, box r#type) => write!(f, "#ref('{},{})", lft, r#type),
         }
     }
 }
@@ -46,7 +64,11 @@ impl fmt::Display for Prop {
 
 impl fmt::Display for Props {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let props_str = self.iter().map(|prop| format!("{}", prop)).collect::<Vec<String>>().join("s");
+        let props_str = self
+            .iter()
+            .map(|prop| format!("{}", prop))
+            .collect::<Vec<String>>()
+            .join("s");
         write!(f, "{}", props_str)
     }
 }
