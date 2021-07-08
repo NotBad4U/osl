@@ -5,6 +5,8 @@ use lang_c::span::Node;
 use crate::ast::*;
 use crate::context::*;
 
+use enum_extract::extract;
+
 #[derive(Debug)]
 pub struct Transpiler {
     pub stmts: Vec<crate::ast::Stmt>,
@@ -23,6 +25,12 @@ impl Transpiler {
         for element in &translation_unit.0 {
             self.transpile_external_declaration(&element.node, &element.span);
         }
+
+        // append the call to C main function
+        self.stmts.push(Stmt::Expression(Exp::Call(
+            "main".to_string(),
+            Exps(vec![]),
+        )));
     }
 
     pub fn transpile_function_def<'ast>(&mut self, function_def: &'ast FunctionDefinition) {
@@ -62,7 +70,7 @@ impl Transpiler {
             ExternalDeclaration::FunctionDefinition(ref f) => {
                 self.transpile_function_def(&f.node);
             }
-            _ => {}
+            _ => unimplemented!(),
         }
     }
 }
@@ -132,14 +140,34 @@ pub fn transpile_statement<'ast>(
 
 fn transpile_expression(context: &mut MutabilityContext, exp: &Expression) -> Stmt {
     match exp {
-        Expression::Call(box Node {
-            node: _call_exp, ..
-        }) => unimplemented!(),
+        Expression::Identifier(box Node {
+            node: Identifier { name },
+            ..
+        }) => Stmt::Expression(Exp::Id(name.to_string())),
+        Expression::Call(box Node { node: call, .. }) => {
+            Stmt::Expression(transpile_call_expression(context, &call))
+        }
         Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
             transpile_binary_operator(context, bin_op)
         }
         e => unimplemented!("{:?}", e),
     }
+}
+
+fn transpile_call_expression(context: &mut MutabilityContext, call_exp: &CallExpression) -> Exp {
+    let callee = extract!(Expression::Identifier(_), &call_exp.callee.node)
+        .unwrap()
+        .node
+        .name
+        .to_string();
+    let arguments = call_exp
+        .arguments
+        .iter()
+        .map(|node| &node.node)
+        .map(|exp| transpile_expression(context, &exp))
+        .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
+        .collect::<Vec<Exp>>();
+    Exp::Call(callee, Exps(arguments))
 }
 
 fn transpile_binary_operator(

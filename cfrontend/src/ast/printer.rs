@@ -39,6 +39,7 @@ impl fmt::Display for Stmt {
             Stmt::Transfer(e1, e2) => writeln!(f, "transfer {} {}", e1, e2),
             Stmt::MBorrow(e1, e2) => writeln!(f, "{} mborrow {};", e1, e2),
             Stmt::Borrow(e1, e2) => writeln!(f, "{} borrow {};", e1, e2),
+            Stmt::Expression(e) => writeln!(f, "{};", e),
         }
     }
 }
@@ -68,8 +69,19 @@ impl fmt::Display for Props {
             .iter()
             .map(|prop| format!("{}", prop))
             .collect::<Vec<String>>()
-            .join("s");
+            .join(",");
         write!(f, "{}", props_str)
+    }
+}
+
+impl fmt::Display for Exps {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let exps_str = self
+            .iter()
+            .map(|exp| format!("{}", exp))
+            .collect::<Vec<String>>()
+            .join(",");
+        write!(f, "{}", exps_str)
     }
 }
 
@@ -78,6 +90,7 @@ impl fmt::Display for Exp {
         match self {
             Exp::NewRessource(props) => write!(f, "newResource({})", props),
             Exp::Id(id) => write!(f, "{}", id),
+            Exp::Call(callee, exps) => write!(f, "call {}({})", callee, exps),
         }
     }
 }

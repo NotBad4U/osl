@@ -35,6 +35,7 @@ pub enum Stmt {
     Val(Exp),
     Borrow(Exp, Exp),
     MBorrow(Exp, Exp),
+    Expression(Exp),
 }
 
 type LifetimeMarker = String;
@@ -83,8 +84,27 @@ impl ops::Deref for Props {
     }
 }
 
+/// Only for function arguments call
+#[derive(Debug, Clone)]
+pub struct Exps(pub Vec<Exp>);
+
+impl ops::Deref for Exps {
+    type Target = Vec<Exp>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<Exp> for Exps {
+    fn from(exp: Exp) -> Self {
+        Exps(vec![exp])
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Exp {
     NewRessource(Props),
     Id(String),
+    Call(String, Exps),
 }
