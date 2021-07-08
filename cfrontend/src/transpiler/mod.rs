@@ -1,27 +1,31 @@
+use enum_extract::extract;
 use lang_c::ast::*;
 use lang_c::span;
 use lang_c::span::Node;
-use enum_extract::extract;
 
 mod context;
+mod diagnostic;
 mod utils;
 
 use crate::ast::*;
-use crate::transpiler::context::*;
-use crate::transpiler::utils::*;
 
+use context::*;
+use diagnostic::CodespanReporter;
+use utils::*;
 
 #[derive(Debug)]
 pub struct Transpiler {
     pub stmts: Vec<crate::ast::Stmt>,
     context: MutabilityContext,
+    reporter: CodespanReporter,
 }
 
 impl Transpiler {
-    pub fn new() -> Self {
+    pub fn new(name: &str, source: String) -> Self {
         Self {
             stmts: Vec::new(),
             context: MutabilityContext::new(),
+            reporter: CodespanReporter::new(name.to_string(), source),
         }
     }
 
@@ -74,7 +78,10 @@ impl Transpiler {
             ExternalDeclaration::FunctionDefinition(ref f) => {
                 self.transpile_function_def(&f.node);
             }
-            _ => unimplemented!(),
+            ExternalDeclaration::Declaration(Node { span, .. })
+            | ExternalDeclaration::StaticAssert(Node { span, .. }) => {
+                self.reporter.unimplemented(span)
+            }
         }
     }
 
@@ -336,7 +343,9 @@ impl Transpiler {
                 _ => unimplemented!(),
             },
             // This should not happend because the parser if the parser work correctly, so I put this as a guard
-            None => panic!("no function definition can't be retrieve for this return statement"),
+            None => {
+                unreachable!("no function definition can't be retrieve for this return statement")
+            }
         }
     }
 }
