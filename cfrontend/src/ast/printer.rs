@@ -33,7 +33,7 @@ impl fmt::Display for Stmt {
             Stmt::Function(id, params, return_type, stmts) => {
                 writeln!(f, "fn {}({}) -> {} {{", id, params, return_type).unwrap();
                 write!(f, "{}", stmts).unwrap();
-                writeln!(f, "}}")
+                writeln!(f, "}}\n")
             }
             Stmt::Val(exp) => writeln!(f, "val({})", exp),
             Stmt::Transfer(e1, e2) => writeln!(f, "transfer {} {}", e1, e2),

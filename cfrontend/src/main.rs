@@ -7,7 +7,6 @@ extern crate log;
 use lang_c::driver::Config;
 
 mod ast;
-mod context;
 mod transpiler;
 
 use crate::transpiler::Transpiler;

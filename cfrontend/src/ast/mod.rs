@@ -3,6 +3,7 @@ use std::{fmt, ops};
 mod printer;
 
 type Id = String;
+type LifetimeMarker = String;
 
 #[derive(Debug, Clone)]
 pub struct Parameter(pub Id, pub Type);
@@ -19,15 +20,6 @@ impl ops::Deref for Parameters {
 }
 
 #[derive(Debug, Clone)]
-pub struct Stmts(pub Vec<Stmt>);
-
-impl From<Stmt> for Stmts {
-    fn from(stmt: Stmt) -> Self {
-        Stmts(vec![stmt])
-    }
-}
-
-#[derive(Debug, Clone)]
 pub enum Stmt {
     Declaration(Id, Option<Type>),
     Function(Id, Parameters, Type, Stmts),
@@ -38,13 +30,13 @@ pub enum Stmt {
     Expression(Exp),
 }
 
-type LifetimeMarker = String;
-
 #[derive(Debug, Clone)]
-pub enum Type {
-    Own(Props),
-    Ref(LifetimeMarker, Box<Type>),
-    VoidTy,
+pub struct Stmts(pub Vec<Stmt>);
+
+impl From<Stmt> for Stmts {
+    fn from(stmt: Stmt) -> Self {
+        Stmts(vec![stmt])
+    }
 }
 
 impl ops::Deref for Stmts {
@@ -56,6 +48,13 @@ impl ops::Deref for Stmts {
 }
 
 #[derive(Debug, Clone)]
+pub enum Type {
+    Own(Props),
+    Ref(LifetimeMarker, Box<Type>),
+    VoidTy,
+}
+
+#[derive(Debug, Clone)]
 pub enum Prop {
     Copy,
     Mut,
@@ -64,15 +63,15 @@ pub enum Prop {
 #[derive(Debug, Clone)]
 pub struct Props(pub Vec<Prop>);
 
-impl From<Prop> for Props {
-    fn from(prop: Prop) -> Self {
-        Props(vec![prop])
-    }
-}
-
 impl Props {
     pub fn new() -> Self {
         Self(vec![])
+    }
+}
+
+impl From<Prop> for Props {
+    fn from(prop: Prop) -> Self {
+        Props(vec![prop])
     }
 }
 
@@ -82,6 +81,13 @@ impl ops::Deref for Props {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum Exp {
+    NewRessource(Props),
+    Id(String),
+    Call(String, Exps),
 }
 
 /// Only for function arguments call
@@ -100,11 +106,4 @@ impl From<Exp> for Exps {
     fn from(exp: Exp) -> Self {
         Exps(vec![exp])
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum Exp {
-    NewRessource(Props),
-    Id(String),
-    Call(String, Exps),
 }
