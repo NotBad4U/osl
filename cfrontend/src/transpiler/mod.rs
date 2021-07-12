@@ -313,24 +313,11 @@ impl Transpiler {
                 .insert_in_last_scope(id, MutabilityContextItem::Variable(decl_mut.clone()))
         });
 
-        // create the AST Stmt node
-        match decl_mut {
-            Mutability::ImmOwner => Stmts(
-                ids.into_iter()
-                    .map(|id| Stmt::Declaration(id, Some(Type::Own(Props(vec![])))))
-                    .collect(),
-            ),
-            Mutability::MutOwner => Stmts(
-                ids.into_iter()
-                    .map(|id| Stmt::Declaration(id, Some(Type::Own(Props(vec![Prop::Mut])))))
-                    .collect(),
-            ),
-            Mutability::ImmRef | Mutability::MutRef => Stmts(
-                ids.into_iter()
-                    .map(|id| Stmt::Declaration(id, None))
-                    .collect(),
-            ),
-        }
+        Stmts(
+            ids.into_iter()
+                .map(|id| Stmt::Declaration(id, None))
+                .collect(),
+        )
     }
 
     fn transpile_return_statement(&mut self, _exp: &Expression) -> Stmt {
