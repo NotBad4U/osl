@@ -24,7 +24,7 @@ pub fn get_mutability_of_declaration(declaration: &Declaration) -> Mutability {
         .node;
 
     if is_a_ref(declarator) {
-        if is_a_ref_const(declarator) {
+        if is_const(specifiers) {
             Mutability::ImmRef
         } else {
             Mutability::MutRef
