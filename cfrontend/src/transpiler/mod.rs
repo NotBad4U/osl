@@ -78,8 +78,11 @@ impl Transpiler {
             ExternalDeclaration::FunctionDefinition(ref f) => {
                 self.transpile_function_def(&f.node);
             }
-            ExternalDeclaration::Declaration(Node { span, .. })
-            | ExternalDeclaration::StaticAssert(Node { span, .. }) => {
+            ExternalDeclaration::Declaration(ref d) => {
+                let stmts = self.transpile_declaration(&d.node);
+                self.stmts.extend(stmts.0);
+            },
+            ExternalDeclaration::StaticAssert(Node { span, .. }) => {
                 self.reporter.unimplemented(span)
             }
         }
