@@ -40,6 +40,15 @@ impl fmt::Display for Stmt {
             Stmt::MBorrow(e1, e2) => writeln!(f, "{} mborrow {};", e1, e2),
             Stmt::Borrow(e1, e2) => writeln!(f, "{} borrow {};", e1, e2),
             Stmt::Expression(e) => writeln!(f, "{};", e),
+            Stmt::Branch(blocks) => {
+                write!(f, "@").unwrap();
+                let blocks_formated = blocks
+                    .iter()
+                    .map(|param| format!("{{\n {} }}", param))
+                    .collect::<Vec<String>>()
+                    .join(",\n");
+                writeln!(f, "{}", blocks_formated)
+            }
         }
     }
 }

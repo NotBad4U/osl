@@ -131,6 +131,7 @@ impl Transpiler {
             Statement::Expression(Some(ref e)) => Stmts::from(self.transpile_expression(&e.node)),
             Statement::Return(Some(ref r)) => Stmts::from(self.transpile_return_statement(&r.node)),
             Statement::Compound(ref block_items) => self.transpile_block_items(block_items),
+            Statement::If(Node{ node: ref if_stmt, .. }) => self.transpile_branchs(if_stmt),
             _ => unimplemented!(),
         }
     }
@@ -146,7 +147,7 @@ impl Transpiler {
             }
             Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
                 self.transpile_binary_operator(bin_op)
-            }
+            },
             e => unimplemented!("{:?}", e),
         }
     }
@@ -337,5 +338,16 @@ impl Transpiler {
                 unreachable!("no function definition can't be retrieve for this return statement")
             }
         }
+    }
+
+    fn transpile_branchs(&mut self, if_stmt: &IfStatement) -> Stmts {
+        let condition = &if_stmt.condition.node;
+        let then_branch = &if_stmt.then_statement;
+        let else_branch = &if_stmt.else_statement;
+
+        let then_stmt = self.transpile_statement(&then_branch);
+        let else_stmt = self.transpile_statement(&else_branch);
+
+        Stmts::from(Stmt::Branch(Stmts(vec![])))
     }
 }
