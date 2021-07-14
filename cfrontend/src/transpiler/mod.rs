@@ -81,7 +81,7 @@ impl Transpiler {
             ExternalDeclaration::Declaration(ref d) => {
                 let stmts = self.transpile_declaration(&d.node);
                 self.stmts.extend(stmts.0);
-            },
+            }
             ExternalDeclaration::StaticAssert(Node { span, .. }) => {
                 self.reporter.unimplemented(span)
             }
@@ -131,7 +131,9 @@ impl Transpiler {
             Statement::Expression(Some(ref e)) => Stmts::from(self.transpile_expression(&e.node)),
             Statement::Return(Some(ref r)) => Stmts::from(self.transpile_return_statement(&r.node)),
             Statement::Compound(ref block_items) => self.transpile_block_items(block_items),
-            Statement::If(Node{ node: ref if_stmt, .. }) => self.transpile_branchs(if_stmt),
+            Statement::If(Node {
+                node: ref if_stmt, ..
+            }) => self.transpile_branchs(if_stmt),
             _ => unimplemented!(),
         }
     }
@@ -147,7 +149,7 @@ impl Transpiler {
             }
             Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
                 self.transpile_binary_operator(bin_op)
-            },
+            }
             e => unimplemented!("{:?}", e),
         }
     }
@@ -340,14 +342,25 @@ impl Transpiler {
         }
     }
 
+    /// Transpiled an If statement
+    /// The Then and Else statement are transpiled as Stmts (Block) and put in a Blocks
     fn transpile_branchs(&mut self, if_stmt: &IfStatement) -> Stmts {
-        let condition = &if_stmt.condition.node;
-        let then_branch = &if_stmt.then_statement;
-        let else_branch = &if_stmt.else_statement;
+        let mut blocks: Blocks = Blocks(Vec::new());
 
-        let then_stmt = self.transpile_statement(&then_branch);
-        let else_stmt = self.transpile_statement(&else_branch);
+        blocks
+            .0
+            .push(self.transpile_statement(&if_stmt.then_statement.node));
 
-        Stmts::from(Stmt::Branch(Stmts(vec![])))
+        let else_stmts = if_stmt
+            .else_statement
+            .as_ref()
+            .map(|ref else_branch| self.transpile_statement(&else_branch.node))
+            .unwrap_or(Stmts::new());
+
+        if !else_stmts.is_empty() {
+            blocks.0.push(else_stmts)
+        }
+
+        Stmts::from(Stmt::Branch(blocks))
     }
 }

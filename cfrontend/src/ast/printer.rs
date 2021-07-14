@@ -25,6 +25,17 @@ impl fmt::Display for Parameter {
     }
 }
 
+impl fmt::Display for Blocks {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let blocks_str = self
+            .iter()
+            .map(|stmts| format!("{{\n {} \n}}", stmts))
+            .collect::<Vec<String>>()
+            .join(",");
+        write!(f, "{}", blocks_str)
+    }
+}
+
 impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -41,13 +52,7 @@ impl fmt::Display for Stmt {
             Stmt::Borrow(e1, e2) => writeln!(f, "{} borrow {};", e1, e2),
             Stmt::Expression(e) => writeln!(f, "{};", e),
             Stmt::Branch(blocks) => {
-                write!(f, "@").unwrap();
-                let blocks_formated = blocks
-                    .iter()
-                    .map(|param| format!("{{\n {} }}", param))
-                    .collect::<Vec<String>>()
-                    .join(",\n");
-                writeln!(f, "{}", blocks_formated)
+                writeln!(f, "@{}", blocks)
             }
         }
     }

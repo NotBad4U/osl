@@ -20,6 +20,17 @@ impl ops::Deref for Parameters {
 }
 
 #[derive(Debug, Clone)]
+pub struct Blocks(pub Vec<Stmts>);
+
+impl ops::Deref for Blocks {
+    type Target = Vec<Stmts>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Declaration(Id, Option<Type>),
     Function(Id, Parameters, Type, Stmts),
@@ -28,7 +39,7 @@ pub enum Stmt {
     Borrow(Exp, Exp),
     MBorrow(Exp, Exp),
     Expression(Exp),
-    Branch(Stmts),
+    Branch(Blocks),
 }
 
 #[derive(Debug, Clone)]
@@ -45,6 +56,12 @@ impl ops::Deref for Stmts {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl Stmts {
+    pub fn new() -> Self {
+        Self(vec![])
     }
 }
 

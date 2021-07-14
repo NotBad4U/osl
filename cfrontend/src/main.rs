@@ -25,7 +25,7 @@ fn main() {
 
     let parsed_ast = lang_c::driver::parse(&config, TEST_C_FILE).unwrap();
 
-    println!("{:#?}", parsed_ast);
+    //println!("{:#?}", parsed_ast);
 
     let mut transpiler = Transpiler::new(TEST_C_FILE, parsed_ast.source);
     transpiler.transpile_translation_unit(&parsed_ast.unit);
