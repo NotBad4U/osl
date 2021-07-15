@@ -47,7 +47,7 @@ impl fmt::Display for Stmt {
                 writeln!(f, "}}\n")
             }
             Stmt::Val(exp) => writeln!(f, "val({})", exp),
-            Stmt::Transfer(e1, e2) => writeln!(f, "transfer {} {}", e1, e2),
+            Stmt::Transfer(e1, e2) => writeln!(f, "transfer {} {};", e1, e2),
             Stmt::MBorrow(e1, e2) => writeln!(f, "{} mborrow {};", e1, e2),
             Stmt::Borrow(e1, e2) => writeln!(f, "{} borrow {};", e1, e2),
             Stmt::Expression(e) => writeln!(f, "{};", e),
