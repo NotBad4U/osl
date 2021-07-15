@@ -178,44 +178,7 @@ impl Transpiler {
 
         match (left, operator, right) {
             // Basic assignment a = b;
-            (
-                Expression::Identifier(box Node { node: left_id, .. }),
-                BinaryOperator::Assign,
-                Expression::Identifier(box Node { node: right_id, .. }),
-            ) => Stmts::from(self.transpile_assignment(left_id, right_id)),
-            // Address assignment a = &b;
-            // We should consider this as a borrow
-            (
-                Expression::Identifier(box Node { node: left_id, .. }),
-                BinaryOperator::Assign,
-                Expression::UnaryOperator(box Node {
-                    node:
-                        UnaryOperatorExpression {
-                            operator:
-                                Node {
-                                    node: UnaryOperator::Address,
-                                    ..
-                                },
-                            operand:
-                                box Node {
-                                    node: Expression::Identifier(box Node { node: right_id, .. }),
-                                    ..
-                                },
-                        },
-                    ..
-                }),
-            ) => Stmts::from(self.transpile_ref_assignment(left_id, right_id)),
-            (
-                Expression::Identifier(box Node { node: left_id, .. }),
-                BinaryOperator::Assign,
-                Expression::Constant(_),
-            ) => Stmts::from(Stmt::Transfer(
-                Exp::NewRessource(Props::from(Prop::Copy)),
-                Exp::Id(left_id.name.to_string()),
-            )),
-            (Expression::Identifier(_), BinaryOperator::Assign, right) => {
-                self.transpile_expression(right)
-            }
+            (left, BinaryOperator::Assign, right) => self.transpile_assign_expression(left, right),
             (
                 left,
                 BinaryOperator::Greater
@@ -237,11 +200,7 @@ impl Transpiler {
                 | BinaryOperator::BitwiseXor
                 | BinaryOperator::BitwiseOr,
                 right,
-            ) => {
-                let mut stmts = self.transpile_expression(left);
-                stmts.0.extend(self.transpile_expression(right).0);
-                stmts
-            }
+            ) => self.transpile_boolean_condition_expression(left, right),
             (
                 Expression::Identifier(_),
                 BinaryOperator::AssignMultiply
@@ -255,12 +214,66 @@ impl Transpiler {
                 | BinaryOperator::AssignBitwiseXor
                 | BinaryOperator::AssignBitwiseOr,
                 right,
-            ) => self.transpile_expression(right),
+            ) => self.transpile_mutable_assign_expression(right),
             e => unimplemented!("{:?}", e),
         }
     }
 
-    fn transpile_assignment(&mut self, lhs: &Identifier, rhs: &Identifier) -> Stmt {
+    #[inline]
+    fn transpile_mutable_assign_expression(&mut self, right: &Expression) -> Stmts {
+        self.transpile_expression(right)
+    }
+
+    fn transpile_boolean_condition_expression(
+        &mut self,
+        left: &Expression,
+        right: &Expression,
+    ) -> Stmts {
+        let mut stmts = self.transpile_expression(left);
+        stmts.0.extend(self.transpile_expression(right).0);
+        stmts
+    }
+
+    fn transpile_assign_expression(&mut self, left: &Expression, right: &Expression) -> Stmts {
+        match (left, right) {
+            // Basic assignment a = b;
+            (
+                Expression::Identifier(box Node { node: left_id, .. }),
+                Expression::Identifier(box Node { node: right_id, .. }),
+            ) => Stmts::from(self.transpile_semantic_move(left_id, right_id)),
+            // Address assignment a = &b;
+            // We should consider this as a borrow
+            (
+                Expression::Identifier(box Node { node: left_id, .. }),
+                Expression::UnaryOperator(box Node {
+                    node:
+                        UnaryOperatorExpression {
+                            operator:
+                                Node {
+                                    node: UnaryOperator::Address,
+                                    ..
+                                },
+                            operand:
+                                box Node {
+                                    node: Expression::Identifier(box Node { node: right_id, .. }),
+                                    ..
+                                },
+                        },
+                    ..
+                }),
+            ) => Stmts::from(self.transpile_ref_assignment(left_id, right_id)),
+            (Expression::Identifier(box Node { node: left_id, .. }), Expression::Constant(_)) => {
+                Stmts::from(Stmt::Transfer(
+                    Exp::NewRessource(Props::from(Prop::Copy)),
+                    Exp::Id(left_id.name.to_string()),
+                ))
+            }
+            (Expression::Identifier(_), right) => self.transpile_expression(right),
+            _ => unimplemented!(),
+        }
+    }
+
+    fn transpile_semantic_move(&mut self, lhs: &Identifier, rhs: &Identifier) -> Stmt {
         let left_mut = self
             .context
             .get_variable_mutability(lhs.name.as_str())
