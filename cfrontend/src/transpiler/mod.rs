@@ -138,18 +138,19 @@ impl Transpiler {
         }
     }
 
-    fn transpile_expression(&mut self, exp: &Expression) -> Stmt {
+    fn transpile_expression(&mut self, exp: &Expression) -> Stmts {
         match exp {
             Expression::Identifier(box Node {
                 node: Identifier { name },
                 ..
-            }) => Stmt::Expression(Exp::Id(name.to_string())),
+            }) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
             Expression::Call(box Node { node: call, .. }) => {
-                Stmt::Expression(self.transpile_call_expression(&call))
+                Stmts::from(Stmt::Expression(self.transpile_call_expression(&call)))
             }
             Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
                 self.transpile_binary_operator(bin_op)
             }
+            Expression::Constant(_) => Stmts::new(),
             e => unimplemented!("{:?}", e),
         }
     }
@@ -164,13 +165,13 @@ impl Transpiler {
             .arguments
             .iter()
             .map(|node| &node.node)
-            .map(|exp| self.transpile_expression(&exp))
+            .map(|exp| self.transpile_expression(&exp).first().unwrap().clone()) //FIXME: pb with multiple stat
             .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
             .collect::<Vec<Exp>>();
         Exp::Call(callee, Exps(arguments))
     }
 
-    fn transpile_binary_operator(&mut self, bop: &BinaryOperatorExpression) -> Stmt {
+    fn transpile_binary_operator(&mut self, bop: &BinaryOperatorExpression) -> Stmts {
         let left = &bop.lhs.node;
         let right = &bop.rhs.node;
         let operator = &bop.operator.node;
@@ -181,7 +182,7 @@ impl Transpiler {
                 Expression::Identifier(box Node { node: left_id, .. }),
                 BinaryOperator::Assign,
                 Expression::Identifier(box Node { node: right_id, .. }),
-            ) => self.transpile_assignment(left_id, right_id),
+            ) => Stmts::from(self.transpile_assignment(left_id, right_id)),
             // Address assignment a = &b;
             // We should consider this as a borrow
             (
@@ -203,8 +204,59 @@ impl Transpiler {
                         },
                     ..
                 }),
-            ) => self.transpile_ref_assignment(left_id, right_id),
-            _ => unimplemented!(),
+            ) => Stmts::from(self.transpile_ref_assignment(left_id, right_id)),
+            (
+                Expression::Identifier(box Node { node: left_id, .. }),
+                BinaryOperator::Assign,
+                Expression::Constant(_),
+            ) => Stmts::from(Stmt::Transfer(
+                Exp::NewRessource(Props::from(Prop::Copy)),
+                Exp::Id(left_id.name.to_string()),
+            )),
+            (Expression::Identifier(_), BinaryOperator::Assign, right) => {
+                self.transpile_expression(right)
+            }
+            (
+                left,
+                BinaryOperator::Greater
+                | BinaryOperator::GreaterOrEqual
+                | BinaryOperator::Less
+                | BinaryOperator::LessOrEqual
+                | BinaryOperator::LogicalAnd
+                | BinaryOperator::LogicalOr
+                | BinaryOperator::Modulo
+                | BinaryOperator::Equals
+                | BinaryOperator::NotEquals
+                | BinaryOperator::Multiply
+                | BinaryOperator::Divide
+                | BinaryOperator::Plus
+                | BinaryOperator::Minus
+                | BinaryOperator::ShiftLeft
+                | BinaryOperator::ShiftRight
+                | BinaryOperator::BitwiseAnd
+                | BinaryOperator::BitwiseXor
+                | BinaryOperator::BitwiseOr,
+                right,
+            ) => {
+                let mut stmts = self.transpile_expression(left);
+                stmts.0.extend(self.transpile_expression(right).0);
+                stmts
+            }
+            (
+                Expression::Identifier(_),
+                BinaryOperator::AssignMultiply
+                | BinaryOperator::AssignDivide
+                | BinaryOperator::AssignModulo
+                | BinaryOperator::AssignPlus
+                | BinaryOperator::AssignMinus
+                | BinaryOperator::AssignShiftLeft
+                | BinaryOperator::AssignShiftRight
+                | BinaryOperator::AssignBitwiseAnd
+                | BinaryOperator::AssignBitwiseXor
+                | BinaryOperator::AssignBitwiseOr,
+                right,
+            ) => self.transpile_expression(right),
+            e => unimplemented!("{:?}", e),
         }
     }
 
@@ -361,6 +413,8 @@ impl Transpiler {
             blocks.0.push(else_stmts)
         }
 
-        Stmts::from(Stmt::Branch(blocks))
+        let mut stmts = self.transpile_expression(&if_stmt.condition.node);
+        stmts.0.push(Stmt::Branch(blocks));
+        stmts
     }
 }
