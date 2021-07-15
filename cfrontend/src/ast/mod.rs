@@ -40,6 +40,7 @@ pub enum Stmt {
     MBorrow(Exp, Exp),
     Expression(Exp),
     Branch(Blocks),
+    Loop(Stmts),
 }
 
 #[derive(Debug, Clone)]

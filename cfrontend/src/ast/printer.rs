@@ -54,6 +54,7 @@ impl fmt::Display for Stmt {
             Stmt::Branch(blocks) => {
                 writeln!(f, "@{}", blocks)
             }
+            Stmt::Loop(block) => writeln!(f, "!{{\n{}\n}}", block),
         }
     }
 }
