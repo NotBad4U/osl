@@ -126,7 +126,7 @@ impl Transpiler {
         }
     }
 
-    pub fn transpile_statement<'ast>(&mut self, statement: &'ast Statement) -> Stmts {
+    pub fn transpile_statement(&mut self, statement: &Statement) -> Stmts {
         match *statement {
             Statement::Expression(Some(ref e)) => Stmts::from(self.transpile_expression(&e.node)),
             Statement::Return(Some(ref r)) => Stmts::from(self.transpile_return_statement(&r.node)),
