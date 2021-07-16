@@ -322,7 +322,21 @@ impl Transpiler {
                 ))
             }
             (Expression::Identifier(_), right) => self.transpile_expression(right),
+            (Expression::UnaryOperator(unary), right) => self.transpile_deref(&unary.node, right),
             _ => unimplemented!(),
+        }
+    }
+
+    fn transpile_deref(&mut self, unary: &UnaryOperatorExpression, right: &Expression) -> Stmts {
+        match (&unary.operator.node, &unary.operand.node, right) {
+            (UnaryOperator::Indirection, Expression::Identifier(box Node { node, .. }), right) => {
+                let mut stmts = self.transpile_expression(right);
+                stmts
+                    .0
+                    .push(Stmt::Expression(Exp::Deref(box Exp::Id(node.name.clone()))));
+                stmts
+            }
+            _ => Stmts::new(),
         }
     }
 

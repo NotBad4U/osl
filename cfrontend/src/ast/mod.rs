@@ -107,6 +107,7 @@ pub enum Exp {
     NewRessource(Props),
     Id(String),
     Call(String, Exps),
+    Deref(Box<Exp>),
 }
 
 /// Only for function arguments call
