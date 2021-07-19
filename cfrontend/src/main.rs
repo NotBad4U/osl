@@ -19,6 +19,8 @@ fn main() {
 
     let parsed_ast = lang_c::driver::parse(&config, TEST_C_FILE).unwrap();
 
+    //println!("{:#?}", parsed_ast.unit);
+
     let stmts = osl::transpile_c_program(parsed_ast);
 
     println!("{}", stmts);

@@ -135,10 +135,24 @@ pub fn get_declarator_id(decl: &Declarator) -> Option<String> {
     }
 }
 
+pub fn is_typedef_declaration(declaration: &Declaration) -> bool {
+    match declaration.specifiers.as_slice() {
+        [Node {
+            node:
+                DeclarationSpecifier::StorageClass(Node {
+                    node: StorageClassSpecifier::Typedef,
+                    ..
+                }),
+            ..
+        }, ..] => true,
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod test_osl_transpile {
     use super::*;
-
+    use enum_extract::extract;
     use lang_c::driver::parse_preprocessed;
     use lang_c::driver::Config;
 
@@ -258,5 +272,29 @@ mod test_osl_transpile {
             }
             _ => panic!("expected a function"),
         }
+    }
+
+    #[test]
+    fn it_should_find_a_typedef_declaration() {
+        let config = Config::default();
+
+        let source = r#"
+        typedef unsigned long int __fsfilcnt_t;
+        "#
+        .to_string();
+
+        let parsed = parse_preprocessed(&config, source).expect("C test code is broken");
+
+        let declaration = &parsed
+            .unit
+            .0
+            .first()
+            .expect("the parser cannot find the main method")
+            .node;
+
+        let typdef_declaration = extract!(ExternalDeclaration::Declaration(_), declaration)
+            .expect("no typedef in the source code, please verify the validity of the test");
+
+        assert!(is_typedef_declaration(&typdef_declaration.node))
     }
 }

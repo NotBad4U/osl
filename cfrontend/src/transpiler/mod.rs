@@ -3,6 +3,8 @@ use lang_c::ast::*;
 use lang_c::span;
 use lang_c::span::Node;
 
+use std::collections::HashMap;
+
 mod context;
 mod diagnostic;
 mod utils;
@@ -10,13 +12,13 @@ mod utils;
 use crate::ast::*;
 
 use context::*;
-use diagnostic::CodespanReporter;
 use utils::*;
 
 #[derive(Debug)]
 pub struct Transpiler {
     pub stmts: Vec<crate::ast::Stmt>,
     context: MutabilityContext,
+    typedefs: HashMap<String, Vec<TypeSpecifier>>,
 }
 
 impl Transpiler {
@@ -24,6 +26,7 @@ impl Transpiler {
         Self {
             stmts: Vec::new(),
             context: MutabilityContext::new(),
+            typedefs: HashMap::new(),
         }
     }
 
@@ -80,7 +83,7 @@ impl Transpiler {
                 let stmts = self.transpile_declaration(&d.node);
                 self.stmts.extend(stmts.0);
             }
-            ExternalDeclaration::StaticAssert(Node { span, .. }) => {
+            ExternalDeclaration::StaticAssert(_) => {
                 unimplemented!()
             }
         }
@@ -426,8 +429,34 @@ impl Transpiler {
         Stmts(stmts)
     }
 
-    /// This function return a Stmts because it is possible to declare multiple variables with same type in one line
     fn transpile_declaration(&mut self, declaration: &Declaration) -> Stmts {
+        if is_typedef_declaration(&declaration) {
+            self.transpile_typedef_declaration(&declaration)
+        } else {
+            self.transpile_variables_declaration(&declaration)
+        }
+    }
+
+    fn transpile_typedef_declaration(&mut self, declaration: &Declaration) -> Stmts {
+        let type_specifiers: Vec<TypeSpecifier> = declaration
+            .specifiers
+            .iter()
+            .skip(1)
+            .map(|specifier| extract!(DeclarationSpecifier::TypeSpecifier(_), &specifier.node))
+            .filter(|x| x.is_some())
+            .map(|x| x.unwrap().node.clone())
+            .collect();
+
+        let id = utils::get_declarator_id(&declaration.declarators[0].node.declarator.node)
+            .expect("Can't find Id in Typedef");
+
+        self.typedefs.insert(id, type_specifiers);
+
+        Stmts::new()
+    }
+
+    /// This function return a Stmts because it is possible to declare multiple variables with same type in one line
+    fn transpile_variables_declaration(&mut self, declaration: &Declaration) -> Stmts {
         let decl_mut = get_mutability_of_declaration(declaration);
 
         // get the list of identifiers
