@@ -4,15 +4,12 @@
 #[macro_use]
 extern crate log;
 
-use lang_c::driver::Config;
-
 use env_logger::Builder;
+use lang_c::driver::Config;
 use log::LevelFilter;
 
-mod ast;
-mod transpiler;
-
-use crate::transpiler::Transpiler;
+use osl::ast;
+use osl::transpiler::Transpiler;
 
 const TEST_C_FILE: &str = "test.c";
 
