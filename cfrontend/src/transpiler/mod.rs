@@ -17,15 +17,13 @@ use utils::*;
 pub struct Transpiler {
     pub stmts: Vec<crate::ast::Stmt>,
     context: MutabilityContext,
-    reporter: CodespanReporter,
 }
 
 impl Transpiler {
-    pub fn new(name: &str, source: String) -> Self {
+    pub fn new() -> Self {
         Self {
             stmts: Vec::new(),
             context: MutabilityContext::new(),
-            reporter: CodespanReporter::new(name.to_string(), source),
         }
     }
 
@@ -83,7 +81,7 @@ impl Transpiler {
                 self.stmts.extend(stmts.0);
             }
             ExternalDeclaration::StaticAssert(Node { span, .. }) => {
-                self.reporter.unimplemented(span)
+                unimplemented!()
             }
         }
     }
