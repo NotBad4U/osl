@@ -22,14 +22,16 @@ pub struct Transpiler {
     pub stmts: Vec<crate::ast::Stmt>,
     context: MutabilityContext,
     typedefs: HashMap<String, Vec<TypeSpecifier>>,
+    reporter: diagnostic::CodespanReporter,
 }
 
 impl Transpiler {
-    pub fn new() -> Self {
+    pub fn new(source: String) -> Self {
         Self {
             stmts: Vec::new(),
             context: MutabilityContext::new(),
             typedefs: HashMap::new(),
+            reporter: diagnostic::CodespanReporter::new(source),
         }
     }
 
@@ -91,7 +93,10 @@ impl Transpiler {
         }
     }
 
-    pub(super) fn transpile_parameters_declaration(&self, params: &Vec<ParameterDeclaration>) -> Parameters {
+    pub(super) fn transpile_parameters_declaration(
+        &self,
+        params: &Vec<ParameterDeclaration>,
+    ) -> Parameters {
         params
             .iter()
             .fold(Parameters(Vec::new()), |mut acc, param| {
@@ -100,7 +105,10 @@ impl Transpiler {
             })
     }
 
-    pub(super) fn transpile_parameter_declaration(&self, param: &ParameterDeclaration) -> Parameter {
+    pub(super) fn transpile_parameter_declaration(
+        &self,
+        param: &ParameterDeclaration,
+    ) -> Parameter {
         let declarator = &param.declarator.as_ref().unwrap().node;
         let id = get_declarator_id(&declarator).unwrap();
 

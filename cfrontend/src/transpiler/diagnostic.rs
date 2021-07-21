@@ -1,33 +1,86 @@
-use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::files::SimpleFile;
-use codespan_reporting::term;
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use annotate_snippets::{
+    display_list::{DisplayList, FormatOptions},
+    snippet::{AnnotationType, Slice, Snippet, SourceAnnotation},
+};
 
 use lang_c::span::Span;
 
 #[derive(Debug)]
 pub struct CodespanReporter {
-    file: SimpleFile<String, String>,
+    source: String,
 }
 
 impl CodespanReporter {
-    pub fn new(name: String, source: String) -> Self {
-        Self {
-            file: SimpleFile::new(name, source),
-        }
+    pub fn new(source: String) -> Self {
+        Self { source }
     }
 
-    pub fn unimplemented(&self, span: Span) {
-        let diagnostic = Diagnostic::error()
-            .with_message("Unimplemented C expression")
-            .with_code("E001")
-            .with_labels(vec![Label::primary((), span.start..span.end)]);
+    pub fn unimplemented(&self, span: Span) -> String {
+        let snippet = Snippet {
+            title: None,
+            footer: vec![],
+            slices: vec![Slice {
+                source: self.source.as_str(),
+                line_start: 0,
+                origin: None,
+                fold: true,
+                annotations: vec![SourceAnnotation {
+                    label: "not implemented",
+                    annotation_type: AnnotationType::Error,
+                    range: (span.start, span.end),
+                }],
+            }],
+            opt: FormatOptions {
+                color: true,
+                ..Default::default()
+            },
+        };
+        format!("{}", DisplayList::from(snippet))
+    }
 
-        let writer = StandardStream::stderr(ColorChoice::Always);
-        let config = codespan_reporting::term::Config::default();
+    pub fn info(&self, span: Span, label: &str) -> String {
+        let snippet = Snippet {
+            title: None,
+            footer: vec![],
+            slices: vec![Slice {
+                source: self.source.as_str(),
+                line_start: 0,
+                origin: None,
+                fold: true,
+                annotations: vec![SourceAnnotation {
+                    label,
+                    annotation_type: AnnotationType::Info,
+                    range: (span.start, span.end),
+                }],
+            }],
+            opt: FormatOptions {
+                color: true,
+                ..Default::default()
+            },
+        };
+        format!("{}", DisplayList::from(snippet))
+    }
 
-        term::emit(&mut writer.lock(), &config, &self.file, &diagnostic).unwrap();
-        // impossible to control the io::Write with term::emit
-        std::process::exit(1);
+    pub fn help(&self, span: Span, label: &str) -> String {
+        let snippet = Snippet {
+            title: None,
+            footer: vec![],
+            slices: vec![Slice {
+                source: self.source.as_str(),
+                line_start: 0,
+                origin: None,
+                fold: true,
+                annotations: vec![SourceAnnotation {
+                    label,
+                    annotation_type: AnnotationType::Help,
+                    range: (span.start, span.end),
+                }],
+            }],
+            opt: FormatOptions {
+                color: true,
+                ..Default::default()
+            },
+        };
+        format!("{}", DisplayList::from(snippet))
     }
 }

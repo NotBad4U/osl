@@ -6,8 +6,8 @@ use lang_c::driver::Parse;
 pub mod ast;
 mod transpiler;
 
-pub fn transpile_c_program(source: Parse) -> ast::Stmts {
-    let mut transpiler = transpiler::Transpiler::new();
-    transpiler.transpile_translation_unit(&source.unit);
+pub fn transpile_c_program(parse: Parse) -> ast::Stmts {
+    let mut transpiler = transpiler::Transpiler::new(parse.source);
+    transpiler.transpile_translation_unit(&parse.unit);
     ast::Stmts(transpiler.stmts)
 }
