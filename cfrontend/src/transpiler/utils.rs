@@ -73,6 +73,17 @@ pub fn get_return_fun_mutability_from_fun_def(function_def: &FunctionDefinition)
     }
 }
 
+pub fn is_a_function(declarator: &Declarator) -> bool {
+    declarator
+        .derived
+        .as_slice()
+        .iter()
+        .find(|devired_declarator| {
+            matches!(devired_declarator.node, DerivedDeclarator::Function(_))
+        })
+        .is_some()
+}
+
 /// Check if the type begin with const type qualifier
 /// e.g.: const T *
 pub fn is_const(specifiers: &[Node<DeclarationSpecifier>]) -> bool {
@@ -131,6 +142,7 @@ pub fn get_declarator_id(decl: &Declarator) -> Option<String> {
             node: Identifier { ref name },
             ..
         }) => Some(name.to_string()),
+        DeclaratorKind::Declarator(box Node { node, .. }) => get_declarator_id(node),
         _ => None,
     }
 }

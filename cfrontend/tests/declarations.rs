@@ -22,7 +22,8 @@ fn it_should_transpile_simple_type_declarations() {
         .to_string(),
     );
 
-    let osl_program = common::render_and_format(common::transpile_c_program(c_program));
+    let osl_program =
+        common::render_and_format(common::transpile_preprocessed_c_program(c_program));
 
     assert_eq!(osl_program, expected_osl_program)
 }
@@ -49,7 +50,8 @@ fn it_should_transpile_simple_pointers_declarations() {
         .to_string(),
     );
 
-    let osl_program = common::render_and_format(common::transpile_c_program(c_program));
+    let osl_program =
+        common::render_and_format(common::transpile_preprocessed_c_program(c_program));
 
     assert_eq!(osl_program, expected_osl_program)
 }
@@ -76,7 +78,8 @@ fn it_should_transpile_simple_const_declarations() {
         .to_string(),
     );
 
-    let osl_program = common::render_and_format(common::transpile_c_program(c_program));
+    let osl_program =
+        common::render_and_format(common::transpile_preprocessed_c_program(c_program));
 
     assert_eq!(osl_program, expected_osl_program)
 }
@@ -103,7 +106,8 @@ fn it_should_transpile_simple_pointer_to_const_declarations() {
         .to_string(),
     );
 
-    let osl_program = common::render_and_format(common::transpile_c_program(c_program));
+    let osl_program =
+        common::render_and_format(common::transpile_preprocessed_c_program(c_program));
 
     assert_eq!(osl_program, expected_osl_program)
 }

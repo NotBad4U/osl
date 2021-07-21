@@ -34,7 +34,6 @@ impl Transpiler {
         for element in &translation_unit.0 {
             self.transpile_external_declaration(&element.node, &element.span);
         }
-
         // append the call to C main function
         self.stmts.push(Stmt::Expression(Exp::Call(
             "main".to_string(),
@@ -430,10 +429,55 @@ impl Transpiler {
     }
 
     fn transpile_declaration(&mut self, declaration: &Declaration) -> Stmts {
-        if is_typedef_declaration(&declaration) {
-            self.transpile_typedef_declaration(&declaration)
-        } else {
-            self.transpile_variables_declaration(&declaration)
+        match (
+            declaration.specifiers.as_slice(),
+            declaration.declarators.as_slice(),
+        ) {
+            (
+                [Node {
+                    node:
+                        DeclarationSpecifier::StorageClass(Node {
+                            node: StorageClassSpecifier::Typedef,
+                            ..
+                        }),
+                    ..
+                }, ..],
+                _,
+            ) => self.transpile_typedef_declaration(declaration),
+            (
+                _,
+                [Node {
+                    node:
+                        InitDeclarator {
+                            declarator,
+                            initializer: None,
+                        },
+                    ..
+                }, ..],
+            ) if is_a_function(&declarator.node) => Stmts::new(),
+            (
+                [Node {
+                    node:
+                        DeclarationSpecifier::TypeSpecifier(Node {
+                            node: TypeSpecifier::Struct(_),
+                            ..
+                        }),
+                    ..
+                }, ..],
+                _,
+            ) => Stmts::new(),
+            (
+                [Node {
+                    node:
+                        DeclarationSpecifier::TypeSpecifier(Node {
+                            node: TypeSpecifier::Enum(_),
+                            ..
+                        }),
+                    ..
+                }, ..],
+                _,
+            ) => Stmts::new(),
+            _ => self.transpile_variables_declaration(&declaration),
         }
     }
 
@@ -448,7 +492,7 @@ impl Transpiler {
             .collect();
 
         let id = utils::get_declarator_id(&declaration.declarators[0].node.declarator.node)
-            .expect("Can't find Id in Typedef");
+            .expect(&format!("Can't find Id in Typedef => {:#?}", declaration));
 
         self.typedefs.insert(id, type_specifiers);
 
