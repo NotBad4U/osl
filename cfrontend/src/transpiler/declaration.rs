@@ -74,31 +74,46 @@ impl Transpiler {
 
     /// This function return a Stmts because it is possible to declare multiple variables with same type in one line
     pub(super) fn transpile_variables_declaration(&mut self, declaration: &Declaration) -> Stmts {
+        println!("{:#?}", declaration);
         let decl_mut = get_mutability_of_declaration(declaration);
 
-        // get the list of identifiers
-        // T a = x, b = x => [a, b]
-        let ids: Vec<String> = declaration
+        // get the list of identifiers and the initializer expression
+        let declarations: Vec<(String, &Option<Node<Initializer>>)> = declaration
             .declarators
             .iter()
             .map(
                 |Node {
-                     node: InitDeclarator { declarator, .. },
+                     node:
+                         InitDeclarator {
+                             declarator,
+                             initializer,
+                         },
                      ..
-                 }| get_declarator_id(&declarator.node).unwrap(),
+                 }| (get_declarator_id(&declarator.node).unwrap(), initializer),
             )
             .collect();
 
         // store the new variables in the context map
-        ids.iter().for_each(|id| {
+        declarations.iter().for_each(|(id, _)| {
             self.context
                 .insert_in_last_scope(id, MutabilityContextItem::Variable(decl_mut.clone()))
         });
 
-        Stmts(
-            ids.into_iter()
-                .map(|id| Stmt::Declaration(id, None))
-                .collect(),
+        declarations.into_iter().fold(
+            Stmts::new(),
+            |mut stmts, (id, initializer)| match initializer {
+                Some(_) => {
+                    stmts.0.push(Stmt::Declaration(id.clone(), None));
+                    stmts
+                        .0
+                        .push(Stmt::Transfer(Exp::NewRessource(Props::new()), Exp::Id(id)));
+                    stmts
+                }
+                None => {
+                    stmts.0.push(Stmt::Declaration(id, None));
+                    stmts
+                }
+            },
         )
     }
 }
