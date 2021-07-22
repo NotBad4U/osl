@@ -161,12 +161,45 @@ pub fn is_typedef_declaration(declaration: &Declaration) -> bool {
     }
 }
 
+pub fn is_copyable(declaration: &Declaration) -> bool {
+    let init_declarator = &declaration.declarators.first().unwrap().node;
+
+    let t = &init_declarator.declarator.node.derived;
+
+    t.iter()
+        .map(|n| &n.node)
+        .find(|derived_declarator| matches!(derived_declarator, DerivedDeclarator::Array(_))   )
+        .is_some()
+}
+
 #[cfg(test)]
 mod test_osl_transpile {
     use super::*;
     use enum_extract::extract;
     use lang_c::driver::parse_preprocessed;
     use lang_c::driver::Config;
+
+    #[test]
+    fn it_should_find_a_copyable_type() {
+        let config = Config::default();
+
+        let source = r#"
+        int a[1];
+        "#
+        .to_string();
+
+        let parsed = parse_preprocessed(&config, source).expect("C test code is broken");
+        let external_declaration = &parsed.unit.0.first().unwrap().node;
+
+        match external_declaration {
+            ExternalDeclaration::Declaration(d) => {
+                assert!(is_copyable(&d.node))
+            }
+            _ => panic!("expected a function"),
+        }
+
+        println!("{:#?}", parsed.unit.0);
+    }
 
     #[test]
     fn it_should_find_a_const_return() {
