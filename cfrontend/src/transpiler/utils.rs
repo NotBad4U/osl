@@ -164,12 +164,10 @@ pub fn is_typedef_declaration(declaration: &Declaration) -> bool {
 pub fn is_copyable(declaration: &Declaration) -> bool {
     let init_declarator = &declaration.declarators.first().unwrap().node;
 
-    let t = &init_declarator.declarator.node.derived;
-
-    t.iter()
-        .map(|n| &n.node)
-        .find(|derived_declarator| matches!(derived_declarator, DerivedDeclarator::Array(_))   )
-        .is_some()
+    // Derived declarator contains the information about if it's a declaration
+    // for an array, pointer and function. This type are not copyable.
+    // So it should be enough to just look if the derived declarator list is empty.
+    init_declarator.declarator.node.derived.is_empty()
 }
 
 #[cfg(test)]
@@ -185,20 +183,30 @@ mod test_osl_transpile {
 
         let source = r#"
         int a[1];
+        int *b;
+        int c;
         "#
         .to_string();
 
         let parsed = parse_preprocessed(&config, source).expect("C test code is broken");
-        let external_declaration = &parsed.unit.0.first().unwrap().node;
 
-        match external_declaration {
-            ExternalDeclaration::Declaration(d) => {
-                assert!(is_copyable(&d.node))
-            }
-            _ => panic!("expected a function"),
+        // test: int a[1]
+        match &parsed.unit.0.get(0).unwrap().node {
+            ExternalDeclaration::Declaration(d) => assert!(is_copyable(&d.node) == false),
+            _ => panic!("Should be a declaration but we got something else"),
         }
 
-        println!("{:#?}", parsed.unit.0);
+        // test: int *a;
+        match &parsed.unit.0.get(1).unwrap().node {
+            ExternalDeclaration::Declaration(d) => assert!(is_copyable(&d.node) == false),
+            _ => panic!("Should be a declaration but we got something else"),
+        }
+
+        // test: int a;
+        match &parsed.unit.0.get(2).unwrap().node {
+            ExternalDeclaration::Declaration(d) => assert!(is_copyable(&d.node) == true),
+            _ => panic!("Should be a declaration but we got something else"),
+        }
     }
 
     #[test]
