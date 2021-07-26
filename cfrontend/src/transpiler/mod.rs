@@ -113,7 +113,7 @@ impl Transpiler {
         let id = get_declarator_id(&declarator).unwrap();
 
         let mutability = if is_a_ref(declarator) {
-            if is_a_ref_const(declarator) {
+            if is_const(param.specifiers.as_slice()) {
                 Mutability::ImmRef
             } else {
                 Mutability::MutRef
