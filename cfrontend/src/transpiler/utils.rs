@@ -164,7 +164,8 @@ pub fn is_copyable(declaration: &Declaration) -> bool {
 pub const LIFETIME_STR_CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
 
 pub fn generate_lifetime(i: usize) -> String {
-    String::from_utf8(Vec::from([*LIFETIME_STR_CHARSET.get(i % 26).unwrap()])).expect("cannot generate a lifetime")
+    String::from_utf8(Vec::from([*LIFETIME_STR_CHARSET.get(i % 26).unwrap()]))
+        .expect("cannot generate a lifetime")
 }
 
 #[cfg(test)]
