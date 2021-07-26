@@ -99,20 +99,36 @@ impl Transpiler {
     ) -> Parameters {
         params
             .iter()
-            .fold(Parameters(Vec::new()), |mut acc, param| {
-                acc.0.push(self.transpile_parameter_declaration(param));
+            .enumerate()
+            .fold(Parameters(Vec::new()), |mut acc, (index, param)| {
+                let id = get_declarator_id(&param.declarator.as_ref().unwrap().node).unwrap();
+
+                //  Each parameter that is a reference gets its own lifetime parameter.
+                // In other words, a function with one parameter gets one lifetime parameter: fn foo(x: ref('a, Type));
+                // a function with two parameters gets two separate lifetime parameters: fn foo(x: ref('a, Type), y: ref('b, Type)); and so on.
+                // This follow the rules of input lifetimes of Rust lang function.
+                let param = match self.get_function_parameter_mutability(param) {
+                    Mutability::MutOwner => Parameter(id, Type::Own(Props::from(Prop::Mut))),
+                    Mutability::ImmOwner => Parameter(id, Type::Own(Props::new())),
+                    Mutability::MutRef => Parameter(
+                        id,
+                        Type::Ref(utils::generate_lifetime(index), box Type::Own(Props::from(Prop::Mut))),
+                    ),
+                    Mutability::ImmRef => Parameter(id, Type::Ref(utils::generate_lifetime(index), box Type::Own(Props::new()))),
+                };
+
+                acc.0.push(param);
                 acc
             })
     }
 
-    pub(super) fn transpile_parameter_declaration(
+    pub(super) fn get_function_parameter_mutability(
         &self,
         param: &ParameterDeclaration,
-    ) -> Parameter {
+    ) -> Mutability {
         let declarator = &param.declarator.as_ref().unwrap().node;
-        let id = get_declarator_id(&declarator).unwrap();
 
-        let mutability = if is_a_ref(declarator) {
+        if is_a_ref(declarator) {
             if is_const(param.specifiers.as_slice()) {
                 Mutability::ImmRef
             } else {
@@ -124,16 +140,6 @@ impl Transpiler {
             } else {
                 Mutability::MutOwner
             }
-        };
-
-        match mutability {
-            Mutability::MutOwner => Parameter(id, Type::Own(Props::from(Prop::Mut))),
-            Mutability::ImmOwner => Parameter(id, Type::Own(Props::new())),
-            Mutability::MutRef => Parameter(
-                id,
-                Type::Ref("a".into(), box Type::Own(Props::from(Prop::Mut))),
-            ),
-            Mutability::ImmRef => Parameter(id, Type::Ref("a".into(), box Type::Own(Props::new()))),
         }
     }
 
