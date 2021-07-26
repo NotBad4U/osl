@@ -4,14 +4,6 @@ use lang_c::span::Node;
 use crate::ast::*;
 use crate::transpiler::context::Mutability;
 
-pub fn convert_mutability_to_type(mutability: &Mutability) -> Type {
-    match mutability {
-        Mutability::ImmOwner => Type::Own(Props(vec![])),
-        Mutability::MutOwner => Type::Own(Props(vec![Prop::Mut])),
-        _ => unimplemented!(),
-    }
-}
-
 // FIXME: support multiple init declarator
 pub fn get_mutability_of_declaration(declaration: &Declaration) -> Mutability {
     let specifiers = &declaration.specifiers;
@@ -41,7 +33,7 @@ pub fn get_mutability_of_declaration(declaration: &Declaration) -> Mutability {
 pub fn get_function_parameters_from_declarator(
     declaration: &Declarator,
 ) -> Vec<ParameterDeclaration> {
-    match &declaration.derived.first().unwrap().node {
+    match &declaration.derived.last().unwrap().node {
         DerivedDeclarator::Function(Node {
             node: FunctionDeclarator { parameters, .. },
             ..

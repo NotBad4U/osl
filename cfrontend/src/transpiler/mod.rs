@@ -61,23 +61,53 @@ impl Transpiler {
         // Inductive recursion on the compound statements
         let block_stmts = self.transpile_statement(&function_def.statement.node);
 
+        let parameters = self.transpile_parameters_declaration(
+            &get_function_parameters_from_declarator(&function_def.declarator.node),
+        );
+
+        let mutability_return_type =
+            self.transpile_return_type_function_declaration(&parameters, &mut_return_type);
+
         // Create the AST OSL corresponding node
         self.stmts.push(Stmt::Function(
             fn_id,
-            self.transpile_parameters_declaration(&get_function_parameters_from_declarator(
-                &function_def.declarator.node,
-            )),
-            convert_mutability_to_type(&mut_return_type),
+            parameters,
+            mutability_return_type,
             block_stmts,
         ));
 
         self.context.pop_last_scope();
     }
 
-    pub(super) fn transpile_external_declaration<'ast>(
+    fn transpile_return_type_function_declaration(
         &mut self,
-        external_declaration: &'ast ExternalDeclaration,
-        _span: &'ast span::Span,
+        params: &Parameters,
+        mutability_function: &Mutability,
+    ) -> Type {
+        // if there is exactly one input lifetime parameter (in other words, the only parameter is a reference),
+        // that lifetime is assigned to all output lifetime parameters:
+        // e.g.: fn foo(x: ref('a, T)) -> ref('a, T).
+        // The rule apply even if the parameter and return type are different.
+        match (params.0.as_slice(), mutability_function) {
+            // The only parameter and return type are references
+            (
+                [Parameter(_, Type::Ref(lifetime, mutability))],
+                Mutability::ImmRef | Mutability::MutRef,
+            ) => Type::Ref(lifetime.to_string(), box *mutability.clone()),
+            (_, Mutability::ImmOwner) => Type::Own(Props(vec![])),
+            (_, Mutability::MutOwner) => Type::Own(Props(vec![Prop::Mut])),
+            (_, Mutability::MutRef) => {
+                // To avoid conflict on lifetime lexical name, we use "rt" has the default name for return
+                Type::Ref("rt".to_string(), box Type::Own(Props(vec![Prop::Mut])))
+            }
+            (_, Mutability::ImmRef) => Type::Ref("rt".to_string(), box Type::Own(Props(vec![]))),
+        }
+    }
+
+    pub(super) fn transpile_external_declaration(
+        &mut self,
+        external_declaration: &ExternalDeclaration,
+        _span: &span::Span,
     ) {
         match *external_declaration {
             ExternalDeclaration::FunctionDefinition(ref f) => {
@@ -112,9 +142,15 @@ impl Transpiler {
                     Mutability::ImmOwner => Parameter(id, Type::Own(Props::new())),
                     Mutability::MutRef => Parameter(
                         id,
-                        Type::Ref(utils::generate_lifetime(index), box Type::Own(Props::from(Prop::Mut))),
+                        Type::Ref(
+                            utils::generate_lifetime(index),
+                            box Type::Own(Props::from(Prop::Mut)),
+                        ),
                     ),
-                    Mutability::ImmRef => Parameter(id, Type::Ref(utils::generate_lifetime(index), box Type::Own(Props::new()))),
+                    Mutability::ImmRef => Parameter(
+                        id,
+                        Type::Ref(utils::generate_lifetime(index), box Type::Own(Props::new())),
+                    ),
                 };
 
                 acc.0.push(param);

@@ -74,7 +74,6 @@ impl Transpiler {
 
     /// This function return a Stmts because it is possible to declare multiple variables with same type in one line
     pub(super) fn transpile_variables_declaration(&mut self, declaration: &Declaration) -> Stmts {
-        println!("{:#?}", declaration);
         let decl_mut = get_mutability_of_declaration(declaration);
 
         // get the list of identifiers and the initializer expression
