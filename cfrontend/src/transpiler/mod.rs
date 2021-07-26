@@ -182,7 +182,7 @@ impl Transpiler {
     pub fn transpile_statement(&mut self, statement: &Statement) -> Stmts {
         match *statement {
             Statement::Expression(Some(ref e)) => Stmts::from(self.transpile_expression(&e.node)),
-            Statement::Return(Some(ref r)) => Stmts::from(self.transpile_return_statement(&r.node)),
+            Statement::Return(Some(ref r)) => self.transpile_return_statement(&r.node),
             Statement::Compound(ref block_items) => self.transpile_block_items(block_items),
             Statement::If(Node {
                 node: ref if_stmt, ..
@@ -282,19 +282,7 @@ impl Transpiler {
         Stmts(stmts)
     }
 
-    pub(super) fn transpile_return_statement(&mut self, _exp: &Expression) -> Stmt {
-        let mut_return_type = self.context.get_last_function_mutability();
-
-        match mut_return_type {
-            Some(mut_r) => match mut_r {
-                (_, Mutability::ImmOwner) => Stmt::Val(Exp::NewRessource(Props(vec![]))),
-                (_, Mutability::MutOwner) => Stmt::Val(Exp::NewRessource(Props(vec![Prop::Mut]))),
-                _ => unimplemented!(),
-            },
-            // This should not happend because the parser if the parser work correctly, so I put this as a guard
-            None => {
-                unreachable!("no function definition can't be retrieve for this return statement")
-            }
-        }
+    fn transpile_return_statement(&mut self, exp: &Expression) -> Stmts {
+        self.transpile_expression(exp)
     }
 }

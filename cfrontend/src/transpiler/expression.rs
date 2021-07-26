@@ -13,8 +13,17 @@ impl Transpiler {
             Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
                 self.transpile_binary_operator(bin_op)
             }
-            Expression::Constant(_) => Stmts::new(),
+            Expression::Constant(constant) => Stmts::from(self.transpile_constant(&constant.node)),
             e => unimplemented!("{:?}", e),
+        }
+    }
+
+    fn transpile_constant(&self, constant: &Constant) -> Stmt {
+        match constant {
+            Constant::Float(_) | Constant::Integer(_) => {
+                Stmt::Val(Exp::NewRessource(Props::from(Prop::Copy)))
+            }
+            Constant::Character(_) => Stmt::Val(Exp::NewRessource(Props::new())),
         }
     }
 

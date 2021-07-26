@@ -50,7 +50,7 @@ impl fmt::Display for Stmt {
             Stmt::Transfer(e1, e2) => writeln!(f, "transfer {} {};", e1, e2),
             Stmt::MBorrow(e1, e2) => writeln!(f, "{} mborrow {};", e1, e2),
             Stmt::Borrow(e1, e2) => writeln!(f, "{} borrow {};", e1, e2),
-            Stmt::Expression(e) => writeln!(f, "{};", e),
+            Stmt::Expression(e) => writeln!(f, "{}", e),
             Stmt::Branch(blocks) => {
                 writeln!(f, "@{}", blocks)
             }
@@ -105,7 +105,7 @@ impl fmt::Display for Exp {
         match self {
             Exp::NewRessource(props) => write!(f, "newResource({})", props),
             Exp::Id(id) => write!(f, "{}", id),
-            Exp::Call(callee, exps) => write!(f, "call {}({})", callee, exps),
+            Exp::Call(callee, exps) => write!(f, "call {}({});", callee, exps),
             Exp::Deref(exp) => write!(f, "*{}", exp),
         }
     }
