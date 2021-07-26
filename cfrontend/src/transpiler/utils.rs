@@ -1,7 +1,6 @@
 use lang_c::ast::*;
 use lang_c::span::Node;
 
-use crate::ast::*;
 use crate::transpiler::context::Mutability;
 
 // FIXME: support multiple init declarator
