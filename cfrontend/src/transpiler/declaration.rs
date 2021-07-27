@@ -103,9 +103,11 @@ impl Transpiler {
             |mut stmts, (id, initializer)| match initializer {
                 Some(_) => {
                     stmts.0.push(Stmt::Declaration(id.clone(), None));
-                    stmts
-                        .0
-                        .push(Stmt::Transfer(Exp::NewRessource(Props::new()), Exp::Id(id)));
+
+                    if let Some(Node { node, .. }) = initializer {
+                        stmts.0.extend(self.transpile_initializer(id, &node).0);
+                    }
+
                     stmts
                 }
                 None => {
@@ -114,5 +116,77 @@ impl Transpiler {
                 }
             },
         )
+    }
+
+    /// This function transpile initializer in declaration of variable
+    /// T a = <expression>
+    /// TODO: For now this function is a little raw, maybe we can put some code in common with
+    /// with other transpilation expressions functions
+    fn transpile_initializer(&self, declarator: String, initializer: &Initializer) -> Stmts {
+        let mutability = self
+            .context
+            .get_variable_mutability(declarator.as_str())
+            .unwrap();
+
+        match initializer {
+            Initializer::Expression(ref expression) => match expression.node {
+                Expression::UnaryOperator(box Node {
+                    node:
+                        UnaryOperatorExpression {
+                            operator:
+                                Node {
+                                    node: UnaryOperator::Address,
+                                    ..
+                                },
+                            operand:
+                                box Node {
+                                    node:
+                                        Expression::Identifier(box Node {
+                                            node: ref right_id, ..
+                                        }),
+                                    ..
+                                },
+                        },
+                    ..
+                }) => {
+                    match mutability {
+                        Mutability::ImmRef => Stmts::from(Stmt::Borrow(
+                            Exp::Id(declarator),
+                            Exp::Id(right_id.name.clone()),
+                        )),
+                        Mutability::MutRef => Stmts::from(Stmt::MBorrow(
+                            Exp::Id(declarator),
+                            Exp::Id(right_id.name.clone()),
+                        )),
+                        _ => unreachable!("The expression contain an Unary operator address"), // If we reach this code then it should be a problem in Context or storing context
+                    }
+                }
+                Expression::Identifier(box Node { node: ref id, .. }) => Stmts::from(
+                    Stmt::Transfer(Exp::Id(declarator), Exp::Id(id.name.clone())),
+                ),
+                Expression::Constant(ref constant) => {
+                    let mut props = Props::new();
+
+                    if let Mutability::MutOwner = mutability {
+                        props.0.push(Prop::Mut);
+                    }
+
+                    if let Constant::Float(_) | Constant::Integer(_) = constant.node {
+                        props.0.push(Prop::Copy);
+                    }
+
+                    Stmts::from(Stmt::Transfer(
+                        Exp::NewRessource(props),
+                        Exp::Id(declarator),
+                    ))
+                }
+                _ => unimplemented!("{}", self.reporter.unimplemented(expression.span)),
+            },
+            Initializer::List(list) => unimplemented!(
+                "{}",
+                self.reporter.unimplemented(list.first().unwrap().span)
+            ),
+        }
+        //Stmts::new()
     }
 }
