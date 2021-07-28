@@ -7,15 +7,19 @@ impl Transpiler {
                 node: Identifier { name },
                 ..
             }) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
-            Expression::Call(box Node { node: call, .. }) => {
-                Stmts::from(Stmt::Expression(self.transpile_call_expression(&call)))
-            }
+            Expression::Call(box Node { node: call, .. }) => self.transpile_call_expression(&call),
             Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
                 self.transpile_binary_operator(bin_op)
             }
             Expression::Constant(constant) => Stmts::from(self.transpile_constant(&constant.node)),
+            Expression::Cast(box Node { node: cast, .. }) => self.transpile_cast_expression(&cast),
+            Expression::StringLiteral(_) => Stmts::new(),
             e => unimplemented!("{:?}", e),
         }
+    }
+
+    fn transpile_cast_expression(&mut self, cast: &CastExpression) -> Stmts {
+        self.transpile_expression(&cast.expression.node)
     }
 
     fn transpile_constant(&self, constant: &Constant) -> Stmt {
@@ -27,20 +31,25 @@ impl Transpiler {
         }
     }
 
-    pub(super) fn transpile_call_expression(&mut self, call_exp: &CallExpression) -> Exp {
+    pub(super) fn transpile_call_expression(&mut self, call_exp: &CallExpression) -> Stmts {
         let callee = extract!(Expression::Identifier(_), &call_exp.callee.node)
             .unwrap()
             .node
             .name
             .to_string();
-        let arguments = call_exp
-            .arguments
-            .iter()
-            .map(|node| &node.node)
-            .map(|exp| self.transpile_expression(&exp).first().unwrap().clone()) //FIXME: pb with multiple stat
-            .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
-            .collect::<Vec<Exp>>();
-        Exp::Call(callee, Exps(arguments))
+
+        if self.stdfun.is_std_function(callee.as_str()) {
+            self.transpile_std_function(&callee, call_exp)
+        } else {
+            let arguments = call_exp
+                .arguments
+                .iter()
+                .map(|node| &node.node)
+                .map(|exp| self.transpile_expression(&exp).first().unwrap().clone()) //FIXME: pb with multiple stat
+                .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
+                .collect::<Vec<Exp>>();
+            Stmts::from(Stmt::Expression(Exp::Call(callee, Exps(arguments))))
+        }
     }
 
     pub(super) fn transpile_binary_operator(&mut self, bop: &BinaryOperatorExpression) -> Stmts {
@@ -112,6 +121,57 @@ impl Transpiler {
         right: &Expression,
     ) -> Stmts {
         match (left, right) {
+            // parse dynamic memory allocation assignment:  ptr = (cast-type*) malloc(byte-size)
+            // Malloc, Calloc, etc. returns a pointer of type void which can be cast into a pointer of any form.
+            // Most usage of malloc follow this pattern.
+            (
+                Expression::Identifier(box Node {
+                    node: Identifier { name: left_id },
+                    ..
+                }),
+                Expression::Cast(box Node {
+                    node:
+                        CastExpression {
+                            expression:
+                                box Node {
+                                    node:
+                                        Expression::Call(box Node {
+                                            node:
+                                                CallExpression {
+                                                    callee:
+                                                        box Node {
+                                                            node:
+                                                                Expression::Identifier(box Node {
+                                                                    node: Identifier { name },
+                                                                    ..
+                                                                }),
+                                                            ..
+                                                        },
+                                                    ..
+                                                },
+                                            ..
+                                        }),
+                                    ..
+                                },
+                            type_name:
+                                Node {
+                                    node:
+                                        TypeName {
+                                            specifiers,
+                                            declarator,
+                                        },
+                                    ..
+                                },
+                        },
+                    ..
+                }),
+            ) if utils::is_allocate_memory_function(name) => Stmts::from(Stmt::Transfer(
+                Exp::NewRessource(utils::get_props_from_specifiers_and_declarator(
+                    &specifiers,
+                    &declarator,
+                )),
+                Exp::Id(left_id.to_string()),
+            )),
             // Basic assignment a = b;
             (
                 Expression::Identifier(box Node { node: left_id, .. }),

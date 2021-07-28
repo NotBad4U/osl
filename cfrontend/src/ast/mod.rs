@@ -41,6 +41,7 @@ pub enum Stmt {
     Expression(Exp),
     Branch(Blocks),
     Loop(Stmts),
+    Deallocate(Exp),
 }
 
 #[derive(Debug, Clone)]

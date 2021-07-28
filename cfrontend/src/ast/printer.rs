@@ -55,6 +55,7 @@ impl fmt::Display for Stmt {
                 writeln!(f, "@{}", blocks)
             }
             Stmt::Loop(block) => writeln!(f, "!{{\n{}\n}}", block),
+            Stmt::Deallocate(exp) => writeln!(f, "deallocate {};", exp),
         }
     }
 }

@@ -1,6 +1,7 @@
 use lang_c::ast::*;
 use lang_c::span::Node;
 
+use crate::ast;
 use crate::transpiler::context::Mutability;
 
 // FIXME: support multiple init declarator
@@ -166,6 +167,29 @@ pub const LIFETIME_STR_CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
 pub fn generate_lifetime(i: usize) -> String {
     String::from_utf8(Vec::from([*LIFETIME_STR_CHARSET.get(i % 26).unwrap()]))
         .expect("cannot generate a lifetime")
+}
+
+#[inline]
+pub fn is_allocate_memory_function(func: &str) -> bool {
+    func == "malloc" || func == "realloc" || func == "calloc"
+}
+
+#[inline]
+pub fn is_deallocate_memory_function(func: &str) -> bool {
+    func == "free"
+}
+
+pub fn get_props_from_specifiers_and_declarator(
+    specifiers: &Vec<Node<SpecifierQualifier>>,
+    declarator: &Option<Node<Declarator>>,
+) -> ast::Props {
+    let mut props = ast::Props(vec![]);
+
+    if let None = declarator {
+        props.0.push(ast::Prop::Copy)
+    }
+
+    props
 }
 
 #[cfg(test)]

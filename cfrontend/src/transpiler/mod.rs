@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 use crate::ast::*;
 use context::*;
+use stdfun::StdlibFunction;
 use utils::*;
 
 mod branch;
@@ -15,6 +16,7 @@ mod declaration;
 mod diagnostic;
 mod expression;
 mod loops;
+mod stdfun;
 mod utils;
 
 #[derive(Debug)]
@@ -23,6 +25,7 @@ pub struct Transpiler {
     context: MutabilityContext,
     typedefs: HashMap<String, Vec<TypeSpecifier>>,
     reporter: diagnostic::CodespanReporter,
+    stdfun: StdlibFunction,
 }
 
 impl Transpiler {
@@ -32,6 +35,7 @@ impl Transpiler {
             context: MutabilityContext::new(),
             typedefs: HashMap::new(),
             reporter: diagnostic::CodespanReporter::new(source),
+            stdfun: StdlibFunction::new(),
         }
     }
 
