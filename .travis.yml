@@ -1,0 +1,13 @@
+language: rust
+cache: cargo
+rust:
+  - beta
+  - nightly
+jobs:
+  allow_failures:
+    - rust: beta
+  fast_finish: true
+script:
+  - cd cfrontend
+  - cargo build --verbose
+  - cargo test --verbose
