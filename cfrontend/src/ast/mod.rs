@@ -11,11 +11,35 @@ pub struct Parameter(pub Id, pub Type);
 #[derive(Debug, Clone)]
 pub struct Parameters(pub Vec<Parameter>);
 
+impl Parameters {
+    pub fn new() -> Self {
+        Self(vec![])
+    }
+}
+
 impl ops::Deref for Parameters {
     type Target = Vec<Parameter>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl From<Parameter> for Parameters {
+    fn from(parameter: Parameter) -> Self {
+        Parameters(vec![parameter])
+    }
+}
+
+impl Parameter {
+    pub fn new(id: &str, r#type: Type) -> Self {
+        Self(id.to_string(), r#type)
+    }
+}
+
+impl From<Vec<Parameter>> for Parameters {
+    fn from(parameters: Vec<Parameter>) -> Self {
+        Parameters(parameters)
     }
 }
 
@@ -32,6 +56,7 @@ impl ops::Deref for Blocks {
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
+    Comment(String),
     Declaration(Id, Option<Type>),
     Function(Id, Parameters, Type, Stmts),
     Transfer(Exp, Exp),
@@ -74,6 +99,20 @@ pub enum Type {
     VoidTy,
 }
 
+impl Type {
+    pub fn own() -> Self {
+        Type::Own(Props::new())
+    }
+
+    pub fn own_from(props: Props) -> Self {
+        Type::Own(props)
+    }
+
+    pub fn ref_from(lifetime: &str, r#type: Type) -> Self {
+        Type::Ref(lifetime.to_string(), box r#type)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Prop {
     Copy,
@@ -92,6 +131,13 @@ impl Props {
 impl From<Prop> for Props {
     fn from(prop: Prop) -> Self {
         Props(vec![prop])
+    }
+}
+
+impl From<Vec<Prop>> for Props {
+    fn from(props: Vec<Prop>) -> Self {
+        let props: Vec<Prop> = props.iter().cloned().collect();
+        Props(props)
     }
 }
 

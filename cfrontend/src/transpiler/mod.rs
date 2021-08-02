@@ -6,6 +6,7 @@ use lang_c::span::Node;
 use std::collections::HashMap;
 
 use crate::ast::*;
+use crate::configuration::Configuration;
 use context::*;
 use stdfun::StdlibFunction;
 use utils::*;
@@ -26,24 +27,43 @@ pub struct Transpiler {
     typedefs: HashMap<String, Vec<TypeSpecifier>>,
     reporter: diagnostic::CodespanReporter,
     stdfun: StdlibFunction,
+    config: Configuration,
 }
 
 impl Transpiler {
-    pub fn new(source: String) -> Self {
+    pub fn new(source: String, config: Configuration) -> Self {
         Self {
             stmts: Vec::new(),
             context: MutabilityContext::new(),
             typedefs: HashMap::new(),
             reporter: diagnostic::CodespanReporter::new(source),
             stdfun: StdlibFunction::new(),
+            config,
         }
     }
 
+    /// Entry point of the transpilation of a C Program.
     pub fn transpile_translation_unit<'ast>(&mut self, translation_unit: &'ast TranslationUnit) {
+        if self.config.intrinsic {
+            // Add the Intrinsics function at the top of the transpiled files.
+            // If you want to now the list of std functions supported, you can
+            // find them in the module: stdfun.
+            let std_funcs: Vec<Stmt> = self
+                .stdfun
+                .get_std_functions()
+                .iter()
+                .map(|func| (*func).clone())
+                .collect();
+            std_funcs.into_iter().for_each(|func| self.stmts.push(func));
+        }
+
         for element in &translation_unit.0 {
             self.transpile_external_declaration(&element.node, &element.span);
         }
-        // append the call to C main function
+
+        // Append the call to C main function. OSL, as Python, doesn't need an entrypoint like the C main function.
+        // We simulate the main function by adding this call at the bottom of the transpiled file.
+        // This method work because in C there exist only functions and variables declarations at the top level.
         self.stmts.push(Stmt::Expression(Exp::Call(
             "main".to_string(),
             Exps(vec![]),

@@ -7,6 +7,7 @@ extern crate log;
 use env_logger::Builder;
 use lang_c::driver::Config;
 use log::LevelFilter;
+use osl::configuration::Configuration;
 
 const TEST_C_FILE: &str = "test.c";
 
@@ -21,7 +22,7 @@ fn main() {
 
     //println!("{:#?}", parsed_ast.unit);
 
-    let stmts = osl::transpile_c_program(parsed_ast);
+    let stmts = osl::transpile_c_program(parsed_ast, Configuration::new(true));
 
     println!("{}", stmts);
 }

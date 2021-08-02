@@ -42,29 +42,49 @@ pub enum StdlibFunction2 {
 #[derive(Debug)]
 pub struct StdlibFunction(HashMap<String, Stmt>);
 
+const GENERATED_FUNCTION_COMMENT: &'static str = "Auto-generated intrinsic function";
+
 impl StdlibFunction {
     pub fn new() -> Self {
         Self(hashmap![
             // int printf(const char *format, ...)
-            "printf".into() => Stmt::Function("printf".into(), Parameters(vec![]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "printf".into() => Stmt::Function("printf".into(), Parameters(vec![
+                Parameter::new("format", Type::own()),
+                Parameter::new("x", Type::ref_from("a", Type::own()))]),
+                Type::VoidTy,
+                Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
+            ),
 
             // int fprintf(FILE *stream, const char *format, ...)
-            "fprintf".into() => Stmt::Function("fprintf".into(), Parameters(vec![]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "fprintf".into() => Stmt::Function("fprintf".into(), Parameters(vec![
+                Parameter::new("stream", Type::ref_from("a", Type::own_from(Props::from(vec![Prop::Mut, Prop::Copy])))),
+                Parameter::new("format", Type::own()),
+                Parameter::new("x", Type::ref_from("b", Type::own()))]),
+                Type::VoidTy,
+                Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
+            ),
 
             // void free(void *ptr)
-            "free".into() => Stmt::Function("free".into(), Parameters(vec![]), Type::VoidTy, Stmts::new()),
+            "free".into() => Stmt::Function("free".into(), Parameters::new(), Type::VoidTy, Stmts::new()),
 
             // void *malloc(size_t size)
-            "malloc".into() => Stmt::Function("malloc".into(), Parameters(vec![]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "malloc".into() => Stmt::Function("malloc".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
 
             // void *realloc(void *ptr, size_t size)
-            "realloc".into() => Stmt::Function("realloc".into(), Parameters(vec![]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "realloc".into() => Stmt::Function("realloc".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
 
             // void *calloc(size_t nitems, size_t size)
-            "calloc".into() => Stmt::Function("calloc".into(), Parameters(vec![]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "calloc".into() => Stmt::Function("calloc".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
 
             // int scanf(const char *format, ...)
-            "scanf".into() => Stmt::Function("scanf".into(), Parameters(vec![]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "scanf".into() => Stmt::Function("scanf".into(),
+                Parameters(vec![
+                    Parameter::new("format", Type::own()),
+                    Parameter::new("x", Type::ref_from("a", Type::own_from(Props::from(Prop::Mut)))),
+                ]),
+                Type::VoidTy,
+                Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
+            ),
         ])
     }
 
