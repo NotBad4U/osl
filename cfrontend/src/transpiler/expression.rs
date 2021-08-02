@@ -157,8 +157,8 @@ impl Transpiler {
                                 Node {
                                     node:
                                         TypeName {
-                                            specifiers,
                                             declarator,
+                                            ..
                                         },
                                     ..
                                 },
@@ -166,9 +166,8 @@ impl Transpiler {
                     ..
                 }),
             ) if utils::is_allocate_memory_function(name) => Stmts::from(Stmt::Transfer(
-                Exp::NewRessource(utils::get_props_from_specifiers_and_declarator(
-                    &specifiers,
-                    &declarator,
+                Exp::NewRessource(utils::get_props_from_declarator(
+                    &declarator
                 )),
                 Exp::Id(left_id.to_string()),
             )),

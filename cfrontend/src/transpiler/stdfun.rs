@@ -5,7 +5,6 @@
 /// the ownership properties for the function of stdlib, stdio, libc, etc.
 use super::*;
 
-use enum_extract::let_extract;
 use std::collections::HashMap;
 
 macro_rules! hashmap {
@@ -23,16 +22,6 @@ macro_rules! hashmap {
             _map
         }
     };
-}
-
-pub enum StdlibFunction2 {
-    Printf,
-    Ffprintf,
-    Free,
-    Malloc,
-    Realloc,
-    Calloc,
-    Scanf,
 }
 
 /// For now, this enum doesn't provide
@@ -90,10 +79,6 @@ impl StdlibFunction {
 
     pub fn is_std_function(&self, key: &str) -> bool {
         self.0.get(key).is_some()
-    }
-
-    pub fn get_std_function(&self, key: &str) -> Option<&Stmt> {
-        self.0.get(key)
     }
 
     pub fn get_std_functions(&self) -> Vec<&Stmt> {
