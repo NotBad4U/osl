@@ -1,5 +1,7 @@
 OSL: An Operational Semantics for Rust Language
 
+[![Build Status](https://travis-ci.com/NotBad4U/osl.svg?branch=master)](https://travis-ci.com/NotBad4U/osl)
+
 ## Introduction
 
 OSL semantics is an operational semantics implemented in K-Framework,
