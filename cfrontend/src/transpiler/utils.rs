@@ -179,9 +179,7 @@ pub fn is_deallocate_memory_function(func: &str) -> bool {
     func == "free"
 }
 
-pub fn get_props_from_declarator(
-    declarator: &Option<Node<Declarator>>
-) -> ast::Props {
+pub fn get_props_from_declarator(declarator: &Option<Node<Declarator>>) -> ast::Props {
     let mut props = ast::Props(vec![]);
 
     if let None = declarator {

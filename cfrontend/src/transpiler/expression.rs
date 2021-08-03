@@ -155,20 +155,14 @@ impl Transpiler {
                                 },
                             type_name:
                                 Node {
-                                    node:
-                                        TypeName {
-                                            declarator,
-                                            ..
-                                        },
+                                    node: TypeName { declarator, .. },
                                     ..
                                 },
                         },
                     ..
                 }),
             ) if utils::is_allocate_memory_function(name) => Stmts::from(Stmt::Transfer(
-                Exp::NewRessource(utils::get_props_from_declarator(
-                    &declarator
-                )),
+                Exp::NewRessource(utils::get_props_from_declarator(&declarator)),
                 Exp::Id(left_id.to_string()),
             )),
             // Basic assignment a = b;

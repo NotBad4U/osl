@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct Configuration {
     /// Intrinsic functions are common C functions: printf, scanf, etc.
-    /// that be found in stdlib and stdio library. 
+    /// that be found in stdlib and stdio library.
     pub intrinsic: bool,
 }
 
