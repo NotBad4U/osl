@@ -1,4 +1,5 @@
 mod common;
+use common::assert_equal_program_from_file;
 
 #[test]
 fn it_should_transpile_stdlibs() {
@@ -36,8 +37,5 @@ fn it_should_transpile_stdlibs() {
         call main();
         "###;
 
-    assert!(common::are_equal_from_file(
-        "tests/assets/stdlib.c",
-        expected_osl_program
-    ));
+    assert_equal_program_from_file("tests/assets/stdlib.c", expected_osl_program);
 }

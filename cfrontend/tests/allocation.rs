@@ -1,4 +1,5 @@
 mod common;
+use common::assert_equal_program;
 
 #[test]
 fn it_should_transpile_dynamic_memory_allocation() {
@@ -12,15 +13,15 @@ fn it_should_transpile_dynamic_memory_allocation() {
     "###;
 
     let expected_osl_program = r###"
-        fn main() -> #own(mut) {
-        decl ptr;
-        transfer newResource() ptr;
-        transfer newResource() ptr;
-        transfer newResource() ptr;
-    }
+fn main() -> #own(mut) {
+decl ptr;
+transfer newResource() ptr;
+transfer newResource() ptr;
+transfer newResource() ptr;
+}
 
-    call main();
-    "###;
+call main();
+"###;
 
-    assert!(common::are_equal(c_program, expected_osl_program));
+    assert_equal_program(c_program, expected_osl_program);
 }

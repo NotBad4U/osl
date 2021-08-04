@@ -1,4 +1,5 @@
 mod common;
+use common::assert_equal_program;
 
 #[test]
 fn it_should_transpile_if_else_statement() {
@@ -35,7 +36,7 @@ fn it_should_transpile_if_else_statement() {
         call main();
     "###;
 
-    assert!(common::are_equal(c_program, expected_osl_program));
+    assert_equal_program(c_program, expected_osl_program);
 }
 
 #[test]
@@ -69,5 +70,5 @@ fn it_should_transpile_nested_if_else_statements() {
     call main();
     "###;
 
-    assert!(common::are_equal(c_program, expected_osl_program));
+    assert_equal_program(c_program, expected_osl_program);
 }

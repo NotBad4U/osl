@@ -25,6 +25,7 @@ fn are_same_programs(p1: &str, p2: &str) -> bool {
     let p1_f: Vec<_> = p1.chars().filter(|c| *c != ' ' && *c != '\n').collect();
     let p2_f: Vec<_> = p2.chars().filter(|c| *c != ' ' && *c != '\n').collect();
 
+    // zip truncate the slice if one is bigger than other one
     if p1_f.len() != p2_f.len() {
         return false;
     }
@@ -33,15 +34,32 @@ fn are_same_programs(p1: &str, p2: &str) -> bool {
 }
 
 #[allow(dead_code)]
-pub fn are_equal(program: &str, expected: &str) -> bool {
-    let osl_program = render(transpile_preprocessed_c_program(program.to_string()));
+pub fn assert_equal_program(program: &str, expected: &str) {
+    let actual = render(transpile_preprocessed_c_program(program.to_string()));
 
-    are_same_programs(&osl_program, expected)
+    if !are_same_programs(&actual, expected) {
+        let diffs = format!(
+            "{}",
+            colored_diff::PrettyDifference {
+                expected: expected.trim(),
+                actual: actual.as_str().trim()
+            }
+        );
+        panic!("{}", diffs);
+    }
 }
 
 #[allow(dead_code)]
-pub fn are_equal_from_file(path: &str, expected: &str) -> bool {
-    let osl_program = render(transpile_c_program(path));
-
-    are_same_programs(&osl_program, expected)
+pub fn assert_equal_program_from_file(path: &str, expected: &str) {
+    let actual = render(transpile_c_program(path));
+    if !are_same_programs(&actual, expected) {
+        let diffs = format!(
+            "{}",
+            colored_diff::PrettyDifference {
+                expected: expected.trim(),
+                actual: actual.as_str().trim()
+            }
+        );
+        panic!("{}", diffs);
+    }
 }
