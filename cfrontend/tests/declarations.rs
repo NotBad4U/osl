@@ -99,3 +99,68 @@ call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+
+#[test]
+fn it_should_transpile_simple_type_mut_borrow_declaration_with_an_init() {
+    let c_program = r###"
+        void main() {
+            int a = 5;
+            int *b = &a;
+        }
+    "###;
+
+    let expected_osl_program = r###"fn main() -> #own(mut) {
+decl a;
+transfer newResource(mut,copy) a;
+decl b;
+b mborrow a;
+}
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+
+#[test]
+fn it_should_transpile_simple_type_borrow_declaration_with_an_init() {
+    let c_program = r###"
+        void main() {
+            const int a = 5;
+            const int *b = &a;
+        }
+    "###;
+
+    let expected_osl_program = r###"fn main() -> #own(mut) {
+decl a;
+transfer newResource(copy) a;
+decl b;
+b borrow a;
+}
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+
+#[test]
+fn it_should_transpile_const_pointer() {
+    let c_program = r###"
+        void main() {
+            int a;
+            int * const b = &a;
+            const int * const c = &a;
+        }
+    "###;
+
+    let expected_osl_program = r###"fn main() -> #own(mut) {
+decl a;
+decl b;
+b mborrow a;
+decl c;
+c borrow a;
+}
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
