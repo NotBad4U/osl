@@ -39,8 +39,7 @@ impl fmt::Display for Blocks {
 impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Stmt::Declaration(id, None) => writeln!(f, "decl {};", id),
-            Stmt::Declaration(id, Some(r#type)) => writeln!(f, "decl {}: {};", id, r#type),
+            Stmt::Declaration(id) => writeln!(f, "decl {};", id),
             Stmt::Function(id, params, return_type, stmts) => {
                 writeln!(f, "fn {}({}) -> {} {{", id, params, return_type).unwrap();
                 write!(f, "{}", stmts).unwrap();

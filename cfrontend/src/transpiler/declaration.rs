@@ -102,7 +102,7 @@ impl Transpiler {
             Stmts::new(),
             |mut stmts, (id, initializer)| match initializer {
                 Some(_) => {
-                    stmts.0.push(Stmt::Declaration(id.clone(), None));
+                    stmts.0.push(Stmt::Declaration(id.clone()));
 
                     if let Some(Node { node, .. }) = initializer {
                         stmts.0.extend(self.transpile_initializer(id, &node).0);
@@ -111,7 +111,7 @@ impl Transpiler {
                     stmts
                 }
                 None => {
-                    stmts.0.push(Stmt::Declaration(id, None));
+                    stmts.0.push(Stmt::Declaration(id));
                     stmts
                 }
             },
