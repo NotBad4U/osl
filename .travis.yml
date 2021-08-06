@@ -10,4 +10,4 @@ jobs:
 script:
   - cd cfrontend
   - cargo build --verbose
-  - cargo test --verbose
+  - cargo test --no-fail-fast
