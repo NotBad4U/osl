@@ -14,10 +14,12 @@ fn the_lifetime_of_the_one_input_parameter_gets_assigned_to_the_output_lifetime(
 
     let expected_osl_program = r###"
 fn foo(x:#ref('a,#own(mut))) -> #ref('a,#own(mut)) {
-    x
+    x;
 }
 
-fn main() -> #own(mut) {}
+fn main() -> #own(mut) {
+}
+
 call main();
 "###;
 
@@ -36,7 +38,9 @@ fn each_parameter_gets_its_own_lifetime() {
 fn foo(x:#ref('a,#own(mut)),y:#ref('b,#own(mut)),z:#ref('c,#own(mut))) -> #ref('rt,#own(mut)) {
 }
 
-fn main() -> #own(mut) {}
+fn main() -> #own(mut) {
+}
+
 call main();
 "###;
 

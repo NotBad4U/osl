@@ -17,7 +17,7 @@ fn transpile_c_program(path: &str) -> ast::Stmts {
 
 #[allow(dead_code)]
 fn render(program: ast::Stmts) -> String {
-    format!("{}", program)
+    ast::render::render_program(program)
 }
 
 #[allow(dead_code)]

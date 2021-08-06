@@ -1,6 +1,6 @@
 use std::{fmt, ops};
 
-mod printer;
+pub mod render;
 
 type Id = String;
 type LifetimeMarker = String;
@@ -57,7 +57,7 @@ impl ops::Deref for Blocks {
 #[derive(Debug, Clone)]
 pub enum Stmt {
     Comment(String),
-    Declaration(Id, Option<Type>),
+    Declaration(Id),
     Function(Id, Parameters, Type, Stmts),
     Transfer(Exp, Exp),
     Val(Exp),

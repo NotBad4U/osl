@@ -24,5 +24,5 @@ fn main() {
 
     let stmts = osl::transpile_c_program(parsed_ast, Configuration::new(true));
 
-    println!("{}", stmts);
+    println!("{}", osl::ast::render::render_program(stmts));
 }

@@ -25,13 +25,15 @@ fn it_should_transpile_if_else_statement() {
             decl limit;
             transfer newResource(mut,copy) limit;
             decl ok;
-            age
-            limit
-            @{
+            age;
+            limit;
+            @
+            {
                 transfer newResource(copy) ok;
-             },{
+            },
+            {
                 transfer newResource(copy) ok;
-             }
+            }
         }
         call main();
     "###;
@@ -58,13 +60,15 @@ fn it_should_transpile_nested_if_else_statements() {
     let expected_osl_program = r###"
     fn main() -> #own(mut) {
         decl x;
-        x
+        x;
         @{
-            x
-            @{}
+            x;
+            @{
+            }
         },{
-            x
-            @{}
+            x;
+            @{
+            }
         }
     }
     call main();
