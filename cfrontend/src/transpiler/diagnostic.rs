@@ -15,7 +15,7 @@ impl CodespanReporter {
         Self { source }
     }
 
-    pub fn unimplemented(&self, span: Span) -> String {
+    pub fn unimplemented(&self, span: Span, reason: &str) -> String {
         let snippet = Snippet {
             title: None,
             footer: vec![],
@@ -25,7 +25,7 @@ impl CodespanReporter {
                 origin: None,
                 fold: true,
                 annotations: vec![SourceAnnotation {
-                    label: "not implemented",
+                    label: reason,
                     annotation_type: AnnotationType::Error,
                     range: (span.start, span.end),
                 }],
