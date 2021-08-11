@@ -180,7 +180,11 @@ impl Transpiler {
                         Exp::Id(declarator),
                     ))
                 }
-                ref e => unimplemented!("{}", self.reporter.unimplemented(expression.span, &format!("{:?}", e)))
+                ref e => unimplemented!(
+                    "{}",
+                    self.reporter
+                        .unimplemented(expression.span, &format!("{:?}", e))
+                ),
             },
             Initializer::List(list) => unimplemented!(
                 "{}",
