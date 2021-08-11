@@ -239,7 +239,23 @@ impl Transpiler {
                     Exp::Id(left_id.name.to_string()),
                 ))
             }
-            (Expression::Identifier(_), right) => self.transpile_expression(right),
+            (
+                Expression::Identifier(box Node {
+                    node: Identifier { name },
+                    ..
+                }),
+                right,
+            ) => {
+                let stmts = self.transpile_expression(right);
+
+                match stmts.0.last() {
+                    Some(Stmt::Expression(e)) => {
+                        Stmts::from(Stmt::Transfer(e.clone(), Exp::Id(name.to_string())))
+                    }
+                    Some(_) => stmts,
+                    None => Stmts::new(),
+                }
+            }
             (Expression::UnaryOperator(unary), right) => self.transpile_deref(&unary.node, right),
             _ => unimplemented!(),
         }

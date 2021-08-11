@@ -26,25 +26,23 @@ call main();
 }
 
 #[test]
-#[ignore]
 fn it_should_transpile_deref() {
     let c_program = r###"
     void main() {
-        int a = 7, b ;
-        int *p; // Un-initialized Pointer
-        p = &a; // Stores address of a in ptr
-        b = *p; // Put Value at ptr in b
+        int a, b;
+        int *p;
+        p = &a;
+        b = *p;
     }
     "###;
 
     let expected_osl_program = r###"
 fn main() -> #own(mut) {
     decl a;
-    transfer newResource() a;
     decl b;
     decl p;
     p mborrow a;
-    transfer *p  b;    
+    transfer *p b;
 }
 call main();
 "###;
