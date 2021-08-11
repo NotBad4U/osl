@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::ast::{Props, Prop};
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Mutability {
     ImmOwner,
@@ -69,6 +71,14 @@ impl MutabilityContext {
                 MutabilityContextItem::Variable(vm) => Some(vm.clone()),
                 _ => None,
             })
+        })
+    }
+
+    pub fn get_props_of_variable(&self, var: &str) -> Option<Props> {
+        self.get_variable_mutability(var)
+        .map(|mut_var| match mut_var {
+            Mutability::MutOwner => Props::from(Prop::Mut),
+            _ => Props::new(),
         })
     }
 }

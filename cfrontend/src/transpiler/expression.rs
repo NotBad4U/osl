@@ -14,6 +14,9 @@ impl Transpiler {
             Expression::Constant(constant) => Stmts::from(self.transpile_constant(&constant.node)),
             Expression::Cast(box Node { node: cast, .. }) => self.transpile_cast_expression(&cast),
             Expression::StringLiteral(_) => Stmts::new(),
+            Expression::UnaryOperator(box Node { node: unary, .. }) => {
+                self.transpile_unary_expression(&unary)
+            }
             e => unimplemented!("{:?}", e),
         }
     }
@@ -97,6 +100,36 @@ impl Transpiler {
                 right,
             ) => self.transpile_mutable_assign_expression(right),
             e => unimplemented!("{:?}", e),
+        }
+    }
+
+    pub(super) fn transpile_unary_expression(&self, unary: &UnaryOperatorExpression) -> Stmts {
+        match (&unary.operand.node, &unary.operator.node) {
+            (
+                Expression::Identifier(box Node {
+                    node: Identifier { name },
+                    ..
+                }),
+                UnaryOperator::PostDecrement
+                | UnaryOperator::PostIncrement
+                | UnaryOperator::PreDecrement
+                | UnaryOperator::PreIncrement,
+            ) => Stmts::from(Stmt::Transfer(
+                Exp::NewRessource(
+                    self.context
+                        .get_props_of_variable(name)
+                        .expect(&format!("the variable {} is not defined", name)),
+                ),
+                Exp::Id(name.to_string()),
+            )),
+            (
+                Expression::Identifier(box Node {
+                    node: Identifier { name },
+                    ..
+                }),
+                UnaryOperator::Indirection,
+            ) => Stmts::from(Stmt::Expression(Exp::Deref(box Exp::Id(name.to_string())))),
+            _ => Stmts::new(),
         }
     }
 
