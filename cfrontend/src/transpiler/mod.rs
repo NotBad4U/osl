@@ -218,44 +218,6 @@ impl Transpiler {
         }
     }
 
-    pub(super) fn transpile_semantic_move(&mut self, lhs: &Identifier, rhs: &Identifier) -> Stmt {
-        let left_mut = self
-            .context
-            .get_variable_mutability(lhs.name.as_str())
-            .unwrap_or_else(|| {
-                panic!(
-                    "The variable {} has not been catched by the transpiler during processing",
-                    lhs.name.as_str()
-                )
-            });
-        self.context
-            .get_variable_mutability(rhs.name.as_str())
-            .unwrap_or_else(|| {
-                panic!(
-                    "The variable {} has not been catched by the transpiler during processing",
-                    rhs.name.as_str()
-                )
-            });
-
-        match left_mut {
-            Mutability::ImmOwner => {
-                Stmt::Transfer(Exp::NewRessource(Props(vec![])), Exp::Id(lhs.name.clone()))
-            }
-            Mutability::MutOwner => Stmt::Transfer(
-                Exp::NewRessource(Props(vec![Prop::Mut])),
-                Exp::Id(lhs.name.clone()),
-            ),
-            Mutability::ImmRef => Stmt::Transfer(
-                Exp::NewRessource(Props(vec![Prop::Mut])),
-                Exp::Id(lhs.name.clone()),
-            ),
-            Mutability::MutRef => Stmt::Transfer(
-                Exp::NewRessource(Props(vec![Prop::Mut])),
-                Exp::Id(lhs.name.clone()),
-            ),
-        }
-    }
-
     pub(super) fn transpile_ref_assignment(&mut self, lhs: &Identifier, rhs: &Identifier) -> Stmt {
         let left_mut = self
             .context

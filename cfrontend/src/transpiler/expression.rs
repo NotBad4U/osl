@@ -167,9 +167,9 @@ impl Transpiler {
             )),
             // Basic assignment a = b;
             (
-                Expression::Identifier(box Node { node: left_id, .. }),
-                Expression::Identifier(box Node { node: right_id, .. }),
-            ) => Stmts::from(self.transpile_semantic_move(left_id, right_id)),
+                Expression::Identifier(box Node { node: Identifier{ name: l_id }, .. }),
+                Expression::Identifier(box Node { node: Identifier{ name: r_id }, .. }),
+            ) => Stmts::from(Stmt::Transfer(Exp::Id(l_id.to_string()), Exp::Id(r_id.into()))),
             // Address assignment a = &b;
             // We should consider this as a borrow
             (
