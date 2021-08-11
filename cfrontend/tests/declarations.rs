@@ -100,7 +100,6 @@ call main();"###;
     assert_equal_program(c_program, expected_osl_program);
 }
 
-
 #[test]
 fn it_should_transpile_simple_type_mut_borrow_declaration_with_an_init() {
     let c_program = r###"
@@ -121,7 +120,6 @@ call main();"###;
     assert_equal_program(c_program, expected_osl_program);
 }
 
-
 #[test]
 fn it_should_transpile_simple_type_borrow_declaration_with_an_init() {
     let c_program = r###"
@@ -141,7 +139,6 @@ call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
 }
-
 
 #[test]
 fn it_should_transpile_const_pointer() {

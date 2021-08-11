@@ -200,9 +200,18 @@ impl Transpiler {
             )),
             // Basic assignment a = b;
             (
-                Expression::Identifier(box Node { node: Identifier{ name: l_id }, .. }),
-                Expression::Identifier(box Node { node: Identifier{ name: r_id }, .. }),
-            ) => Stmts::from(Stmt::Transfer(Exp::Id(l_id.to_string()), Exp::Id(r_id.into()))),
+                Expression::Identifier(box Node {
+                    node: Identifier { name: l_id },
+                    ..
+                }),
+                Expression::Identifier(box Node {
+                    node: Identifier { name: r_id },
+                    ..
+                }),
+            ) => Stmts::from(Stmt::Transfer(
+                Exp::Id(l_id.to_string()),
+                Exp::Id(r_id.into()),
+            )),
             // Address assignment a = &b;
             // We should consider this as a borrow
             (

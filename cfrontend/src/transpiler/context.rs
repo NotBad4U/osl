@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::{Props, Prop};
+use crate::ast::{Prop, Props};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Mutability {
@@ -76,10 +76,10 @@ impl MutabilityContext {
 
     pub fn get_props_of_variable(&self, var: &str) -> Option<Props> {
         self.get_variable_mutability(var)
-        .map(|mut_var| match mut_var {
-            Mutability::MutOwner => Props::from(Prop::Mut),
-            _ => Props::new(),
-        })
+            .map(|mut_var| match mut_var {
+                Mutability::MutOwner => Props::from(Prop::Mut),
+                _ => Props::new(),
+            })
     }
 }
 

@@ -25,7 +25,6 @@ call main();
     assert_equal_program(c_program, expected_osl_program);
 }
 
-
 #[test]
 #[ignore]
 fn it_should_transpile_deref() {
