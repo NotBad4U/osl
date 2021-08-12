@@ -173,6 +173,7 @@ impl fmt::Display for Exp {
             Exp::Id(id) => write!(f, "{}", id),
             Exp::Call(callee, exps) => write!(f, "call {}({})", callee, exps),
             Exp::Deref(exp) => write!(f, "*{}", exp),
+            Exp::Read(exp) => write!(f, "read({})", exp),
         }
     }
 }

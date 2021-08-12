@@ -155,6 +155,7 @@ pub enum Exp {
     Id(String),
     Call(String, Exps),
     Deref(Box<Exp>),
+    Read(Box<Exp>),
 }
 
 /// Only for function arguments call
