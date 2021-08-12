@@ -76,6 +76,9 @@ impl Transpiler {
     pub(super) fn transpile_variables_declaration(&mut self, declaration: &Declaration) -> Stmts {
         let decl_mut = get_mutability_of_declaration(declaration);
 
+        // construct the props by looking at the types
+        let props = get_props_from_declaration(declaration);
+
         // get the list of identifiers and the initializer expression
         let declarations: Vec<(String, &Option<Node<Initializer>>)> = declaration
             .declarators
@@ -94,8 +97,10 @@ impl Transpiler {
 
         // store the new variables in the context map
         declarations.iter().for_each(|(id, _)| {
-            self.context
-                .insert_in_last_scope(id, MutabilityContextItem::Variable(decl_mut.clone()))
+            self.context.insert_in_last_scope(
+                id,
+                MutabilityContextItem::Variable(decl_mut.clone(), props.clone()),
+            )
         });
 
         declarations.into_iter().fold(

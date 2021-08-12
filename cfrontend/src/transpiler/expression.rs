@@ -233,12 +233,20 @@ impl Transpiler {
                     ..
                 }),
             ) => Stmts::from(self.transpile_ref_assignment(left_id, right_id)),
-            (Expression::Identifier(box Node { node: left_id, .. }), Expression::Constant(_)) => {
-                Stmts::from(Stmt::Transfer(
-                    Exp::NewRessource(Props::from(Prop::Copy)),
-                    Exp::Id(left_id.name.to_string()),
-                ))
-            }
+            (
+                Expression::Identifier(box Node {
+                    node: Identifier { name },
+                    ..
+                }),
+                Expression::Constant(_),
+            ) => Stmts::from(Stmt::Transfer(
+                Exp::NewRessource(
+                    self.context
+                        .get_props_of_variable(name)
+                        .expect(&format!("{}", name)),
+                ),
+                Exp::Id(name.to_string()),
+            )),
             (
                 Expression::Identifier(box Node {
                     node: Identifier { name },

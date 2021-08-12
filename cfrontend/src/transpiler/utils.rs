@@ -162,6 +162,22 @@ pub fn is_copyable(declaration: &Declaration) -> bool {
     init_declarator.declarator.node.derived.is_empty()
 }
 
+pub fn get_props_from_declaration(declaration: &Declaration) -> ast::Props {
+    let decl_mut = get_mutability_of_declaration(declaration);
+
+    // construct the props by looking at the types
+    let mut props = ast::Props::new();
+    if is_copyable(declaration) {
+        props.0.push(ast::Prop::Copy);
+    }
+
+    if let Mutability::MutOwner = decl_mut {
+        props.0.push(ast::Prop::Mut);
+    }
+
+    props
+}
+
 pub const LIFETIME_STR_CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
 
 pub fn generate_lifetime(i: usize) -> String {
@@ -368,5 +384,49 @@ mod test_osl_transpile {
             .expect("no typedef in the source code, please verify the validity of the test");
 
         assert!(is_typedef_declaration(&typdef_declaration.node))
+    }
+
+    #[test]
+    fn it_should_get_props_from_declaration() {
+        let config = Config::default();
+
+        let source = r#"
+        int a;
+        const int b;
+        "#
+        .to_string();
+
+        let parsed = parse_preprocessed(&config, source).expect("C test code is broken");
+
+        let declaration_a = &parsed
+            .unit
+            .0
+            .first()
+            .expect("cannot find the declaration of variable a")
+            .node;
+
+        let declaration_b = &parsed
+            .unit
+            .0
+            .get(1)
+            .expect("cannot find the declaration of variable b")
+            .node;
+
+        let declaration_a = extract!(ExternalDeclaration::Declaration(_), declaration_a).expect(
+            "no declaration of 'a' in the source code, please verify the validity of the test",
+        );
+
+        let declaration_b = extract!(ExternalDeclaration::Declaration(_), declaration_b).expect(
+            "no declaration of 'b' in the source code, please verify the validity of the test",
+        );
+
+        assert_eq!(
+            ast::Props(vec![ast::Prop::Copy, ast::Prop::Mut]),
+            get_props_from_declaration(&declaration_a.node)
+        );
+        assert_eq!(
+            ast::Props(vec![ast::Prop::Copy]),
+            get_props_from_declaration(&declaration_b.node)
+        );
     }
 }

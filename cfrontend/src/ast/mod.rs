@@ -113,13 +113,13 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Prop {
     Copy,
     Mut,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Props(pub Vec<Prop>);
 
 impl Props {

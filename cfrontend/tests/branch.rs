@@ -29,10 +29,10 @@ fn it_should_transpile_if_else_statement() {
             limit;
             @
             {
-                transfer newResource(copy) ok;
+                transfer newResource(copy,mut) ok;
             },
             {
-                transfer newResource(copy) ok;
+                transfer newResource(copy,mut) ok;
             }
         }
         call main();
