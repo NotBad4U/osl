@@ -50,7 +50,6 @@ call main();
     assert_equal_program(c_program, expected_osl_program);
 }
 
-
 #[test]
 fn it_should_transpile_assign_constant() {
     let c_program = r###"
@@ -70,7 +69,6 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
-
 
 #[test]
 fn it_should_transpile_semantic_move() {

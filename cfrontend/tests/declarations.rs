@@ -161,3 +161,24 @@ call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_declaration_with_init() {
+    let c_program = r###"
+        void main() {
+            int a = 0;
+            const int b = 0;
+        }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #own(mut) {
+decl a;
+transfer newResource(mut,copy) a;
+decl b;
+transfer newResource(copy) b;
+}
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
