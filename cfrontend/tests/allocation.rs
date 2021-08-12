@@ -25,3 +25,27 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+
+#[test]
+fn it_should_transpile_deallocation() {
+    let c_program = r###"
+    void main() {
+        int* ptr;
+        ptr = (int*) malloc(n * sizeof(int));
+        free(ptr);
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #own(mut) {
+decl ptr;
+transfer newResource() ptr;
+deallocate ptr;
+}
+
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
