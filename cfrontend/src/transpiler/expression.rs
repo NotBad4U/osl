@@ -28,9 +28,9 @@ impl Transpiler {
     fn transpile_constant(&self, constant: &Constant) -> Stmt {
         match constant {
             Constant::Float(_) | Constant::Integer(_) => {
-                Stmt::Val(Exp::NewRessource(Props::from(Prop::Copy)))
+                Stmt::Val(Exp::NewResource(Props::from(Prop::Copy)))
             }
-            Constant::Character(_) => Stmt::Val(Exp::NewRessource(Props::new())),
+            Constant::Character(_) => Stmt::Val(Exp::NewResource(Props::new())),
         }
     }
 
@@ -115,7 +115,7 @@ impl Transpiler {
                 | UnaryOperator::PreDecrement
                 | UnaryOperator::PreIncrement,
             ) => Stmts::from(Stmt::Transfer(
-                Exp::NewRessource(
+                Exp::NewResource(
                     self.context
                         .get_props_of_variable(name)
                         .expect(&format!("the variable {} is not defined", name)),
@@ -195,7 +195,7 @@ impl Transpiler {
                     ..
                 }),
             ) if utils::is_allocate_memory_function(name) => Stmts::from(Stmt::Transfer(
-                Exp::NewRessource(utils::get_props_from_declarator(&declarator)),
+                Exp::NewResource(utils::get_props_from_declarator(&declarator)),
                 Exp::Id(left_id.to_string()),
             )),
             // Basic assignment a = b;
@@ -240,7 +240,7 @@ impl Transpiler {
                 }),
                 Expression::Constant(_),
             ) => Stmts::from(Stmt::Transfer(
-                Exp::NewRessource(
+                Exp::NewResource(
                     self.context
                         .get_props_of_variable(name)
                         .expect(&format!("{}", name)),

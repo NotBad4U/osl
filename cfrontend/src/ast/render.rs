@@ -169,7 +169,7 @@ impl fmt::Display for Exps {
 impl fmt::Display for Exp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Exp::NewRessource(props) => write!(f, "newResource({})", props),
+            Exp::NewResource(props) => write!(f, "newResource({})", props),
             Exp::Id(id) => write!(f, "{}", id),
             Exp::Call(callee, exps) => write!(f, "call {}({})", callee, exps),
             Exp::Deref(exp) => write!(f, "*{}", exp),

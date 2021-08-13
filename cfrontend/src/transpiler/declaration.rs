@@ -180,10 +180,7 @@ impl Transpiler {
                         props.0.push(Prop::Copy);
                     }
 
-                    Stmts::from(Stmt::Transfer(
-                        Exp::NewRessource(props),
-                        Exp::Id(declarator),
-                    ))
+                    Stmts::from(Stmt::Transfer(Exp::NewResource(props), Exp::Id(declarator)))
                 }
                 ref e => unimplemented!(
                     "{}",

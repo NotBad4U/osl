@@ -151,7 +151,7 @@ impl ops::Deref for Props {
 
 #[derive(Debug, Clone)]
 pub enum Exp {
-    NewRessource(Props),
+    NewResource(Props),
     Id(String),
     Call(String, Exps),
     Deref(Box<Exp>),
