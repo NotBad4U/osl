@@ -14,9 +14,9 @@ fn it_should_transpile_call_expression() {
     "###;
 
     let expected_osl_program = r###"
-fn foo(x:#own(mut)) -> #own(mut) {}
+fn foo(x:#own(mut)) ->  #voidTy {}
 
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
 call foo(x);
 }
 call main();
@@ -37,7 +37,7 @@ fn it_should_transpile_deref() {
     "###;
 
     let expected_osl_program = r###"
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
     decl a;
     decl b;
     decl p;
@@ -60,7 +60,7 @@ fn it_should_transpile_assign_constant() {
     "###;
 
     let expected_osl_program = r###"
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
     decl a;
     transfer newResource(copy, mut) a;
 }
@@ -80,7 +80,7 @@ fn it_should_transpile_semantic_move() {
     "###;
 
     let expected_osl_program = r###"
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
     decl a;
     decl b;
     transfer a b;

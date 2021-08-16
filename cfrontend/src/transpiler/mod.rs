@@ -77,11 +77,6 @@ impl Transpiler {
         let fn_id = get_declarator_id(&function_def.declarator.node).unwrap();
         let mut_return_type = get_return_fun_mutability_from_fun_def(function_def);
 
-        self.context.insert_in_last_scope(
-            fn_id.clone(),
-            MutabilityContextItem::Function(mut_return_type.clone()),
-        );
-
         // Inductive recursion on the compound statements
         let block_stmts = self.transpile_statement(&function_def.statement.node);
 
@@ -89,16 +84,17 @@ impl Transpiler {
             &get_function_parameters_from_declarator(&function_def.declarator.node),
         );
 
-        let mutability_return_type =
+        let return_type =
             self.transpile_return_type_function_declaration(&parameters, &mut_return_type);
 
+        self.context.insert_in_last_scope(
+            fn_id.clone(),
+            MutabilityContextItem::Function(return_type.clone()),
+        );
+
         // Create the AST OSL corresponding node
-        self.stmts.push(Stmt::Function(
-            fn_id,
-            parameters,
-            mutability_return_type,
-            block_stmts,
-        ));
+        self.stmts
+            .push(Stmt::Function(fn_id, parameters, return_type, block_stmts));
 
         self.context.pop_last_scope();
     }
@@ -106,7 +102,7 @@ impl Transpiler {
     fn transpile_return_type_function_declaration(
         &mut self,
         params: &Parameters,
-        mutability_function: &Mutability,
+        mutability_function: &Option<Mutability>,
     ) -> Type {
         // if there is exactly one input lifetime parameter (in other words, the only parameter is a reference),
         // that lifetime is assigned to all output lifetime parameters:
@@ -114,17 +110,20 @@ impl Transpiler {
         // The rule apply even if the parameter and return type are different.
         match (params.0.as_slice(), mutability_function) {
             // The only parameter and return type are references
+            (_, None) => Type::VoidTy,
             (
                 [Parameter(_, Type::Ref(lifetime, mutability))],
-                Mutability::ImmRef | Mutability::MutRef,
+                Some(Mutability::ImmRef) | Some(Mutability::MutRef),
             ) => Type::Ref(lifetime.to_string(), box *mutability.clone()),
-            (_, Mutability::ImmOwner) => Type::Own(Props(vec![])),
-            (_, Mutability::MutOwner) => Type::Own(Props(vec![Prop::Mut])),
-            (_, Mutability::MutRef) => {
+            (_, Some(Mutability::ImmOwner)) => Type::Own(Props(vec![])),
+            (_, Some(Mutability::MutOwner)) => Type::Own(Props(vec![Prop::Mut])),
+            (_, Some(Mutability::MutRef)) => {
                 // To avoid conflict on lifetime lexical name, we use "rt" has the default name for return
                 Type::Ref("rt".to_string(), box Type::Own(Props(vec![Prop::Mut])))
             }
-            (_, Mutability::ImmRef) => Type::Ref("rt".to_string(), box Type::Own(Props(vec![]))),
+            (_, Some(Mutability::ImmRef)) => {
+                Type::Ref("rt".to_string(), box Type::Own(Props(vec![])))
+            }
         }
     }
 

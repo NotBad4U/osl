@@ -91,7 +91,7 @@ fn it_should_transpile_simple_type_declaration_with_an_init() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() -> #own(mut) {
+    let expected_osl_program = r###"fn main() -> #voidTy {
 decl a;
 transfer newResource(mut,copy) a;
 }
@@ -109,7 +109,7 @@ fn it_should_transpile_simple_type_mut_borrow_declaration_with_an_init() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() -> #own(mut) {
+    let expected_osl_program = r###"fn main() ->  #voidTy {
 decl a;
 transfer newResource(mut,copy) a;
 decl b;
@@ -129,7 +129,7 @@ fn it_should_transpile_simple_type_borrow_declaration_with_an_init() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() -> #own(mut) {
+    let expected_osl_program = r###"fn main() ->  #voidTy {
 decl a;
 transfer newResource(copy) a;
 decl b;
@@ -150,7 +150,7 @@ fn it_should_transpile_const_pointer() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() -> #own(mut) {
+    let expected_osl_program = r###"fn main() ->  #voidTy {
 decl a;
 decl b;
 b mborrow a;
@@ -172,7 +172,7 @@ fn it_should_transpile_declaration_with_init() {
     "###;
 
     let expected_osl_program = r###"
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
 decl a;
 transfer newResource(mut,copy) a;
 decl b;

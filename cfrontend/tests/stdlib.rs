@@ -3,7 +3,7 @@ use common::assert_equal_program_from_file;
 
 #[test]
 fn it_should_transpile_stdlibs() {
-    let expected_osl_program = r###"    
+    let expected_osl_program = r###"
 decl stdin;
 decl stdout;
 decl stderr;

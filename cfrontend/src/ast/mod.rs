@@ -92,7 +92,7 @@ impl Stmts {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Own(Props),
     Ref(LifetimeMarker, Box<Type>),

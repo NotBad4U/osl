@@ -1,7 +1,7 @@
 use lang_c::ast::*;
 use lang_c::span::Node;
 
-use crate::ast;
+use crate::ast::*;
 use crate::transpiler::context::Mutability;
 
 // FIXME: support multiple init declarator
@@ -46,23 +46,43 @@ pub fn get_function_parameters_from_declarator(
 }
 
 /// extract the mutability value from a C function definition
-pub fn get_return_fun_mutability_from_fun_def(function_def: &FunctionDefinition) -> Mutability {
+pub fn get_return_fun_mutability_from_fun_def(
+    function_def: &FunctionDefinition,
+) -> Option<Mutability> {
     let specifiers = &function_def.specifiers.as_slice();
     let declarator = &function_def.declarator.node;
 
     if is_a_ref(declarator) {
         if is_a_ref_const(declarator) {
-            Mutability::ImmRef
+            Some(Mutability::ImmRef)
         } else {
-            Mutability::MutRef
+            Some(Mutability::MutRef)
         }
     } else {
+        if is_void(specifiers) {
+            return None;
+        }
+
         if is_const(specifiers) {
-            Mutability::ImmOwner
+            Some(Mutability::ImmOwner)
         } else {
-            Mutability::MutOwner
+            Some(Mutability::MutOwner)
         }
     }
+}
+
+/// Check if the type specifier is void
+pub fn is_void(specifiers: &[Node<DeclarationSpecifier>]) -> bool {
+    matches!(
+        specifiers,
+        [Node {
+            node: DeclarationSpecifier::TypeSpecifier(Node {
+                node: TypeSpecifier::Void,
+                ..
+            }),
+            ..
+        },]
+    )
 }
 
 pub fn is_a_function(declarator: &Declarator) -> bool {
@@ -162,17 +182,17 @@ pub fn is_copyable(declaration: &Declaration) -> bool {
     init_declarator.declarator.node.derived.is_empty()
 }
 
-pub fn get_props_from_declaration(declaration: &Declaration) -> ast::Props {
+pub fn get_props_from_declaration(declaration: &Declaration) -> Props {
     let decl_mut = get_mutability_of_declaration(declaration);
 
     // construct the props by looking at the types
-    let mut props = ast::Props::new();
+    let mut props = Props::new();
     if is_copyable(declaration) {
-        props.0.push(ast::Prop::Copy);
+        props.0.push(Prop::Copy);
     }
 
     if let Mutability::MutOwner = decl_mut {
-        props.0.push(ast::Prop::Mut);
+        props.0.push(Prop::Mut);
     }
 
     props
@@ -195,11 +215,11 @@ pub fn is_deallocate_memory_function(func: &str) -> bool {
     func == "free"
 }
 
-pub fn get_props_from_declarator(declarator: &Option<Node<Declarator>>) -> ast::Props {
-    let mut props = ast::Props(vec![]);
+pub fn get_props_from_declarator(declarator: &Option<Node<Declarator>>) -> Props {
+    let mut props = Props(vec![]);
 
     if let None = declarator {
-        props.0.push(ast::Prop::Copy)
+        props.0.push(Prop::Copy)
     }
 
     props
@@ -421,11 +441,11 @@ mod test_osl_transpile {
         );
 
         assert_eq!(
-            ast::Props(vec![ast::Prop::Copy, ast::Prop::Mut]),
+            Props(vec![Prop::Copy, Prop::Mut]),
             get_props_from_declaration(&declaration_a.node)
         );
         assert_eq!(
-            ast::Props(vec![ast::Prop::Copy]),
+            Props(vec![Prop::Copy]),
             get_props_from_declaration(&declaration_b.node)
         );
     }

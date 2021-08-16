@@ -19,7 +19,7 @@ fn it_should_transpile_if_else_statement() {
     "###;
 
     let expected_osl_program = r###"
-        fn main() -> #own(mut) {
+        fn main() ->  #voidTy {
             decl age;
             transfer newResource(mut,copy) age;
             decl limit;
@@ -58,7 +58,7 @@ fn it_should_transpile_nested_if_else_statements() {
 
     // Note that the transpiler ignore empty else condition
     let expected_osl_program = r###"
-    fn main() -> #own(mut) {
+    fn main() ->  #voidTy {
         decl x;
         x;
         @{

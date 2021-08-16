@@ -13,7 +13,7 @@ fn it_should_transpile_dynamic_memory_allocation() {
     "###;
 
     let expected_osl_program = r###"
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
 decl ptr;
 transfer newResource() ptr;
 transfer newResource() ptr;
@@ -37,7 +37,7 @@ fn it_should_transpile_deallocation() {
     "###;
 
     let expected_osl_program = r###"
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
 decl ptr;
 transfer newResource() ptr;
 deallocate ptr;

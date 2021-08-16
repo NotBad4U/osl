@@ -17,7 +17,7 @@ fn foo(x:#ref('a,#own(mut))) -> #ref('a,#own(mut)) {
     x;
 }
 
-fn main() -> #own(mut) {
+fn main() -> #voidTy {
 }
 
 call main();
@@ -38,7 +38,7 @@ fn each_parameter_gets_its_own_lifetime() {
 fn foo(x:#ref('a,#own(mut)),y:#ref('b,#own(mut)),z:#ref('c,#own(mut))) -> #ref('rt,#own(mut)) {
 }
 
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
 }
 
 call main();
@@ -71,7 +71,7 @@ fn mutable_ref() -> #ref('rt,#own(mut)) {
 fn immutable_ref() -> #ref('rt,#own(mut)) {
 }
 
-fn main() -> #own(mut) {
+fn main() ->  #voidTy {
 }
 call main();
 "###;
@@ -80,7 +80,6 @@ call main();
 }
 
 #[test]
-#[ignore]
 fn it_should_transpile_void_type_to_voidty() {
     let c_program = r###"
     void main() {}
