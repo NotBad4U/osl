@@ -121,6 +121,7 @@ impl fmt::Display for Stmt {
             Stmt::Loop(block) => write!(f, "!{{\n{}\n}}", block),
             Stmt::Deallocate(exp) => write!(f, "deallocate {};", exp),
             Stmt::Comment(comment) => write!(f, "// {}", comment),
+            Stmt::Return(e) => write!(f, "{}", e), // like expression but without semicolon
         }
     }
 }

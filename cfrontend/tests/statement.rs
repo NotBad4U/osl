@@ -23,7 +23,6 @@ call main();
     assert_equal_program(c_program, expected_osl_program);
 }
 
-
 #[test]
 #[should_panic]
 fn it_should_not_support_goto() {
@@ -36,6 +35,27 @@ fn it_should_not_support_goto() {
 
     let expected_osl_program = r###"
 fn main() -> #voidTy {
+}
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_return() {
+    let c_program = r###"
+    int main() {
+        int a, b;
+        return a;
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #own(mut) {
+    decl a;
+    decl b;
+    a
 }
 call main();
 "###;

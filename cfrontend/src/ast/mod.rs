@@ -67,6 +67,9 @@ pub enum Stmt {
     Branch(Blocks),
     Loop(Stmts),
     Deallocate(Exp),
+    // We add this statement that is not in the original
+    // OSL syntax for simplify the transpilation work
+    Return(Exp),
 }
 
 #[derive(Debug, Clone)]

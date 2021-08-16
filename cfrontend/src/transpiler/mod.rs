@@ -289,6 +289,19 @@ impl Transpiler {
     }
 
     fn transpile_return_statement(&mut self, exp: &Expression) -> Stmts {
-        self.transpile_expression(exp)
+        let mut stmts = self.transpile_expression(exp);
+
+        let last_index = stmts.0.len() - 1;
+
+        if let Some(stmt) = stmts.0.get_mut(last_index) {
+            match stmt {
+                Stmt::Expression(e) => {
+                    *stmt = Stmt::Return((*e).clone());
+                }
+                _ => {}
+            };
+        }
+
+        stmts
     }
 }
