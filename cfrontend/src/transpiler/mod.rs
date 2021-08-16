@@ -205,7 +205,9 @@ impl Transpiler {
     pub fn transpile_statement(&mut self, statement: &Statement) -> Stmts {
         match *statement {
             Statement::Expression(Some(ref e)) => Stmts::from(self.transpile_expression(&e.node)),
+            Statement::Expression(None) => Stmts::new(),
             Statement::Return(Some(ref r)) => self.transpile_return_statement(&r.node),
+            Statement::Return(None) => Stmts::new(),
             Statement::Compound(ref block_items) => self.transpile_block_items(block_items),
             Statement::If(Node {
                 node: ref if_stmt, ..
@@ -213,7 +215,26 @@ impl Transpiler {
             Statement::While(ref while_stmt) => self.transpile_while_statement(&while_stmt.node),
             Statement::For(ref forloop) => self.transpile_forloop_statement(&forloop.node),
             Statement::DoWhile(ref dowhile) => self.transpile_dowhile_statement(&dowhile.node),
-            _ => unimplemented!(),
+            Statement::Asm(_) => Stmts::new(), // ignore it
+            Statement::Switch(Node { span, .. }) => {
+                unimplemented!("{}", self.reporter.unimplemented(span, ""))
+            }
+            Statement::Goto(Node { span, .. }) => {
+                unimplemented!(
+                    "{}",
+                    self.reporter
+                        .unimplemented(span, "OSL doesn't support unconditional jump")
+                )
+            }
+            Statement::Break => unimplemented!("break statement is not supported"),
+            Statement::Continue => Stmts::new(), // ignore it
+            Statement::Labeled(Node { span, .. }) => {
+                unimplemented!(
+                    "{}",
+                    self.reporter
+                        .unimplemented(span, "OSL doesn't support unconditional jump")
+                )
+            }
         }
     }
 
