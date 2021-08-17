@@ -22,7 +22,7 @@ fn main() {
             info!("transpiling {}...", TEST_C_FILE);
             let stmts = osl::transpile_c_program(ast, Configuration::new(true));
             println!("{}", osl::ast::render::render_program(stmts));
-        },
+        }
         Err(e) => eprintln!("{}", e),
     }
 }

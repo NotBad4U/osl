@@ -25,8 +25,44 @@ fn it_should_transpile_if_else_statement() {
             decl limit;
             transfer newResource(mut,copy) limit;
             decl ok;
-            age;
-            limit;
+            read(age);
+            read(limit);
+            @
+            {
+                transfer newResource(copy,mut) ok;
+            },
+            {
+                transfer newResource(copy,mut) ok;
+            }
+        }
+        call main();
+    "###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_if_statement_and_ignore_constant() {
+    let c_program = r###"
+    void main() {
+        int age = 23;
+        int ok;
+
+        if (age >= 30) {
+            ok = 0;
+        }
+        else {
+            ok = 1;
+        }
+    }
+    "###;
+
+    let expected_osl_program = r###"
+        fn main() ->  #voidTy {
+            decl age;
+            transfer newResource(mut,copy) age;
+            decl ok;
+            read(age);
             @
             {
                 transfer newResource(copy,mut) ok;
@@ -60,13 +96,13 @@ fn it_should_transpile_nested_if_else_statements() {
     let expected_osl_program = r###"
     fn main() ->  #voidTy {
         decl x;
-        x;
+        read(x);
         @{
-            x;
+            read(x);
             @{
             }
         },{
-            x;
+            read(x);
             @{
             }
         }

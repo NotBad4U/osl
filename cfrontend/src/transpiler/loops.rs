@@ -2,7 +2,7 @@ use super::*;
 
 impl Transpiler {
     pub(super) fn transpile_while_statement(&mut self, while_stmt: &WhileStatement) -> Stmts {
-        let condition = self.transpile_expression(&while_stmt.expression.node);
+        let condition = self.transpile_boolean_condition(&while_stmt.expression.node);
         let block = self.transpile_statement(&while_stmt.statement.node);
 
         let mut stmts = condition;
@@ -11,7 +11,7 @@ impl Transpiler {
     }
 
     pub(super) fn transpile_dowhile_statement(&mut self, while_stmt: &DoWhileStatement) -> Stmts {
-        let condition = self.transpile_expression(&while_stmt.expression.node);
+        let condition = self.transpile_boolean_condition(&while_stmt.expression.node);
 
         let mut block = self.transpile_statement(&while_stmt.statement.node);
         block.0.extend(condition.0);
@@ -32,7 +32,7 @@ impl Transpiler {
         let condition = forloop_stmt
             .condition
             .as_ref()
-            .map(|cond| self.transpile_expression(&cond.node))
+            .map(|cond| self.transpile_boolean_condition(&cond.node))
             .unwrap_or(Stmts::new());
 
         let mut block = self.transpile_statement(&forloop_stmt.statement.node);

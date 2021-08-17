@@ -13,12 +13,30 @@ impl Transpiler {
             }
             Expression::Constant(constant) => Stmts::from(self.transpile_constant(&constant.node)),
             Expression::Cast(box Node { node: cast, .. }) => self.transpile_cast_expression(&cast),
-            Expression::StringLiteral(_) => Stmts::from(Stmt::Expression(Exp::NewResource(Props::new()))),
+            Expression::StringLiteral(_) => {
+                Stmts::from(Stmt::Expression(Exp::NewResource(Props::new())))
+            }
             Expression::UnaryOperator(box Node { node: unary, .. }) => {
                 self.transpile_unary_expression(&unary)
             }
             e => unimplemented!("{:?}", e),
         }
+    }
+
+    /// transpile expression but filter Val statement to only keep read and transfer
+    pub(super) fn transpile_boolean_condition(&mut self, exp: &Expression) -> Stmts {
+        self.transpile_expression(exp)
+            .0
+            .into_iter()
+            .filter(|stmt| !matches!(stmt, Stmt::Val(_)))
+            .map(|stmt| match stmt {
+                Stmt::Expression(Exp::Id(id)) => Stmt::Expression(Exp::Read(box Exp::Id(id))),
+                _ => stmt,
+            })
+            .fold(Stmts::new(), |mut acc, stmt| {
+                acc.0.push(stmt);
+                acc
+            }) // love you collect...
     }
 
     fn transpile_cast_expression(&mut self, cast: &CastExpression) -> Stmts {
@@ -48,7 +66,12 @@ impl Transpiler {
                 .arguments
                 .iter()
                 .map(|node| &node.node)
-                .map(|exp| { self.transpile_expression(&exp).first().expect("waiting an expression").clone() }) //FIXME: pb with multiple stat
+                .map(|exp| {
+                    self.transpile_expression(&exp)
+                        .first()
+                        .expect("waiting an expression")
+                        .clone()
+                }) //FIXME: pb with multiple stat
                 .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
                 .collect::<Vec<Exp>>();
             Stmts::from(Stmt::Expression(Exp::Call(callee, Exps(arguments))))
