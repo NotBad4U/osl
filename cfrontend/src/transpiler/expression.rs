@@ -1,3 +1,5 @@
+use lang_c::span::Span;
+
 use super::*;
 
 impl Transpiler {
@@ -19,7 +21,12 @@ impl Transpiler {
             Expression::UnaryOperator(box Node { node: unary, .. }) => {
                 self.transpile_unary_expression(&unary)
             }
-            e => unimplemented!("{:?}", e),
+            e => {
+                unimplemented!(
+                    "{}",
+                    self.reporter.unimplemented(get_span_from_expression(e), "")
+                )
+            }
         }
     }
 
@@ -126,8 +133,9 @@ impl Transpiler {
         }
     }
 
-    pub(super) fn transpile_unary_expression(&self, unary: &UnaryOperatorExpression) -> Stmts {
+    pub(super) fn transpile_unary_expression(&mut self, unary: &UnaryOperatorExpression) -> Stmts {
         match (&unary.operand.node, &unary.operator.node) {
+            // ++T, --T, T++, T--
             (
                 Expression::Identifier(box Node {
                     node: Identifier { name },
@@ -145,6 +153,7 @@ impl Transpiler {
                 ),
                 Exp::Id(name.to_string()),
             )),
+            // *T
             (
                 Expression::Identifier(box Node {
                     node: Identifier { name },
@@ -152,7 +161,15 @@ impl Transpiler {
                 }),
                 UnaryOperator::Indirection,
             ) => Stmts::from(Stmt::Expression(Exp::Deref(box Exp::Id(name.to_string())))),
-            _ => Stmts::new(),
+            // &T
+            (e, UnaryOperator::Address) => self.transpile_expression(e),
+            (operand, _) => {
+                unimplemented!(
+                    "{}",
+                    self.reporter
+                        .unimplemented(get_span_from_expression(operand), "")
+                )
+            }
         }
     }
 
@@ -307,5 +324,27 @@ impl Transpiler {
             }
             _ => Stmts::new(),
         }
+    }
+}
+
+fn get_span_from_expression(e: &Expression) -> Span {
+    match e {
+        Expression::Identifier(box node) => node.span,
+        Expression::Call(box node) => node.span,
+        Expression::BinaryOperator(box node) => node.span,
+        Expression::Constant(box node) => node.span,
+        Expression::Cast(box node) => node.span,
+        Expression::StringLiteral(node) => node.span,
+        Expression::UnaryOperator(node) => node.span,
+        Expression::CompoundLiteral(box node) => node.span,
+        Expression::GenericSelection(box node) => node.span,
+        Expression::Member(box node) => node.span,
+        Expression::SizeOf(box node) => node.span,
+        Expression::AlignOf(box node) => node.span,
+        Expression::Conditional(box node) => node.span,
+        Expression::Comma(box exps) => get_span_from_expression(&exps.first().unwrap().node),
+        Expression::VaArg(box node) => node.span,
+        Expression::Statement(box node) => node.span,
+        Expression::OffsetOf(box node) => node.span,
     }
 }
