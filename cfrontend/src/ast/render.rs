@@ -27,7 +27,7 @@ fn render_stmt(stmt: &Stmt, level: usize) -> String {
                 .iter()
                 .map(|stmt| render_stmt(stmt, level + INDENTATION_SIZE))
                 .for_each(|stmt_str| buff.push_str(&format!("{}", stmt_str)));
-            buff.push_str(&format!("}}\n\n"));
+            buff.push_str(&format!("}};\n\n"));
         }
         Stmt::Branch(blocks) => {
             buff.push_str(&format!("{:indent$}@\n", "", indent = level));
@@ -108,7 +108,7 @@ impl fmt::Display for Stmt {
             Stmt::Function(id, params, return_type, stmts) => {
                 writeln!(f, "fn {}({}) -> {} {{", id, params, return_type).unwrap();
                 write!(f, "{}", stmts).unwrap();
-                writeln!(f, "}}\n")
+                writeln!(f, "}};\n")
             }
             Stmt::Val(exp) => write!(f, "val({})", exp),
             Stmt::Transfer(e1, e2) => write!(f, "transfer {} {};", e1, e2),

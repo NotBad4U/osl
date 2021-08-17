@@ -93,3 +93,31 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_adress_argument() {
+    let c_program = r###"
+    void foo(int * a, int b) {
+
+    }
+
+    void main() {
+        int a, b;
+        foo(&a, b);
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn foo(a:#ref('a,#own(mut)),b:#own(mut)) -> #voidTy {
+}
+
+fn main() -> #voidTy {
+    decl a;
+    decl b;
+    call foo(a,b);
+}
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}

@@ -4,10 +4,10 @@
 #[macro_use]
 extern crate log;
 
+use cfrontend::configuration::Configuration;
 use env_logger::Builder;
 use lang_c::driver::Config;
 use log::LevelFilter;
-use osl::configuration::Configuration;
 
 const TEST_C_FILE: &str = "test.c";
 
@@ -20,8 +20,8 @@ fn main() {
     match lang_c::driver::parse(&Config::default(), TEST_C_FILE) {
         Ok(ast) => {
             info!("transpiling {}...", TEST_C_FILE);
-            let stmts = osl::transpile_c_program(ast, Configuration::new(true));
-            println!("{}", osl::ast::render::render_program(stmts));
+            let stmts = cfrontend::transpile_c_program(ast, Configuration::new(true));
+            println!("{}", cfrontend::ast::render::render_program(stmts));
         }
         Err(e) => eprintln!("{}", e),
     }

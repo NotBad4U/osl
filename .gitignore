@@ -32,3 +32,9 @@ k
 
 cfrontend/target
 cfrontend/*.c
+
+# Added by cargo
+
+/target
+
+*.c

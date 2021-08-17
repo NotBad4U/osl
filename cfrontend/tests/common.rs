@@ -1,18 +1,18 @@
+use cfrontend::{ast, configuration::Configuration};
 use lang_c::driver::{parse, parse_preprocessed, Config};
-use osl::{ast, configuration::Configuration};
 
 #[allow(dead_code)]
 fn transpile_preprocessed_c_program(c_program: String) -> ast::Stmts {
-    let config = Config::default();
-    let ast = parse_preprocessed(&config, c_program.clone()).unwrap();
-    osl::transpile_c_program(ast, Configuration::new(false))
+    match parse_preprocessed(&Config::default(), c_program.clone()) {
+        Ok(ast) => cfrontend::transpile_c_program(ast, Configuration::new(false)),
+        Err(e) => panic!("{}", e),
+    }
 }
 
 #[allow(dead_code)]
 fn transpile_c_program(path: &str) -> ast::Stmts {
-    let config = Config::default();
-    let ast = parse(&config, path).unwrap();
-    osl::transpile_c_program(ast, Configuration::new(false))
+    let ast = parse(&Config::default(), path).unwrap();
+    cfrontend::transpile_c_program(ast, Configuration::new(false))
 }
 
 #[allow(dead_code)]
