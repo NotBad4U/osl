@@ -13,16 +13,16 @@ const TEST_C_FILE: &str = "test.c";
 
 fn main() {
     let mut builder = Builder::from_default_env();
-
     builder.filter(None, LevelFilter::Info).init();
 
-    let config = Config::default();
+    info!("parsing {}...", TEST_C_FILE);
 
-    let parsed_ast = lang_c::driver::parse(&config, TEST_C_FILE).unwrap();
-
-    //println!("{:#?}", parsed_ast.unit);
-
-    let stmts = osl::transpile_c_program(parsed_ast, Configuration::new(true));
-
-    println!("{}", osl::ast::render::render_program(stmts));
+    match lang_c::driver::parse(&Config::default(), TEST_C_FILE) {
+        Ok(ast) => {
+            info!("transpiling {}...", TEST_C_FILE);
+            let stmts = osl::transpile_c_program(ast, Configuration::new(true));
+            println!("{}", osl::ast::render::render_program(stmts));
+        },
+        Err(e) => eprintln!("{}", e),
+    }
 }
