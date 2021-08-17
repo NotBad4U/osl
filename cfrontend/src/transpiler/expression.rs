@@ -13,7 +13,7 @@ impl Transpiler {
             }
             Expression::Constant(constant) => Stmts::from(self.transpile_constant(&constant.node)),
             Expression::Cast(box Node { node: cast, .. }) => self.transpile_cast_expression(&cast),
-            Expression::StringLiteral(_) => Stmts::new(),
+            Expression::StringLiteral(_) => Stmts::from(Stmt::Expression(Exp::NewResource(Props::new()))),
             Expression::UnaryOperator(box Node { node: unary, .. }) => {
                 self.transpile_unary_expression(&unary)
             }
@@ -48,7 +48,7 @@ impl Transpiler {
                 .arguments
                 .iter()
                 .map(|node| &node.node)
-                .map(|exp| self.transpile_expression(&exp).first().unwrap().clone()) //FIXME: pb with multiple stat
+                .map(|exp| { self.transpile_expression(&exp).first().expect("waiting an expression").clone() }) //FIXME: pb with multiple stat
                 .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
                 .collect::<Vec<Exp>>();
             Stmts::from(Stmt::Expression(Exp::Call(callee, Exps(arguments))))
