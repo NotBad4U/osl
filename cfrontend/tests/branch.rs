@@ -33,8 +33,8 @@ fn it_should_transpile_if_else_statement() {
             },
             {
                 transfer newResource(copy,mut) ok;
-            }
-        }
+            };
+        };
         call main();
     "###;
 
@@ -69,8 +69,8 @@ fn it_should_transpile_if_statement_and_ignore_constant() {
             },
             {
                 transfer newResource(copy,mut) ok;
-            }
-        }
+            };
+        };
         call main();
     "###;
 

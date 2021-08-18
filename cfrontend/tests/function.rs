@@ -15,10 +15,10 @@ fn the_lifetime_of_the_one_input_parameter_gets_assigned_to_the_output_lifetime(
     let expected_osl_program = r###"
 fn foo(x:#ref('a,#own(mut))) -> #ref('a,#own(mut)) {
     x
-}
+};
 
 fn main() -> #voidTy {
-}
+};
 
 call main();
 "###;
@@ -36,10 +36,10 @@ fn each_parameter_gets_its_own_lifetime() {
 
     let expected_osl_program = r###"
 fn foo(x:#ref('a,#own(mut)),y:#ref('b,#own(mut)),z:#ref('c,#own(mut))) -> #ref('rt,#own(mut)) {
-}
+};
 
 fn main() ->  #voidTy {
-}
+};
 
 call main();
 "###;
@@ -60,19 +60,19 @@ fn it_should_find_the_mutability_of_the_return_type() {
 
     let expected_osl_program = r###"
 fn mutable() -> #own(mut) {
-}
+};
 
 fn immutable() -> #own() {
-}
+};
 
 fn mutable_ref() -> #ref('rt,#own(mut)) {
-}
+};
 
 fn immutable_ref() -> #ref('rt,#own(mut)) {
-}
+};
 
 fn main() ->  #voidTy {
-}
+};
 call main();
 "###;
 
@@ -87,7 +87,7 @@ fn it_should_transpile_void_type_to_voidty() {
 
     let expected_osl_program = r###"
 fn main() -> #voidTy {
-}
+};
 call main();
 "###;
 
@@ -109,13 +109,13 @@ fn it_should_transpile_adress_argument() {
 
     let expected_osl_program = r###"
 fn foo(a:#ref('a,#own(mut)),b:#own(mut)) -> #voidTy {
-}
+};
 
 fn main() -> #voidTy {
     decl a;
     decl b;
     call foo(a,b);
-}
+};
 call main();
 "###;
 

@@ -13,12 +13,12 @@ fn it_should_transpile_dynamic_memory_allocation() {
     "###;
 
     let expected_osl_program = r###"
-fn main() ->  #voidTy {
+fn main() -> #voidTy {
 decl ptr;
 transfer newResource() ptr;
 transfer newResource() ptr;
 transfer newResource() ptr;
-}
+};
 
 call main();
 "###;
@@ -37,11 +37,11 @@ fn it_should_transpile_deallocation() {
     "###;
 
     let expected_osl_program = r###"
-fn main() ->  #voidTy {
+fn main() -> #voidTy {
 decl ptr;
 transfer newResource() ptr;
 deallocate ptr;
-}
+};
 
 call main();
 "###;

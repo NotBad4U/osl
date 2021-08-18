@@ -16,7 +16,7 @@ fn it_should_ignore_inline_assembly() {
 
     let expected_osl_program = r###"
 fn main() -> #voidTy {
-}
+};
 call main();
 "###;
 
@@ -28,14 +28,13 @@ call main();
 fn it_should_not_support_goto() {
     let c_program = r###"
     void main() {
-        loop:
         goto loop;
     }
     "###;
 
     let expected_osl_program = r###"
 fn main() -> #voidTy {
-}
+};
 call main();
 "###;
 
@@ -56,7 +55,7 @@ fn main() -> #own(mut) {
     decl a;
     decl b;
     a
-}
+};
 call main();
 "###;
 

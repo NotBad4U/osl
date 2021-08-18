@@ -91,10 +91,11 @@ fn it_should_transpile_simple_type_declaration_with_an_init() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() -> #voidTy {
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
 decl a;
 transfer newResource(mut,copy) a;
-}
+};
 call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
@@ -109,12 +110,12 @@ fn it_should_transpile_simple_type_mut_borrow_declaration_with_an_init() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() ->  #voidTy {
+    let expected_osl_program = r###"fn main() -> #voidTy {
 decl a;
 transfer newResource(mut,copy) a;
 decl b;
 b mborrow a;
-}
+};
 call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
@@ -129,12 +130,13 @@ fn it_should_transpile_simple_type_borrow_declaration_with_an_init() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() ->  #voidTy {
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
 decl a;
 transfer newResource(copy) a;
 decl b;
 b borrow a;
-}
+};
 call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
@@ -150,13 +152,14 @@ fn it_should_transpile_const_pointer() {
         }
     "###;
 
-    let expected_osl_program = r###"fn main() ->  #voidTy {
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
 decl a;
 decl b;
 b mborrow a;
 decl c;
 c borrow a;
-}
+};
 call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
@@ -172,12 +175,12 @@ fn it_should_transpile_declaration_with_init() {
     "###;
 
     let expected_osl_program = r###"
-fn main() ->  #voidTy {
+fn main() -> #voidTy {
 decl a;
 transfer newResource(mut,copy) a;
 decl b;
 transfer newResource(copy) b;
-}
+};
 call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
