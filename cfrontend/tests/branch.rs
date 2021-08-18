@@ -94,21 +94,80 @@ fn it_should_transpile_nested_if_else_statements() {
 
     // Note that the transpiler ignore empty else condition
     let expected_osl_program = r###"
-    fn main() ->  #voidTy {
+    fn main() -> #voidTy {
         decl x;
         read(x);
         @{
             read(x);
             @{
-            }
+            };
         },{
             read(x);
             @{
-            }
-        }
-    }
+            };
+        };
+    };
     call main();
     "###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+fn it_should_transpile_switch_statement() {
+    let c_program = r###"
+    int main () {
+
+        /* local variable definition */
+        char grade = 'B';
+     
+        switch(grade) {
+           case 'A' :
+              printf("Excellent!\n" );
+              break;
+           case 'B' :
+           case 'C' :
+              printf("Well done\n" );
+              break;
+           case 'D' :
+              printf("You passed\n" );
+              break;
+           case 'F' :
+              printf("Better try again\n" );
+              break;
+           default :
+              printf("Invalid grade\n" );
+        }
+
+        printf("Your grade is  %c\n", grade );
+
+        return 0;
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl grade;
+    transfer newResource(mut) grade;
+    read(grade);
+    @
+    {
+        call printf();
+    },
+    {
+        call printf();
+    },
+    {
+        call printf();
+    },
+    {
+        call printf();
+    };
+    call printf(grade);
+    val(newResource(copy))
+};
+
+call main();
+"###;
 
     assert_equal_program(c_program, expected_osl_program);
 }

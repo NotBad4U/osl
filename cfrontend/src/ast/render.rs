@@ -45,7 +45,7 @@ fn render_stmt(stmt: &Stmt, level: usize) -> String {
                 })
                 .join(",\n");
 
-            buff.push_str(&format!("{}\n", &blocks_s))
+            buff.push_str(&format!("{};\n", &blocks_s))
         }
         Stmt::Loop(block) => {
             buff.push_str(&format!("{:indent$}!{{\n", "", indent = level));

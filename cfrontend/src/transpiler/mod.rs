@@ -216,9 +216,7 @@ impl Transpiler {
             Statement::For(ref forloop) => self.transpile_forloop_statement(&forloop.node),
             Statement::DoWhile(ref dowhile) => self.transpile_dowhile_statement(&dowhile.node),
             Statement::Asm(_) => Stmts::new(), // ignore it
-            Statement::Switch(Node { span, .. }) => {
-                unimplemented!("{}", self.reporter.unimplemented(span, ""))
-            }
+            Statement::Switch(Node { ref node, .. }) => self.transpile_switch_case(node),
             Statement::Goto(Node { span, .. }) => {
                 unimplemented!(
                     "{}",
@@ -228,13 +226,7 @@ impl Transpiler {
             }
             Statement::Break => unimplemented!("break statement is not supported"),
             Statement::Continue => Stmts::new(), // ignore it
-            Statement::Labeled(Node { span, .. }) => {
-                unimplemented!(
-                    "{}",
-                    self.reporter
-                        .unimplemented(span, "OSL doesn't support unconditional jump")
-                )
-            }
+            Statement::Labeled(_) => Stmts::new(),
         }
     }
 
@@ -301,6 +293,37 @@ impl Transpiler {
                 _ => {}
             };
         }
+
+        stmts
+    }
+
+    fn transpile_switch_case(&mut self, switch: &SwitchStatement) -> Stmts {
+        let condition = self.transpile_boolean_condition(&switch.expression.node);
+        let mut blocks = Blocks(vec![]);
+
+        if let Statement::Compound(ref stmts) = switch.statement.node {
+            blocks = stmts
+                .iter()
+                .map(|ref stmt| match &stmt.node {
+                    BlockItem::Statement(Node {
+                        node:
+                            Statement::Labeled(Node {
+                                node: LabeledStatement { box statement, .. },
+                                ..
+                            }),
+                        ..
+                    }) => self.transpile_statement(&statement.node),
+                    _ => Stmts::new(),
+                })
+                .filter(|stmts| stmts.is_empty() == false) // filter the Break and empty block
+                .fold(Blocks(vec![]), |mut acc, stmts| {
+                    acc.0.push(stmts);
+                    acc
+                });
+        }
+
+        let mut stmts = Stmts::from(condition);
+        stmts.0.push(Stmt::Branch(blocks));
 
         stmts
     }
