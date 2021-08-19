@@ -50,7 +50,7 @@ fn render_stmt(stmt: &Stmt, level: usize) -> String {
         Stmt::Loop(block) => {
             buff.push_str(&format!("{:indent$}!{{\n", "", indent = level));
             buff.push_str(&render_stmts(block, level + INDENTATION_SIZE));
-            buff.push_str(&format!("{:indent$}}}\n", "", indent = level));
+            buff.push_str(&format!("{:indent$}}};\n", "", indent = level));
         }
         e => buff.push_str(&format!("{:indent$}{}\n", "", e, indent = level)),
     }

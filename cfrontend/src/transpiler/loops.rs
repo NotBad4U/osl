@@ -3,7 +3,10 @@ use super::*;
 impl Transpiler {
     pub(super) fn transpile_while_statement(&mut self, while_stmt: &WhileStatement) -> Stmts {
         let condition = self.transpile_boolean_condition(&while_stmt.expression.node);
-        let block = self.transpile_statement(&while_stmt.statement.node);
+        let mut block = self.transpile_statement(&while_stmt.statement.node);
+
+        block.0.push(Stmt::Comment("loop invariant".into()));
+        block.0.extend(condition.0.clone());
 
         let mut stmts = condition;
         stmts.0.push(Stmt::Loop(block));
@@ -44,8 +47,14 @@ impl Transpiler {
             .unwrap_or(Stmts::new());
         block.0.extend(step.0);
 
+        stmts.0.push(Stmt::Comment("loop init".into()));
         stmts.0.extend(initializer.0);
-        stmts.0.extend(condition.0);
+
+        stmts.0.push(Stmt::Comment("loop invariant".into()));
+        stmts.0.extend(condition.0.clone());
+
+        block.0.push(Stmt::Comment("loop invariant".into()));
+        block.0.extend(condition.0);
         stmts.0.push(Stmt::Loop(block));
 
         stmts
