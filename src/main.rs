@@ -5,6 +5,7 @@ use cfrontend::configuration::Configuration;
 use env_logger::Builder;
 use lang_c::driver::Config;
 use log::LevelFilter;
+use regex::Regex;
 use structopt::StructOpt;
 
 use std::error::Error;
@@ -52,8 +53,8 @@ struct Opt {
     input: PathBuf,
 
     /// Only run the transpiler
-    #[structopt(name = "dry-run", short, long)]
-    dry_run: bool,
+    #[structopt(name = "transpile", short, long)]
+    only_transpile: bool,
 
     /// Save temporary transpiled file
     #[structopt(short, long)]
@@ -79,7 +80,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         builder.filter(None, LevelFilter::Info).init();
     }
 
-    let osl_file = opt.output.unwrap_or(PathBuf::from(format!(
+    let osl_file = opt.output.clone().unwrap_or(PathBuf::from(format!(
         "{}.osl",
         opt.input.to_string_lossy()
     )));
@@ -99,13 +100,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     setup_opam()?;
 
     info!("[4/5] Transpiling {}", opt.input.to_string_lossy());
-    transpile_c_code(opt.input, &osl_file.to_string_lossy())?;
+    transpile_c_code(&opt, &osl_file.to_string_lossy())?;
 
-    if opt.dry_run == false {
+    if opt.only_transpile == false {
         info!("[5/5] Running OSL");
-        krun(&osl_file)?;
+        let k_output = krun(&osl_file)?;
+
+        if is_valid(k_output.as_str()) {
+            info!("Program valid ✓")
+        } else {
+            error!("Program invalid ✘");
+            io::stdout().write_all(k_output.as_bytes())?;
+        }
     } else {
-        info!("[5/5] dry-run mode active, krun will not be start")
+        info!("[5/5] dry-run mode active, krun will not be started")
     }
 
     if opt.keep == false {
@@ -139,39 +147,43 @@ fn is_osl_model_compiled() -> bool {
     Path::new("model/osl-kompiled").exists()
 }
 
-fn transpile_c_code(file: PathBuf, output_file_name: &str) -> Result<(), Box<dyn Error>> {
-    info!("parsing {}...", file.to_string_lossy());
-    let ast = lang_c::driver::parse(&Config::default(), file.to_string_lossy().into_owned())?;
+fn transpile_c_code(opt: &Opt, output_file_name: &str) -> Result<(), Box<dyn Error>> {
+    info!("parsing {}...", opt.input.to_string_lossy());
+    let ast = lang_c::driver::parse(&Config::default(), opt.input.to_string_lossy().into_owned())?;
 
-    info!("transpiling {}...", file.to_string_lossy());
+    info!("transpiling {}...", opt.input.to_string_lossy());
     let stmts = cfrontend::transpile_c_program(ast, Configuration::new(true));
 
-    trace!("creating temporary file: {}", output_file_name);
-    let mut file = File::create(output_file_name)?;
-    file.write_all(
-        format!("{}", cfrontend::ast::render::render_program(stmts))
-            .into_bytes()
-            .as_slice(),
-    )?;
+    if opt.only_transpile && !opt.keep {
+        println!("{}", stmts);
+    } else {
+        trace!("creating temporary file: {}", output_file_name);
+        let mut file = File::create(output_file_name)?;
+        file.write_all(
+            format!("{}", cfrontend::ast::render::render_program(stmts))
+                .into_bytes()
+                .as_slice(),
+        )?;
+    }
 
     Ok(())
 }
 
-fn krun(file: &PathBuf) -> Result<(), Box<dyn Error>> {
+// Run the krun script and get the output
+fn krun(file: &PathBuf) -> Result<String, Box<dyn Error>> {
     trace!("k/bin/krun -d model {}", file.to_string_lossy());
     let output = Command::new("k/bin/krun")
         .args(&["-d", "model"])
         .arg(format!("{}", file.to_string_lossy()))
         .output()?;
 
-    if output.status.success() {
-        io::stdout().write_all(&output.stdout)?;
-    } else {
+    if output.status.success() == false {
+        // stderr may not crash the program
         let msg = convert_output(output.stderr.as_slice())?;
         error!("{}\n{}", output.status, msg);
     }
 
-    Ok(())
+    Ok(String::from_utf8(output.stdout.clone())?)
 }
 
 fn setup_opam() -> Result<(), Box<dyn Error>> {
@@ -182,4 +194,11 @@ fn setup_opam() -> Result<(), Box<dyn Error>> {
 
 fn convert_output(output: &[u8]) -> Result<&str, Box<dyn Error>> {
     std::str::from_utf8(output).map_err(|e| e.into())
+}
+
+/// Check if the PGM in output is equal to <k>.<\k>
+fn is_valid(k_output: &str) -> bool {
+    Regex::new(r"<k>\n\s*\.\n\s*</k>")
+        .unwrap()
+        .is_match(k_output)
 }

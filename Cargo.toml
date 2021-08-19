@@ -9,6 +9,7 @@ log = "0.4.0"
 env_logger = "0.9"
 lang-c = "0.10.1"
 structopt = { version = "0.3", default-features = false }
+regex = "1.5.4"
 
 [workspace]
 
