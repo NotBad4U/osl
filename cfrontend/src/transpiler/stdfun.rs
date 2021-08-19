@@ -91,39 +91,3 @@ impl StdlibFunction {
             })
     }
 }
-
-impl Transpiler {
-    pub fn transpile_std_function(&mut self, func_name: &str, call_exp: &CallExpression) -> Stmts {
-        if utils::is_deallocate_memory_function(func_name) {
-            let argument_to_free = call_exp.arguments.first().unwrap();
-            let identifier = match argument_to_free.node {
-                Expression::Identifier(box Node {
-                    node: Identifier { ref name },
-                    ..
-                }) => name,
-                _ => unimplemented!(),
-            };
-
-            return Stmts::from(Stmt::Deallocate(Exp::Id(identifier.to_string())));
-        }
-
-        let arguments = call_exp
-            .arguments
-            .iter()
-            .fold(Vec::new(), |mut acc, argument| {
-                //FIXME: support also calling function in argument
-                if let Some(Stmt::Expression(Exp::Id(id))) =
-                    self.transpile_expression(&argument.node).last()
-                {
-                    acc.push(Exp::Id(id.to_string()));
-                }
-
-                acc
-            });
-
-        Stmts::from(Stmt::Expression(Exp::Call(
-            func_name.to_string(),
-            Exps(arguments),
-        )))
-    }
-}

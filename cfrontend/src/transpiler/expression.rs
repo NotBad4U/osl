@@ -9,6 +9,25 @@ impl Transpiler {
                 node: Identifier { name },
                 ..
             }) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
+            // transpile free(x)
+            Expression::Call(box Node {
+                node:
+                    CallExpression {
+                        callee:
+                            box Node {
+                                node:
+                                    Expression::Identifier(box Node {
+                                        node: Identifier { name },
+                                        ..
+                                    }),
+                                ..
+                            },
+                        arguments,
+                    },
+                ..
+            }) if utils::is_deallocate_memory_function(name) => {
+                self.transpile_deallocate(arguments)
+            }
             Expression::Call(box Node { node: call, .. }) => self.transpile_call_expression(&call),
             Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
                 self.transpile_binary_operator(bin_op)
@@ -59,6 +78,26 @@ impl Transpiler {
         }
     }
 
+    /// Transpile call method to free(x) into deallocate (OSL)
+    pub(super) fn transpile_deallocate(&mut self, arguments: &Vec<Node<Expression>>) -> Stmts {
+        let argument_to_free = arguments.first().unwrap(); // Free has only one parameter: void free(void *ptr);
+        let identifier = match argument_to_free.node {
+            Expression::Identifier(box Node {
+                node: Identifier { ref name },
+                ..
+            }) => name,
+            ref e => unimplemented!(
+                "{}",
+                self.reporter.unimplemented(
+                    get_span_from_expression(e),
+                    "Support only identifier as argument for free"
+                )
+            ),
+        };
+
+        Stmts::from(Stmt::Deallocate(Exp::Id(identifier.to_string())))
+    }
+
     pub(super) fn transpile_call_expression(&mut self, call_exp: &CallExpression) -> Stmts {
         let callee = extract!(Expression::Identifier(_), &call_exp.callee.node)
             .unwrap()
@@ -66,23 +105,19 @@ impl Transpiler {
             .name
             .to_string();
 
-        if self.stdfun.is_std_function(callee.as_str()) {
-            self.transpile_std_function(&callee, call_exp)
-        } else {
-            let arguments = call_exp
-                .arguments
-                .iter()
-                .map(|node| &node.node)
-                .map(|exp| {
-                    self.transpile_expression(&exp)
-                        .first()
-                        .expect("waiting an expression")
-                        .clone()
-                }) //FIXME: pb with multiple stat
-                .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
-                .collect::<Vec<Exp>>();
-            Stmts::from(Stmt::Expression(Exp::Call(callee, Exps(arguments))))
-        }
+        let arguments = call_exp
+            .arguments
+            .iter()
+            .map(|node| &node.node)
+            .map(|exp| {
+                self.transpile_expression(&exp)
+                    .first()
+                    .expect("waiting an expression")
+                    .clone()
+            }) //FIXME: pb with multiple stat
+            .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
+            .collect::<Vec<Exp>>();
+        Stmts::from(Stmt::Expression(Exp::Call(callee, Exps(arguments))))
     }
 
     pub(super) fn transpile_binary_operator(&mut self, bop: &BinaryOperatorExpression) -> Stmts {
