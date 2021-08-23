@@ -223,6 +223,9 @@ impl Transpiler {
         stmts
     }
 
+    /// Transpile assign binary expression.
+    /// Some of the pattern matching cases here are
+    /// done to optimize the transpiliation.
     pub(super) fn transpile_assign_expression(
         &mut self,
         left: &Expression,
@@ -237,6 +240,7 @@ impl Transpiler {
                     node: Identifier { name: left_id },
                     ..
                 }),
+                // Initial memory allocation : x = (T*) malloc(y);
                 Expression::Cast(box Node {
                     node:
                         CastExpression {
@@ -308,6 +312,7 @@ impl Transpiler {
                     ..
                 }),
             ) => Stmts::from(self.transpile_ref_assignment(left_id, right_id)),
+            // a = <Constant>;
             (
                 Expression::Identifier(box Node {
                     node: Identifier { name },
@@ -322,6 +327,7 @@ impl Transpiler {
                 ),
                 Exp::Id(name.to_string()),
             )),
+            // Default: a = b
             (
                 Expression::Identifier(box Node {
                     node: Identifier { name },
@@ -339,6 +345,7 @@ impl Transpiler {
                     None => Stmts::new(),
                 }
             }
+            // a = *b;
             (Expression::UnaryOperator(unary), right) => self.transpile_deref(&unary.node, right),
             _ => unimplemented!(),
         }
