@@ -90,3 +90,28 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_assign() {
+    let c_program = r###"
+    void main() {
+        int a, b, c;
+        a = a + b + (1 - c);
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl a;
+    decl b;
+    decl c;
+    read(a);
+    read(b);
+    read(c);
+    transfer newResource(copy,mut) a;
+};
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}

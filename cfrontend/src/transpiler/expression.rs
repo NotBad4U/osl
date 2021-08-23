@@ -51,18 +51,7 @@ impl Transpiler {
 
     /// transpile expression but filter Val statement to only keep read and transfer
     pub(super) fn transpile_boolean_condition(&mut self, exp: &Expression) -> Stmts {
-        self.transpile_expression(exp)
-            .0
-            .into_iter()
-            .filter(|stmt| !matches!(stmt, Stmt::Val(_)))
-            .map(|stmt| match stmt {
-                Stmt::Expression(Exp::Id(id)) => Stmt::Expression(Exp::Read(box Exp::Id(id))),
-                _ => stmt,
-            })
-            .fold(Stmts::new(), |mut acc, stmt| {
-                acc.0.push(stmt);
-                acc
-            }) // love you collect...
+        normalize_stmts_expression(self.transpile_expression(exp))
     }
 
     fn transpile_cast_expression(&mut self, cast: &CastExpression) -> Stmts {
@@ -335,17 +324,21 @@ impl Transpiler {
                 }),
                 right,
             ) => {
-                let stmts = self.transpile_expression(right);
-
-                match stmts.0.last() {
-                    Some(Stmt::Expression(e)) => {
-                        Stmts::from(Stmt::Transfer(e.clone(), Exp::Id(name.to_string())))
-                    }
-                    Some(_) => stmts,
-                    None => Stmts::new(),
+                // Get all the expression to check before transfering a new resource to the left Identifier.
+                // For exemple: A = A + 1;
+                // Here we have to read first A, and after Transfer a NewResource to A.
+                let mut stmts = self.transpile_expression(right); //NOTE: We want to filter constant. We should able to re-uuse this function
+                if let [Stmt::Expression(e)] = stmts.0.as_slice() {
+                    Stmts::from(Stmt::Transfer(e.clone(), Exp::Id(name.into())))
+                } else {
+                    stmts.0.push(Stmt::Transfer(
+                        Exp::NewResource(self.context.get_props_of_variable(name).unwrap()),
+                        Exp::Id(name.into()),
+                    ));
+                    normalize_stmts_expression(stmts)
                 }
             }
-            // a = *b;
+            // *a = b;
             (Expression::UnaryOperator(unary), right) => self.transpile_deref(&unary.node, right),
             _ => unimplemented!(),
         }
@@ -369,6 +362,7 @@ impl Transpiler {
     }
 }
 
+/// Function used by the reporter to report diagnostic
 fn get_span_from_expression(e: &Expression) -> Span {
     match e {
         Expression::Identifier(box node) => node.span,
@@ -389,4 +383,21 @@ fn get_span_from_expression(e: &Expression) -> Span {
         Expression::Statement(box node) => node.span,
         Expression::OffsetOf(box node) => node.span,
     }
+}
+
+/// Filter all constant and transform Id statement
+/// into the equivalent, but more readable, read statement.
+fn normalize_stmts_expression(stmts: Stmts) -> Stmts {
+    stmts
+        .0
+        .into_iter()
+        .filter(|stmt| !matches!(stmt, Stmt::Val(_)))
+        .map(|stmt| match stmt {
+            Stmt::Expression(Exp::Id(id)) => Stmt::Expression(Exp::Read(box Exp::Id(id))),
+            _ => stmt,
+        })
+        .fold(Stmts::new(), |mut acc, stmt| {
+            acc.0.push(stmt);
+            acc
+        }) // love you collect...
 }
