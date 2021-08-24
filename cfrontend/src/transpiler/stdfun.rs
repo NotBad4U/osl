@@ -5,6 +5,7 @@
 /// the ownership properties for the function of stdlib, stdio, libc, etc.
 use super::*;
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 macro_rules! hashmap {
@@ -31,27 +32,83 @@ macro_rules! hashmap {
 #[derive(Debug)]
 pub struct StdlibFunction(HashMap<String, Stmt>);
 
-const GENERATED_FUNCTION_COMMENT: &'static str = "Auto-generated intrinsic function";
+const GENERATED_FUNCTION_COMMENT: &'static str = "transpiler built-in";
+
+macro_rules! count {
+    () => (0usize);
+    ( $x:tt $($xs:tt)* ) => (1usize + count!($($xs)*));
+}
+
+macro_rules! printf {
+    ( $( $args:expr ),* ) => {
+        Stmt::Function(format!("printf{}", count!($($args)*)), Parameters(vec![
+                Parameter::new("format", Type::own()),
+                $( Parameter::new($args, Type::ref_from($args, Type::own())) , )*
+            ]),
+            Type::VoidTy,
+            Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
+        )
+    };
+}
+
+macro_rules! fprintf {
+    ( $( $args:expr ),* ) => {
+        Stmt::Function(
+            format!("fprintf{}", count!($($args)*)),
+            Parameters(vec![
+                Parameter::new(
+                    "stream",
+                    Type::ref_from(
+                        "a",
+                        Type::own_from(Props::from(vec![Prop::Mut, Prop::Copy])),
+                    ),
+                ),
+                Parameter::new("format", Type::own()),
+                Parameter::new("x", Type::ref_from("b", Type::own())),
+            ]),
+            Type::VoidTy,
+            Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string())),
+        )
+    };
+}
+
+macro_rules! scanf {
+    ( $( $args:expr ),* ) => {
+        Stmt::Function(
+            format!("scanf{}", count!($($args)*)),
+            Parameters(vec![
+                Parameter::new("format", Type::own()),
+                $( Parameter::new($args, Type::ref_from($args, Type::own_from(Props::from(Prop::Mut)))), )*
+            ]),
+            Type::VoidTy,
+            Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string())),
+        )
+    };
+}
 
 impl StdlibFunction {
     pub fn new() -> Self {
         Self(hashmap![
             // int printf(const char *format, ...)
-            "printf".into() => Stmt::Function("printf".into(), Parameters(vec![
-                Parameter::new("format", Type::own()),
-                Parameter::new("x", Type::ref_from("a", Type::own()))]),
-                Type::VoidTy,
-                Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
-            ),
+            "printf".into() => printf!("a"),
+            "printf2".into() => printf!("a", "b"),
+            "printf3".into() => printf!("a", "b", "c"),
+            "printf4".into() => printf!("a", "b", "c", "d"),
+            "printf5".into() => printf!("a", "b", "c", "d", "e"),
 
             // int fprintf(FILE *stream, const char *format, ...)
-            "fprintf".into() => Stmt::Function("fprintf".into(), Parameters(vec![
-                Parameter::new("stream", Type::ref_from("a", Type::own_from(Props::from(vec![Prop::Mut, Prop::Copy])))),
-                Parameter::new("format", Type::own()),
-                Parameter::new("x", Type::ref_from("b", Type::own()))]),
-                Type::VoidTy,
-                Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
-            ),
+            "fprintf".into() => fprintf!("a"),
+            "fprintf2".into() => fprintf!("a", "b"),
+            "fprintf3".into() => fprintf!("a", "b", "c"),
+            "fprintf4".into() => fprintf!("a", "b", "c", "d"),
+            "fprintf5".into() => fprintf!("a", "b", "c", "d", "e"),
+
+            // int scanf(const char *format, ...)
+            "scanf".into() => scanf!("a"),
+            "scanf2".into() => scanf!("a", "b"),
+            "scanf3".into() => scanf!("a", "b", "c"),
+            "scanf4".into() => scanf!("a", "b", "c", "d"),
+            "scanf5".into() => scanf!("a", "b", "c", "d", "e"),
 
             // void free(void *ptr)
             "free".into() => Stmt::Function("free".into(), Parameters::new(), Type::VoidTy, Stmts::new()),
@@ -64,16 +121,6 @@ impl StdlibFunction {
 
             // void *calloc(size_t nitems, size_t size)
             "calloc".into() => Stmt::Function("calloc".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
-
-            // int scanf(const char *format, ...)
-            "scanf".into() => Stmt::Function("scanf".into(),
-                Parameters(vec![
-                    Parameter::new("format", Type::own()),
-                    Parameter::new("x", Type::ref_from("a", Type::own_from(Props::from(Prop::Mut)))),
-                ]),
-                Type::VoidTy,
-                Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
-            ),
         ])
     }
 
@@ -82,12 +129,20 @@ impl StdlibFunction {
     }
 
     pub fn get_std_functions(&self) -> Vec<&Stmt> {
-        self.0
+        let mut stmts = self
+            .0
             .iter()
             .filter(|(k, _)| *k != "malloc" && *k != "realloc" && *k != "calloc" && *k != "free") // this functions have specifier behavior in OSL
             .fold(vec![], |mut acc, (_, f)| {
                 acc.push(f);
                 acc
-            })
+            });
+
+        stmts.sort_by(|a, b| match (a, b) {
+            (Stmt::Function(id_a, ..), Stmt::Function(id_b, ..)) => id_a.cmp(id_b),
+            _ => Ordering::Equal,
+        });
+
+        stmts
     }
 }
