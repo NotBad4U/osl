@@ -115,3 +115,45 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_assign_array() {
+    let c_program = r###"
+    void main() {
+        int a[10];
+        a[0] = 1;
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl a;
+    transfer newResource(mut) a;
+};
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_passing_array_as_args() {
+    let c_program = r###"
+    void main() {
+        int a[10];
+        printf("%d", a[0]);
+        printf("%d", &a[0]);
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl a;
+    call printf2(newResource(), a);
+    call printf2(newResource(), a);
+};
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}

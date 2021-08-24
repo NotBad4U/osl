@@ -167,6 +167,15 @@ impl Transpiler {
                 | BinaryOperator::AssignBitwiseOr,
                 right,
             ) => self.transpile_mutable_assign_expression(right),
+            // a[..]
+            (
+                Expression::Identifier(box Node {
+                    node: Identifier { name },
+                    ..
+                }),
+                BinaryOperator::Index,
+                _,
+            ) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
             (left, _, _) => unimplemented!(
                 "{}",
                 self.reporter
@@ -239,6 +248,40 @@ impl Transpiler {
         right: &Expression,
     ) -> Stmts {
         match (left, right) {
+            // Change Value of Array elements
+            (
+                Expression::BinaryOperator(box Node {
+                    node:
+                        BinaryOperatorExpression {
+                            operator:
+                                Node {
+                                    node: BinaryOperator::Index,
+                                    ..
+                                },
+                            lhs:
+                                box Node {
+                                    node:
+                                        Expression::Identifier(box Node {
+                                            node: Identifier { name },
+                                            ..
+                                        }),
+                                    ..
+                                },
+                            ..
+                        },
+                    ..
+                }),
+                right,
+            ) => {
+                let mut stmts = normalize_stmts_expression(self.transpile_expression(right));
+                stmts.0.push(Stmt::Transfer(
+                    Exp::NewResource(self.context.get_props_of_variable(name).unwrap()),
+                    Exp::Id(name.to_string()),
+                ));
+                stmts
+            }
+
+            //Expression::Identifier(box Node{ node: Identifier{name}, .. } ), , _) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
             // parse dynamic memory allocation assignment:  ptr = (cast-type*) malloc(byte-size)
             // Malloc, Calloc, etc. returns a pointer of type void which can be cast into a pointer of any form.
             // Most usage of malloc follow this pattern.
@@ -358,7 +401,13 @@ impl Transpiler {
             }
             // *a = b;
             (Expression::UnaryOperator(unary), right) => self.transpile_deref(&unary.node, right),
-            _ => unimplemented!(),
+            (left, _) => {
+                unimplemented!(
+                    "{}",
+                    self.reporter
+                        .unimplemented(get_span_from_expression(left), "")
+                )
+            }
         }
     }
 
