@@ -7,6 +7,43 @@ impl Transpiler {
             declaration.declarators.as_slice(),
         ) {
             (
+                specifiers,
+                [Node {
+                    node:
+                        InitDeclarator {
+                            declarator:
+                                Node {
+                                    node:
+                                        Declarator {
+                                            kind:
+                                                Node {
+                                                    node:
+                                                        DeclaratorKind::Identifier(Node {
+                                                            node: Identifier { name },
+                                                            ..
+                                                        }),
+                                                    ..
+                                                },
+                                            derived,
+                                            extensions,
+                                        },
+                                    ..
+                                },
+                            initializer,
+                        },
+                    ..
+                }],
+            ) if matches!(
+                derived.as_slice(),
+                [Node {
+                    node: DerivedDeclarator::Array(_),
+                    ..
+                }]
+            ) =>
+            {
+                self.transpile_array_declaration(specifiers, name, initializer.is_some())
+            }
+            (
                 [Node {
                     node:
                         DeclarationSpecifier::StorageClass(Node {
@@ -52,6 +89,44 @@ impl Transpiler {
             ) => Stmts::new(),
             _ => self.transpile_variables_declaration(&declaration),
         }
+    }
+
+    /// Transpile array declaration
+    /// TODO: Support the declaration of multiple array of the same type:
+    /// int a,b[]
+    pub(super) fn transpile_array_declaration(
+        &mut self,
+        specifiers: &[Node<DeclarationSpecifier>],
+        name: &str,
+        is_init: bool,
+    ) -> Stmts {
+        let mut stmts = Stmts::new();
+
+        // I return a props just because I am lazy to pattern below
+        let (mut_context, props) = if utils::is_const(specifiers) {
+            (
+                MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+                Props::new(),
+            )
+        } else {
+            (
+                MutabilityContextItem::Variable(Mutability::MutOwner, Props::from(Prop::Mut)),
+                Props::from(Prop::Mut),
+            )
+        };
+
+        self.context.insert_in_last_scope(name, mut_context);
+
+        stmts.0.push(Stmt::Declaration(name.to_string()));
+
+        if is_init {
+            stmts.0.push(Stmt::Transfer(
+                Exp::NewResource(props),
+                Exp::Id(name.to_string()),
+            ))
+        }
+
+        stmts
     }
 
     pub(super) fn transpile_typedef_declaration(&mut self, declaration: &Declaration) -> Stmts {

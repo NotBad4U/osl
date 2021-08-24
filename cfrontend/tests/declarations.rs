@@ -185,3 +185,25 @@ call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_declaration_of_array() {
+    let c_program = r###" 
+        void main () {
+            double a[5];
+            double b[];
+            double c[3] = {1.0, 1.0, 1.0};
+        }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl a;
+    decl b;
+    decl c;
+    transfer newResource(mut) c;
+};
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
