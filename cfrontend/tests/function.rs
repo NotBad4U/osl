@@ -121,3 +121,24 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+
+#[test]
+fn it_should_transpile_assing_arrays_as_function_arguments() {
+    let c_program = r###"
+    void myFunction(int param[10]) {
+    }
+    void myFunction2(const int param[10]) {
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn myFunction(param:#own(mut)) -> #voidTy {
+};
+fn myFunction2(param:#own()) -> #voidTy {
+};
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
