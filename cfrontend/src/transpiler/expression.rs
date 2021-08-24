@@ -87,13 +87,16 @@ impl Transpiler {
         Stmts::from(Stmt::Deallocate(Exp::Id(identifier.to_string())))
     }
 
+    /// Transpile the call of function.
     pub(super) fn transpile_call_expression(&mut self, call_exp: &CallExpression) -> Stmts {
-        let callee = extract!(Expression::Identifier(_), &call_exp.callee.node)
+        let function_name = extract!(Expression::Identifier(_), &call_exp.callee.node)
             .unwrap()
             .node
             .name
             .to_string();
 
+        // Pass the required parameters along with the function name
+        // We don't distinguish Call by value or by reference with OSL.
         let arguments = call_exp
             .arguments
             .iter()
@@ -103,10 +106,21 @@ impl Transpiler {
                     .first()
                     .expect("waiting an expression")
                     .clone()
-            }) //FIXME: pb with multiple stat
+            })
             .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
             .collect::<Vec<Exp>>();
-        Stmts::from(Stmt::Expression(Exp::Call(callee, Exps(arguments))))
+
+        // the call to std function need to be a little modify because they use
+        // variadic arguments. So we have to call the corresponding unrolled version.
+        // See stdfun.rs for more information.
+        let function_name = if self.stdfun.is_std_function(&function_name) {
+            // take the arity of arguments and add it in postfix of the name
+            format!("{}{}", function_name, arguments.len().to_string())
+        } else {
+            function_name // keep the current name
+        };
+
+        Stmts::from(Stmt::Expression(Exp::Call(function_name, Exps(arguments))))
     }
 
     pub(super) fn transpile_binary_operator(&mut self, bop: &BinaryOperatorExpression) -> Stmts {

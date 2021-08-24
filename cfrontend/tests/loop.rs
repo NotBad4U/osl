@@ -23,7 +23,7 @@ fn main() -> #voidTy {
     transfer newResource(mut,copy) a;
     read(a);
     !{
-        call printf(newResource(),a);
+        call printf2(newResource(),a);
         transfer newResource(copy,mut) a;
         // loop invariant
         read(a);
@@ -57,7 +57,7 @@ fn main() -> #voidTy {
     decl a;
     transfer newResource(mut,copy) a;
     !{
-        call printf(newResource(),a);
+        call printf2(newResource(),a);
         transfer newResource(copy,mut) a;
         read(a);
     };
@@ -89,7 +89,7 @@ fn main() -> #voidTy {
     // loop invariant
     read(i);
     !{
-        call printf(newResource(), i);
+        call printf2(newResource(), i);
         transfer newResource(copy,mut) i;
         // loop invariant
         read(i);

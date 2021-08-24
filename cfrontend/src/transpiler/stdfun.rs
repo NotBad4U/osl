@@ -3,6 +3,18 @@
 /// To counter this problem, the transpiler will just add this function with an empty body.
 /// With that OSL can still verify ownership properties of the user program, but we will not verify
 /// the ownership properties for the function of stdlib, stdio, libc, etc.
+///
+/// Some function like printf use the variadic arguments feature.
+/// Currently, OSL can't deal with variadic arguments, so we generate
+/// a function for each n-th different arity possible. For example, printf become:
+///
+/// For arity 1 (just the format):
+/// `fn printf1(format:#own()) -> #voidTy`
+/// For arity 2 (format and one argument):
+/// `fn printf2(format:#own(),_a:#ref('a,#own())) -> #voidTy`
+/// For arity 3:
+/// fn printf3(format:#own(),_a:#ref('a,#own()),_b:#ref('b,#own())) -> #voidTy`
+/// etc...
 use super::*;
 
 use std::cmp::Ordering;
@@ -25,6 +37,10 @@ macro_rules! hashmap {
     };
 }
 
+fn uncollision_param(param: &str) -> String {
+    format!("_{}", param)
+}
+
 /// For now, this enum doesn't provide
 /// an exhaustive list of std C functions.
 /// Functions will be adds throughout the life
@@ -34,16 +50,20 @@ pub struct StdlibFunction(HashMap<String, Stmt>);
 
 const GENERATED_FUNCTION_COMMENT: &'static str = "transpiler built-in";
 
+/// Used to generate the correct postfix
+/// of variadic function:  fun<N>, where
+/// N is defined by the number of arguments.
 macro_rules! count {
-    () => (0usize);
+    () => (1usize);
     ( $x:tt $($xs:tt)* ) => (1usize + count!($($xs)*));
 }
 
+// int printf(const char *format, ...)
 macro_rules! printf {
     ( $( $args:expr ),* ) => {
         Stmt::Function(format!("printf{}", count!($($args)*)), Parameters(vec![
                 Parameter::new("format", Type::own()),
-                $( Parameter::new($args, Type::ref_from($args, Type::own())) , )*
+                $( Parameter::new(&uncollision_param($args), Type::ref_from($args, Type::own())) , )*
             ]),
             Type::VoidTy,
             Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
@@ -51,6 +71,7 @@ macro_rules! printf {
     };
 }
 
+// int fprintf(FILE *stream, const char *format, ...)
 macro_rules! fprintf {
     ( $( $args:expr ),* ) => {
         Stmt::Function(
@@ -59,12 +80,12 @@ macro_rules! fprintf {
                 Parameter::new(
                     "stream",
                     Type::ref_from(
-                        "a",
+                        "s",
                         Type::own_from(Props::from(vec![Prop::Mut, Prop::Copy])),
                     ),
                 ),
                 Parameter::new("format", Type::own()),
-                Parameter::new("x", Type::ref_from("b", Type::own())),
+                $( Parameter::new(&uncollision_param($args), Type::ref_from($args, Type::own())) , )*
             ]),
             Type::VoidTy,
             Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string())),
@@ -72,13 +93,14 @@ macro_rules! fprintf {
     };
 }
 
+// int scanf(const char *format, ...)
 macro_rules! scanf {
     ( $( $args:expr ),* ) => {
         Stmt::Function(
             format!("scanf{}", count!($($args)*)),
             Parameters(vec![
                 Parameter::new("format", Type::own()),
-                $( Parameter::new($args, Type::ref_from($args, Type::own_from(Props::from(Prop::Mut)))), )*
+                $( Parameter::new(&uncollision_param($args), Type::ref_from($args, Type::own_from(Props::from(Prop::Mut)))), )*
             ]),
             Type::VoidTy,
             Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string())),
@@ -89,26 +111,23 @@ macro_rules! scanf {
 impl StdlibFunction {
     pub fn new() -> Self {
         Self(hashmap![
-            // int printf(const char *format, ...)
-            "printf".into() => printf!("a"),
-            "printf2".into() => printf!("a", "b"),
-            "printf3".into() => printf!("a", "b", "c"),
-            "printf4".into() => printf!("a", "b", "c", "d"),
-            "printf5".into() => printf!("a", "b", "c", "d", "e"),
+            "printf".into() => printf!(),
+            "printf2".into() => printf!("a"),
+            "printf3".into() => printf!("a", "b"),
+            "printf4".into() => printf!("a", "b", "c"),
+            "printf5".into() => printf!("a", "b", "c", "d"),
 
-            // int fprintf(FILE *stream, const char *format, ...)
-            "fprintf".into() => fprintf!("a"),
-            "fprintf2".into() => fprintf!("a", "b"),
-            "fprintf3".into() => fprintf!("a", "b", "c"),
-            "fprintf4".into() => fprintf!("a", "b", "c", "d"),
-            "fprintf5".into() => fprintf!("a", "b", "c", "d", "e"),
+            "fprintf".into() => fprintf!(),
+            "fprintf2".into() => fprintf!("a"),
+            "fprintf3".into() => fprintf!("a", "b"),
+            "fprintf4".into() => fprintf!("a", "b", "c"),
+            "fprintf5".into() => fprintf!("a", "b", "c", "d"),
 
-            // int scanf(const char *format, ...)
-            "scanf".into() => scanf!("a"),
-            "scanf2".into() => scanf!("a", "b"),
-            "scanf3".into() => scanf!("a", "b", "c"),
-            "scanf4".into() => scanf!("a", "b", "c", "d"),
-            "scanf5".into() => scanf!("a", "b", "c", "d", "e"),
+            "scanf".into() => scanf!(),
+            "scanf2".into() => scanf!("a"),
+            "scanf3".into() => scanf!("a", "b"),
+            "scanf4".into() => scanf!("a", "b", "c"),
+            "scanf5".into() => scanf!("a", "b", "c", "d"),
 
             // void free(void *ptr)
             "free".into() => Stmt::Function("free".into(), Parameters::new(), Type::VoidTy, Stmts::new()),
