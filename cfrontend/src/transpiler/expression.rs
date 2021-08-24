@@ -167,7 +167,11 @@ impl Transpiler {
                 | BinaryOperator::AssignBitwiseOr,
                 right,
             ) => self.transpile_mutable_assign_expression(right),
-            e => unimplemented!("{:?}", e),
+            (left, _, _) => unimplemented!(
+                "{}",
+                self.reporter
+                    .unimplemented(get_span_from_expression(left), "")
+            ),
         }
     }
 
