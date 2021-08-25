@@ -122,7 +122,6 @@ call main();
     assert_equal_program(c_program, expected_osl_program);
 }
 
-
 #[test]
 fn it_should_transpile_assing_arrays_as_function_arguments() {
     let c_program = r###"

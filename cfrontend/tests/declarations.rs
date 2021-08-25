@@ -207,3 +207,64 @@ call main();"###;
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_declaration_of_structure_type() {
+    let c_program = r###" 
+    struct complex
+    {
+        int imag;
+        float real;
+    };
+    "###;
+
+    let expected_osl_program = r###"
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_declaration_of_structure_variable() {
+    let c_program = r###" 
+    struct complex
+    {
+        int imag;
+        float real;
+    } p1, p2;
+    "###;
+
+    let expected_osl_program = r###"
+decl p1;
+decl p2;
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_declaration_of_structure_variable_with_init() {
+    let c_program = r###" 
+    struct complex
+    {
+        int imag;
+        float real;
+    };
+
+    void main() {
+        struct complex c1, c2 = { .imag = 1, .real = 1.0 }, c3;
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl c1;
+    decl c2;
+    transfer newResource() c2;
+    decl c3;
+};
+
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}

@@ -20,12 +20,14 @@ pub enum MutabilityContextItem {
 pub struct MutabilityContext {
     /// lexical scopes representation
     pub context: Vec<HashMap<String, MutabilityContextItem>>,
+    pub types: HashMap<String, Props>,
 }
 
 impl MutabilityContext {
     pub fn new() -> Self {
         Self {
             context: Vec::new(),
+            types: HashMap::new(),
         }
     }
 

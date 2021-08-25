@@ -157,3 +157,27 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_passing_struct_as_args() {
+    let c_program = r###"
+    struct foo {
+        int x;
+    };
+    
+    void main() {
+        struct foo f;
+        printf("%d", f.x);
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl f;
+    call printf2(newResource(), f);
+};
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}

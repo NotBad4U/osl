@@ -40,6 +40,7 @@ impl Transpiler {
             Expression::UnaryOperator(box Node { node: unary, .. }) => {
                 self.transpile_unary_expression(&unary)
             }
+            Expression::Member(box Node { node: m, .. }) => self.transpile_struct_member(m),
             e => {
                 unimplemented!(
                     "{}",
@@ -427,6 +428,11 @@ impl Transpiler {
             _ => Stmts::new(),
         }
     }
+
+    pub(super) fn transpile_struct_member(&mut self, member: &MemberExpression) -> Stmts {
+        let id = get_structure_tag(member);
+        Stmts::from(Stmt::Expression(Exp::Id(id)))
+    }
 }
 
 /// Function used by the reporter to report diagnostic
@@ -467,4 +473,17 @@ fn normalize_stmts_expression(stmts: Stmts) -> Stmts {
             acc.0.push(stmt);
             acc
         }) // love you collect...
+}
+
+/// C-Lang library put the structure tag at the tail of the list.
+/// We have to iterate recursively to extract the structure tag.
+fn get_structure_tag(member: &MemberExpression) -> String {
+    match &(*member.expression).node {
+        Expression::Member(box Node { node: ref m, .. }) => get_structure_tag(m),
+        Expression::Identifier(box Node {
+            node: Identifier { name },
+            ..
+        }) => name.into(),
+        _ => unreachable!(),
+    }
 }

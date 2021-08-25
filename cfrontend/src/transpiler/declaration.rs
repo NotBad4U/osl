@@ -6,6 +6,7 @@ impl Transpiler {
             declaration.specifiers.as_slice(),
             declaration.declarators.as_slice(),
         ) {
+            // Array declaration
             (
                 specifiers,
                 [Node {
@@ -25,7 +26,7 @@ impl Transpiler {
                                                     ..
                                                 },
                                             derived,
-                                            extensions,
+                                            ..
                                         },
                                     ..
                                 },
@@ -43,6 +44,7 @@ impl Transpiler {
             {
                 self.transpile_array_declaration(specifiers, name, initializer.is_some())
             }
+            // typedef declaration
             (
                 [Node {
                     node:
@@ -54,6 +56,7 @@ impl Transpiler {
                 }, ..],
                 _,
             ) => self.transpile_typedef_declaration(declaration),
+            // header function declaration
             (
                 _,
                 [Node {
@@ -65,17 +68,35 @@ impl Transpiler {
                     ..
                 }, ..],
             ) if is_a_function(&declarator.node) => Stmts::new(),
+            // Structure definition
             (
+                // const struct T
                 [Node {
                     node:
+                        DeclarationSpecifier::TypeQualifier(Node {
+                            node: TypeQualifier::Const,
+                            ..
+                        }),
+                    ..
+                }, Node {
+                    node:
                         DeclarationSpecifier::TypeSpecifier(Node {
-                            node: TypeSpecifier::Struct(_),
+                            node: TypeSpecifier::Struct(Node{ node: structure, .. }),
+                            ..
+                        }),
+                    ..
+                }, ..]
+                // struct T
+                | [Node {
+                    node:
+                        DeclarationSpecifier::TypeSpecifier(Node {
+                            node: TypeSpecifier::Struct(Node{ node: structure, .. }),
                             ..
                         }),
                     ..
                 }, ..],
-                _,
-            ) => Stmts::new(),
+                declarations,
+            ) => self.transpile_struct_declaration(structure, declarations),
             (
                 [Node {
                     node:
@@ -89,6 +110,39 @@ impl Transpiler {
             ) => Stmts::new(),
             _ => self.transpile_variables_declaration(&declaration),
         }
+    }
+
+    pub(super) fn transpile_struct_declaration(
+        &mut self,
+        structure: &StructType,
+        declarations: &[Node<InitDeclarator>],
+    ) -> Stmts {
+        let structure_tag = structure.identifier.clone().unwrap().node.name;
+        //TODO: get props from StructType
+        self.context.types.insert(structure_tag, Props::new());
+
+        declarations
+            .iter()
+            .map(|n| &n.node)
+            .fold(Stmts::new(), |mut acc, init| {
+                let id = utils::get_declarator_id(&init.declarator.node).expect("missing id");
+                acc.0.push(Stmt::Declaration(id.to_string()));
+
+                //TODO: get props from context
+                self.context.insert_in_last_scope(
+                    id.to_string(),
+                    MutabilityContextItem::Variable(Mutability::MutOwner, Props::new()),
+                );
+
+                if init.initializer.is_some() {
+                    acc.0.push(Stmt::Transfer(
+                        Exp::NewResource(Props::new()),
+                        Exp::Id(id.to_string()),
+                    ));
+                }
+
+                acc
+            })
     }
 
     /// Transpile array declaration
