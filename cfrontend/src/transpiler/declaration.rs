@@ -13,103 +13,71 @@ impl Transpiler {
             // Array declaration
             (
                 specifiers,
-                [Node {
-                    node:
-                        InitDeclarator {
-                            declarator:
-                                Node {
-                                    node:
-                                        Declarator {
-                                            kind:
-                                                Node {
-                                                    node:
-                                                        DeclaratorKind::Identifier(Node {
-                                                            node: Identifier { name },
-                                                            ..
-                                                        }),
-                                                    ..
-                                                },
-                                            derived,
-                                            ..
-                                        },
-                                    ..
-                                },
-                            initializer,
-                        },
-                    ..
-                }],
+                [node!(InitDeclarator {
+                    declarator: node!(
+                        Declarator {
+                            kind: node!(DeclaratorKind::Identifier(node!(Identifier { name }))),
+                            derived,
+                            ..
+                        }
+                    ),
+                    initializer,
+                })],
             ) if matches!(
                 derived.as_slice(),
-                [Node {
-                    node: DerivedDeclarator::Array(_),
-                    ..
-                }]
+                [node!(DerivedDeclarator::Array(_))]
             ) =>
             {
                 self.transpile_array_declaration(specifiers, name, initializer.is_some())
             }
             // typedef declaration
             (
-                [Node {
-                    node:
-                        DeclarationSpecifier::StorageClass(Node {
-                            node: StorageClassSpecifier::Typedef,
-                            ..
-                        }),
-                    ..
-                }, ..],
+                [node!(DeclarationSpecifier::StorageClass(node!(StorageClassSpecifier::Typedef))), ..],
                 _,
             ) => self.transpile_typedef_declaration(declaration),
             // header function declaration
             (
                 _,
-                [Node {
-                    node:
+                [
+                    node!(
                         InitDeclarator {
                             declarator,
                             initializer: None,
-                        },
+                        }
+                    ),
                     ..
-                }, ..],
+                ],
             ) if is_a_function(&declarator.node) => Stmts::new(),
             // Structure definition
             (
                 // const struct T
-                [Node {
-                    node:
+                [
+                    node!(
                         DeclarationSpecifier::TypeQualifier(Node {
                             node: TypeQualifier::Const,
                             ..
-                        }),
-                    ..
-                }, Node {
-                    node:
+                    })),
+                    node!(
                         DeclarationSpecifier::TypeSpecifier(Node {
                             node: TypeSpecifier::Struct(Node{ node: structure, .. }),
                             ..
-                        }),
+                    })),
                     ..
-                }, ..]
+                ]
                 // struct T
-                | [Node {
-                    node:
-                        DeclarationSpecifier::TypeSpecifier(Node {
-                            node: TypeSpecifier::Struct(Node{ node: structure, .. }),
-                            ..
-                        }),
+                | [
+                    node!(
+                        DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Struct(Node{ node: structure, .. })))
+                    ),
                     ..
-                }, ..],
+                ],
                 declarations,
             ) => self.transpile_struct_declaration(structure, declarations),
             (
-                [Node {
-                    node:
-                        DeclarationSpecifier::TypeSpecifier(Node {
-                            node: TypeSpecifier::Enum(_),
-                            ..
-                        }),
+                [
+                    node!(DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Enum(_)))),
                     ..
-                }, ..],
+                ],
                 _,
             ) => Stmts::new(),
             _ => self.transpile_variables_declaration(&declaration),
@@ -248,7 +216,7 @@ impl Transpiler {
                 Some(_) => {
                     stmts.0.push(Stmt::Declaration(id.clone()));
 
-                    if let Some(Node { node, .. }) = initializer {
+                    if let Some(node!(node)) = initializer {
                         stmts.0.extend(self.transpile_initializer(id, &node).0);
                     }
 
@@ -274,25 +242,12 @@ impl Transpiler {
 
         match initializer {
             Initializer::Expression(ref expression) => match expression.node {
-                Expression::UnaryOperator(box Node {
-                    node:
-                        UnaryOperatorExpression {
-                            operator:
-                                Node {
-                                    node: UnaryOperator::Address,
-                                    ..
-                                },
-                            operand:
-                                box Node {
-                                    node:
-                                        Expression::Identifier(box Node {
-                                            node: ref right_id, ..
-                                        }),
-                                    ..
-                                },
-                        },
-                    ..
-                }) => {
+                Expression::UnaryOperator(
+                    box node!(UnaryOperatorExpression {
+                        operator: node!(UnaryOperator::Address),
+                        operand: box node!(Expression::Identifier(box node!(ref right_id))),
+                    }),
+                ) => {
                     match mutability {
                         Mutability::ImmRef => Stmts::from(Stmt::Borrow(
                             Exp::Id(declarator),
@@ -305,9 +260,10 @@ impl Transpiler {
                         _ => unreachable!("The expression contain an Unary operator address"), // If we reach this code then it should be a problem in Context or storing context
                     }
                 }
-                Expression::Identifier(box Node { node: ref id, .. }) => Stmts::from(
-                    Stmt::Transfer(Exp::Id(declarator), Exp::Id(id.name.clone())),
-                ),
+                Expression::Identifier(box node!(ref id)) => Stmts::from(Stmt::Transfer(
+                    Exp::Id(declarator),
+                    Exp::Id(id.name.clone()),
+                )),
                 Expression::Constant(ref constant) => {
                     let mut props = Props::new();
 
