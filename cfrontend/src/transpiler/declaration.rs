@@ -73,15 +73,34 @@ impl Transpiler {
                 ],
                 declarations,
             ) => self.transpile_struct_declaration(structure, declarations),
+            // Enum T
             (
                 [
-                    node!(DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Enum(_)))),
+                    node!(DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Enum(node!(enum_type))))),
                     ..
                 ],
                 _,
-            ) => Stmts::new(),
+            ) => self.transpile_enum_type(&enum_type),
             _ => self.transpile_variables_declaration(&declaration),
         }
+    }
+
+    pub(super) fn transpile_enum_type(&mut self, enum_type: &EnumType) -> Stmts {
+        let constants = enum_type.enumerators.iter().map(|n| &n.node).fold(
+            HashSet::new(),
+            |mut acc, enumerator| {
+                acc.insert(enumerator.identifier.node.name.to_string());
+                acc
+            },
+        );
+        let id = enum_type
+            .identifier
+            .clone()
+            .map(|n| n.node.name.to_string())
+            .unwrap_or("global_enum".to_string());
+
+        self.context.types.insert(id, Ctype::Enum(constants));
+        Stmts::new()
     }
 
     pub(super) fn transpile_struct_declaration(
@@ -94,7 +113,9 @@ impl Transpiler {
         );
 
         if let Some(tag) = structure.identifier.clone() {
-            self.context.types.insert(tag.node.name, props.clone());
+            self.context
+                .types
+                .insert(tag.node.name, Ctype::Struct(props.clone()));
         }
 
         declarations
@@ -310,12 +331,10 @@ impl Transpiler {
                             declarations: None,
                             ..
                         }))
-                    ))), ..] => self
-                        .context
-                        .types
-                        .get(name)
-                        .cloned()
-                        .unwrap_or(Props::new()),
+                    ))), ..] => match self.context.types.get(name).cloned() {
+                        Some(Ctype::Struct(props)) => props,
+                        _ => unreachable!("The structure was not captured before"),
+                    },
                     // declaration of a structure in this structure
                     [node!(SpecifierQualifier::TypeSpecifier(node!(
                         TypeSpecifier::Struct(node!(StructType {

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::ast::{Props, Type};
 
@@ -16,11 +16,20 @@ pub enum MutabilityContextItem {
     Variable(Mutability, Props),
 }
 
+#[derive(Debug, Clone)]
+pub enum Ctype {
+    /// contains the intersection of all props
+    /// between all the fields
+    Struct(Props),
+    /// contains all the variant
+    Enum(HashSet<String>),
+}
+
 #[derive(Debug)]
 pub struct MutabilityContext {
     /// lexical scopes representation
     pub context: Vec<HashMap<String, MutabilityContextItem>>,
-    pub types: HashMap<String, Props>,
+    pub types: HashMap<String, Ctype>,
 }
 
 impl MutabilityContext {

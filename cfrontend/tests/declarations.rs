@@ -260,7 +260,7 @@ fn it_should_transpile_declaration_of_structure_variable_with_init() {
 fn main() -> #voidTy {
     decl c1;
     decl c2;
-    transfer newResource() c2;
+    transfer newResource(mut,copy) c2;
     decl c3;
 };
 

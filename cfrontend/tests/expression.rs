@@ -83,7 +83,7 @@ fn it_should_transpile_semantic_move() {
 fn main() -> #voidTy {
     decl a;
     decl b;
-    transfer a b;
+    transfer b a;
 };
 call main();
 "###;

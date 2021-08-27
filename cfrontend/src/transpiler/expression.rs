@@ -339,8 +339,8 @@ impl Transpiler {
                     ..
                 }),
             ) => Stmts::from(Stmt::Transfer(
-                Exp::Id(l_id.to_string()),
                 Exp::Id(r_id.into()),
+                Exp::Id(l_id.to_string()),
             )),
             // Address assignment a = &b;
             // We should consider this as a borrow
