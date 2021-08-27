@@ -4,6 +4,13 @@ use lang_c::span::Node;
 use crate::ast::*;
 use crate::transpiler::context::Mutability;
 
+#[macro_export]
+macro_rules! node {
+    ($pattern:pat) => {
+        Node { node: $pattern, .. }
+    };
+}
+
 pub fn get_props_from_specifiers_qualifier_and_declaration(
     specifiers: &Vec<Node<SpecifierQualifier>>,
     declarators: &Vec<Node<StructDeclarator>>,
@@ -20,10 +27,9 @@ pub fn get_props_from_specifiers_qualifier_and_declaration(
         .unwrap()
         .node;
 
-    let mutability =
-        if (is_a_ref(&declarator) && !is_const_field(specifiers)) || !is_const_field(specifiers) {
-            props.0.push(Prop::Mut);
-        };
+    if (is_a_ref(&declarator) && !is_const_field(specifiers)) || !is_const_field(specifiers) {
+        props.0.push(Prop::Mut);
+    }
 
     if declarator.derived.is_empty() {
         props.0.push(Prop::Copy);

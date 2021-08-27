@@ -1,13 +1,8 @@
 use super::*;
+use crate::node;
 
 use std::collections::HashSet;
 use std::iter::FromIterator;
-
-macro_rules! node {
-    ($pattern:pat) => {
-        Node { node: $pattern, .. }
-    };
-}
 
 impl Transpiler {
     pub(super) fn transpile_declaration(&mut self, declaration: &Declaration) -> Stmts {
@@ -352,7 +347,6 @@ impl Transpiler {
         Props(
             fields
                 .iter()
-                .inspect(|field| println!("{:#?}", field.specifiers))
                 .map(|field| match field.specifiers.as_slice() {
                     [node!(SpecifierQualifier::TypeSpecifier(node!(
                         TypeSpecifier::Struct(node!(StructType {
@@ -360,28 +354,20 @@ impl Transpiler {
                             declarations: None,
                             ..
                         }))
-                    )))] => self
+                    ))), ..] => self
                         .context
                         .types
                         .get(name)
                         .cloned()
                         .unwrap_or(Props::new()),
-                    [Node {
-                        node:
-                            SpecifierQualifier::TypeSpecifier(Node {
-                                node:
-                                    TypeSpecifier::Struct(Node {
-                                        node:
-                                            StructType {
-                                                declarations: Some(declarations),
-                                                ..
-                                            },
-                                        ..
-                                    }),
-                                ..
-                            }),
-                        ..
-                    }, ..] => self.get_props_of_struct_from_fields(declarations),
+                    // declaration of a structure in this structure
+                    [node!(SpecifierQualifier::TypeSpecifier(node!(
+                        TypeSpecifier::Struct(node!(StructType {
+                            declarations: Some(declarations),
+                            ..
+                        }))
+                    ))), ..] => self.get_props_of_struct_from_fields(declarations),
+                    // normal variable
                     _ => utils::get_props_from_specifiers_qualifier_and_declaration(
                         &field.specifiers,
                         &field.declarators,

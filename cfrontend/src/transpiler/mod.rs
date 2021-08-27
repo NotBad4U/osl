@@ -18,6 +18,7 @@ mod diagnostic;
 mod expression;
 mod loops;
 mod stdfun;
+#[macro_use]
 mod utils;
 
 #[derive(Debug)]

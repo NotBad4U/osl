@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::{Prop, Props, Type};
+use crate::ast::{Props, Type};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Mutability {
