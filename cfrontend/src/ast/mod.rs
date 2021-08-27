@@ -116,7 +116,7 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Prop {
     Copy,
     Mut,
@@ -128,6 +128,10 @@ pub struct Props(pub Vec<Prop>);
 impl Props {
     pub fn new() -> Self {
         Self(vec![])
+    }
+
+    pub fn get_all_props() -> Self {
+        Self(vec![Prop::Mut, Prop::Copy])
     }
 }
 

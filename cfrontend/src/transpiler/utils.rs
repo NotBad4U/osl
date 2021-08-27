@@ -4,6 +4,34 @@ use lang_c::span::Node;
 use crate::ast::*;
 use crate::transpiler::context::Mutability;
 
+pub fn get_props_from_specifiers_qualifier_and_declaration(
+    specifiers: &Vec<Node<SpecifierQualifier>>,
+    declarators: &Vec<Node<StructDeclarator>>,
+) -> Props {
+    let mut props = Props::new();
+
+    let specifiers = specifiers.as_slice();
+    let declarator = declarators
+        .first()
+        .unwrap()
+        .clone()
+        .node
+        .declarator
+        .unwrap()
+        .node;
+
+    let mutability =
+        if (is_a_ref(&declarator) && !is_const_field(specifiers)) || !is_const_field(specifiers) {
+            props.0.push(Prop::Mut);
+        };
+
+    if declarator.derived.is_empty() {
+        props.0.push(Prop::Copy);
+    }
+
+    props
+}
+
 // FIXME: support multiple init declarator
 pub fn get_mutability_of_declaration(declaration: &Declaration) -> Mutability {
     let specifiers = &declaration.specifiers;
@@ -104,6 +132,24 @@ pub fn is_const(specifiers: &[Node<DeclarationSpecifier>]) -> bool {
         [
             Node {
                 node: DeclarationSpecifier::TypeQualifier(Node {
+                    node: TypeQualifier::Const,
+                    ..
+                }),
+                ..
+            },
+            ..
+        ]
+    )
+}
+
+/// Check if the type begin with const type qualifier
+/// e.g.: const T *
+pub fn is_const_field(specifiers: &[Node<SpecifierQualifier>]) -> bool {
+    matches!(
+        specifiers,
+        [
+            Node {
+                node: SpecifierQualifier::TypeQualifier(Node {
                     node: TypeQualifier::Const,
                     ..
                 }),

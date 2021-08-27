@@ -1,5 +1,14 @@
 use super::*;
 
+use std::collections::HashSet;
+use std::iter::FromIterator;
+
+macro_rules! node {
+    ($pattern:pat) => {
+        Node { node: $pattern, .. }
+    };
+}
+
 impl Transpiler {
     pub(super) fn transpile_declaration(&mut self, declaration: &Declaration) -> Stmts {
         match (
@@ -117,9 +126,13 @@ impl Transpiler {
         structure: &StructType,
         declarations: &[Node<InitDeclarator>],
     ) -> Stmts {
-        let structure_tag = structure.identifier.clone().unwrap().node.name;
-        //TODO: get props from StructType
-        self.context.types.insert(structure_tag, Props::new());
+        let props = self.get_props_of_struct_from_fields(
+            structure.declarations.as_ref().unwrap_or(&Vec::new()),
+        );
+
+        if let Some(tag) = structure.identifier.clone() {
+            self.context.types.insert(tag.node.name, props.clone());
+        }
 
         declarations
             .iter()
@@ -131,12 +144,14 @@ impl Transpiler {
                 //TODO: get props from context
                 self.context.insert_in_last_scope(
                     id.to_string(),
-                    MutabilityContextItem::Variable(Mutability::MutOwner, Props::new()),
+                    MutabilityContextItem::Variable(Mutability::MutOwner, props.clone()),
                 );
+
+                println!("{:#?}", self.context.context);
 
                 if init.initializer.is_some() {
                     acc.0.push(Stmt::Transfer(
-                        Exp::NewResource(Props::new()),
+                        Exp::NewResource(props.clone()),
                         Exp::Id(id.to_string()),
                     ));
                 }
@@ -322,5 +337,67 @@ impl Transpiler {
                 self.reporter.unimplemented(list.first().unwrap().span, "")
             ),
         }
+    }
+
+    fn get_props_of_struct_from_fields(&self, fields: &Vec<Node<StructDeclaration>>) -> Props {
+        let fields: Vec<&StructField> = fields
+            .iter()
+            .map(|n| &n.node)
+            .map(|field_dec| match field_dec {
+                StructDeclaration::Field(node!(field)) => Some(field),
+                _ => None,
+            })
+            .filter_map(|x| x)
+            .collect();
+        Props(
+            fields
+                .iter()
+                .inspect(|field| println!("{:#?}", field.specifiers))
+                .map(|field| match field.specifiers.as_slice() {
+                    [node!(SpecifierQualifier::TypeSpecifier(node!(
+                        TypeSpecifier::Struct(node!(StructType {
+                            identifier: Some(node!(Identifier { name })),
+                            declarations: None,
+                            ..
+                        }))
+                    )))] => self
+                        .context
+                        .types
+                        .get(name)
+                        .cloned()
+                        .unwrap_or(Props::new()),
+                    [Node {
+                        node:
+                            SpecifierQualifier::TypeSpecifier(Node {
+                                node:
+                                    TypeSpecifier::Struct(Node {
+                                        node:
+                                            StructType {
+                                                declarations: Some(declarations),
+                                                ..
+                                            },
+                                        ..
+                                    }),
+                                ..
+                            }),
+                        ..
+                    }, ..] => self.get_props_of_struct_from_fields(declarations),
+                    _ => utils::get_props_from_specifiers_qualifier_and_declaration(
+                        &field.specifiers,
+                        &field.declarators,
+                    ),
+                })
+                .map(|props| HashSet::from_iter(props.0))
+                .fold(
+                    HashSet::from_iter(Props::get_all_props().0),
+                    |mut acc: HashSet<Prop>, props_set| {
+                        let tmp = acc.intersection(&props_set).collect::<HashSet<_>>();
+                        acc = tmp.into_iter().map(|x| x.clone()).collect();
+                        acc
+                    },
+                )
+                .into_iter()
+                .collect(),
+        )
     }
 }
