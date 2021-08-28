@@ -73,19 +73,36 @@ impl Transpiler {
                 ],
                 declarations,
             ) => self.transpile_struct_declaration(structure, declarations),
-            // Enum T
+            // Enum T { constant1, constant2, .. ,constantN }
             (
                 [
                     node!(DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Enum(node!(enum_type))))),
                     ..
                 ],
-                _,
-            ) => self.transpile_enum_type(&enum_type),
+                [],
+            ) => self.transpile_enum_type_definition(&enum_type),
+            // enum Name Id;
+            (
+                [
+                    node!(DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Enum(_)))),
+                ],
+                [
+                    node!(InitDeclarator{ declarator: node!(Declarator{kind: node!(DeclaratorKind::Identifier(node!(Identifier{name}))), ..}) , ..})
+                ],
+            ) => self.transpile_enum_declaration(name),
             _ => self.transpile_variables_declaration(&declaration),
         }
     }
 
-    pub(super) fn transpile_enum_type(&mut self, enum_type: &EnumType) -> Stmts {
+    pub(super) fn transpile_enum_declaration(&mut self, id: &str) -> Stmts {
+        self.context.insert_in_last_scope(
+            id,
+            MutabilityContextItem::Variable(Mutability::MutOwner, Props::from(Prop::Copy)),
+        );
+        Stmts::from(Stmt::Declaration(id.to_string()))
+    }
+
+    pub(super) fn transpile_enum_type_definition(&mut self, enum_type: &EnumType) -> Stmts {
         let constants = enum_type.enumerators.iter().map(|n| &n.node).fold(
             HashSet::new(),
             |mut acc, enumerator| {
@@ -108,7 +125,7 @@ impl Transpiler {
         structure: &StructType,
         declarations: &[Node<InitDeclarator>],
     ) -> Stmts {
-        let props = self.get_props_of_struct_from_fields(
+        let mut props = self.get_props_of_struct_from_fields(
             structure.declarations.as_ref().unwrap_or(&Vec::new()),
         );
 
@@ -321,7 +338,7 @@ impl Transpiler {
             })
             .filter_map(|x| x)
             .collect();
-        Props(
+        let mut props = Props(
             fields
                 .iter()
                 .map(|field| match field.specifiers.as_slice() {
@@ -359,6 +376,12 @@ impl Transpiler {
                 )
                 .into_iter()
                 .collect(),
-        )
+        );
+
+        // Using Hashet make the display of props not deterministic.
+        // This break the automatic tests base on string equivalence.
+        // To make it deterministic, we sort the props.
+        props.0.sort();
+        props
     }
 }

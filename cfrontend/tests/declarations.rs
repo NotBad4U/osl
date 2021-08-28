@@ -260,8 +260,42 @@ fn it_should_transpile_declaration_of_structure_variable_with_init() {
 fn main() -> #voidTy {
     decl c1;
     decl c2;
-    transfer newResource(mut,copy) c2;
+    transfer newResource(copy,mut) c2;
     decl c3;
+};
+
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_declaration_of_enum_constants() {
+    let c_program = r###" 
+    enum week{sunday, monday, tuesday, wednesday, thursday, friday, saturday};
+    enum day{Mond, Tues, Wedn, Thurs, Frid=18, Satu=11, Sund};
+    "###;
+
+    let expected_osl_program = r###"
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+fn it_should_transpile_declaration_of_enum_variable() {
+    let c_program = r###" 
+    enum {Mon, Tue, Wed, Thur, Fri, Sat, Sun};
+
+    void main() {
+        enum week day;
+        day = Wed;
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl day;
+    transfer newResource(copy) c2;
 };
 
 call main();"###;

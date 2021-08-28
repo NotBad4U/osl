@@ -1,14 +1,14 @@
 use lang_c::span::Span;
 
 use super::*;
+use crate::node;
 
 impl Transpiler {
     pub(super) fn transpile_expression(&mut self, exp: &Expression) -> Stmts {
         match exp {
-            Expression::Identifier(box Node {
-                node: Identifier { name },
-                ..
-            }) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
+            Expression::Identifier(box node!(Identifier { name })) => {
+                Stmts::from(Stmt::Expression(Exp::Id(name.to_string())))
+            }
             // transpile free(x)
             Expression::Call(box Node {
                 node:
@@ -330,18 +330,21 @@ impl Transpiler {
             )),
             // Basic assignment a = b;
             (
-                Expression::Identifier(box Node {
-                    node: Identifier { name: l_id },
-                    ..
-                }),
-                Expression::Identifier(box Node {
-                    node: Identifier { name: r_id },
-                    ..
-                }),
-            ) => Stmts::from(Stmt::Transfer(
-                Exp::Id(r_id.into()),
-                Exp::Id(l_id.to_string()),
-            )),
+                Expression::Identifier(box node!(Identifier { name: l_id })),
+                Expression::Identifier(box node!(Identifier { name: r_id })),
+            ) => {
+                if self.context.is_constant_in_enum(r_id) {
+                    Stmts::from(Stmt::Transfer(
+                        Exp::NewResource(Props::from(Prop::Copy)),
+                        Exp::Id(l_id.to_string()),
+                    ))
+                } else {
+                    Stmts::from(Stmt::Transfer(
+                        Exp::Id(r_id.into()),
+                        Exp::Id(l_id.to_string()),
+                    ))
+                }
+            }
             // Address assignment a = &b;
             // We should consider this as a borrow
             (

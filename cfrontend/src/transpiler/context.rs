@@ -40,6 +40,16 @@ impl MutabilityContext {
         }
     }
 
+    pub fn is_constant_in_enum(&self, id: &str) -> bool {
+        self.types
+            .iter()
+            .find_map(|r#type| match r#type.1 {
+                Ctype::Enum(set) => set.get(id),
+                _ => None,
+            })
+            .is_some()
+    }
+
     /// The function do nothing if a block doesn't exist yet.
     pub fn insert_in_last_scope<S: Into<String>>(&mut self, id: S, item: MutabilityContextItem) {
         self.context
