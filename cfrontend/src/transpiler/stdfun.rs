@@ -133,13 +133,44 @@ impl StdlibFunction {
             "free".into() => Stmt::Function("free".into(), Parameters::new(), Type::VoidTy, Stmts::new()),
 
             // void *malloc(size_t size)
-            "malloc".into() => Stmt::Function("malloc".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "malloc".into() => Stmt::Function("malloc".into(), Parameters(vec![
+                Parameter::new("size", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+            ]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
 
             // void *realloc(void *ptr, size_t size)
-            "realloc".into() => Stmt::Function("realloc".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "realloc".into() => Stmt::Function("realloc".into(), Parameters(vec![
+                Parameter::new("ptr", Type::Ref("a".into(), box Type::Own(Props(vec![Prop::Copy, Prop::Mut])))),
+                Parameter::new("size", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+            ]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
 
             // void *calloc(size_t nitems, size_t size)
-            "calloc".into() => Stmt::Function("calloc".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+            "calloc".into() => Stmt::Function("calloc".into(), Parameters(vec![
+                Parameter::new("nitems", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("size", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+            ]), Type::Own(Props::from(Prop::Copy)), Stmts::new()),
+
+            // int abs(int x) Returns the absolute value of x.
+            "abs".into() => Stmt::Function("abs".into(), Parameters(vec![
+                Parameter::new("x", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+            ]), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Return(Exp::Id("x".into())))),
+
+            // int rand(void) Returns a pseudo-random number in the range of 0 to RAND_MAX.
+            "rand".into() => Stmt::Function("rand".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
+
+            // int atoi(const char *str)
+            "atoi".into() => Stmt::Function("atoi".into(), Parameters::from(
+                Parameter::new("ptr", Type::Ref("a".into(), box Type::Own(Props::new())))
+            ), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
+
+            // double atof(const char *str)
+            "atof".into() => Stmt::Function("atof".into(), Parameters::from(
+                Parameter::new("ptr", Type::Ref("a".into(), box Type::Own(Props::new())))
+            ), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
+
+            // long int atol(const char *str)
+            "atol;".into() => Stmt::Function("atol".into(), Parameters::from(
+                Parameter::new("ptr", Type::Ref("a".into(), box Type::Own(Props::new())))
+            ), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
         ])
     }
 
