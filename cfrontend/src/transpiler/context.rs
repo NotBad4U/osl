@@ -11,9 +11,28 @@ pub enum Mutability {
 }
 
 #[derive(Debug, Clone)]
+pub struct Stats {
+    number_of_times_modifed: usize,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            number_of_times_modifed: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum MutabilityContextItem {
     Function(Type),
-    Variable(Mutability, Props),
+    Variable(Mutability, Props, Stats),
+}
+
+impl MutabilityContextItem {
+    pub fn variable(mutability: Mutability, props: Props) -> Self {
+        Self::Variable(mutability, props, Stats::default())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -89,7 +108,7 @@ impl MutabilityContext {
     pub fn get_variable_mutability(&self, id: &str) -> Option<Mutability> {
         self.context.iter().rev().find_map(|scope| {
             scope.get(id).and_then(|mut_var| match mut_var {
-                MutabilityContextItem::Variable(vm, _) => Some(vm.clone()),
+                MutabilityContextItem::Variable(vm, _, _) => Some(vm.clone()),
                 _ => None,
             })
         })
@@ -98,7 +117,7 @@ impl MutabilityContext {
     pub fn get_props_of_variable(&self, var: &str) -> Option<Props> {
         self.context.iter().rev().find_map(|scope| {
             scope.get(var).and_then(|element| match element {
-                MutabilityContextItem::Variable(_, props) => Some(props.clone()),
+                MutabilityContextItem::Variable(_, props, _) => Some(props.clone()),
                 _ => None,
             })
         })
@@ -127,17 +146,17 @@ mod test_context {
         );
         ctx.insert_in_last_scope(
             "x",
-            MutabilityContextItem::Variable(Mutability::MutOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::MutOwner, Props::new()),
         );
         ctx.insert_in_last_scope(
             "y",
-            MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::ImmOwner, Props::new()),
         );
 
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "z",
-            MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::ImmOwner, Props::new()),
         );
 
         let res = ctx.get_current_function_type();
@@ -169,19 +188,19 @@ mod test_context {
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "x",
-            MutabilityContextItem::Variable(Mutability::MutOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::MutOwner, Props::new()),
         );
 
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "y",
-            MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::ImmOwner, Props::new()),
         );
 
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "z",
-            MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::ImmOwner, Props::new()),
         );
 
         let res = ctx.get_variable_mutability("x");
@@ -197,19 +216,19 @@ mod test_context {
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "x",
-            MutabilityContextItem::Variable(Mutability::MutOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::MutOwner, Props::new()),
         );
 
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "y",
-            MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::ImmOwner, Props::new()),
         );
 
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "z",
-            MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+            MutabilityContextItem::variable(Mutability::ImmOwner, Props::new()),
         );
 
         let res = ctx.get_variable_mutability("value_not_defined");

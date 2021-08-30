@@ -93,7 +93,7 @@ impl Transpiler {
     pub(super) fn transpile_enum_declaration(&mut self, id: &str) -> Stmts {
         self.context.insert_in_last_scope(
             id,
-            MutabilityContextItem::Variable(Mutability::MutOwner, Props::from(Prop::Copy)),
+            MutabilityContextItem::variable(Mutability::MutOwner, Props::from(Prop::Copy)),
         );
         Stmts::from(Stmt::Declaration(id.to_string()))
     }
@@ -121,7 +121,7 @@ impl Transpiler {
         structure: &StructType,
         declarations: &[Node<InitDeclarator>],
     ) -> Stmts {
-        let mut props = self.get_props_of_struct_from_fields(
+        let props = self.get_props_of_struct_from_fields(
             structure.declarations.as_ref().unwrap_or(&Vec::new()),
         );
 
@@ -141,7 +141,7 @@ impl Transpiler {
                 //TODO: get props from context
                 self.context.insert_in_last_scope(
                     id.to_string(),
-                    MutabilityContextItem::Variable(Mutability::MutOwner, props.clone()),
+                    MutabilityContextItem::variable(Mutability::MutOwner, props.clone()),
                 );
 
                 println!("{:#?}", self.context.context);
@@ -171,12 +171,12 @@ impl Transpiler {
         // I return a props just because I am lazy to pattern below
         let (mut_context, props) = if utils::is_const(specifiers) {
             (
-                MutabilityContextItem::Variable(Mutability::ImmOwner, Props::new()),
+                MutabilityContextItem::variable(Mutability::ImmOwner, Props::new()),
                 Props::new(),
             )
         } else {
             (
-                MutabilityContextItem::Variable(Mutability::MutOwner, Props::from(Prop::Mut)),
+                MutabilityContextItem::variable(Mutability::MutOwner, Props::from(Prop::Mut)),
                 Props::from(Prop::Mut),
             )
         };
@@ -236,7 +236,7 @@ impl Transpiler {
         declarations.iter().for_each(|(id, _)| {
             self.context.insert_in_last_scope(
                 id,
-                MutabilityContextItem::Variable(decl_mut.clone(), props.clone()),
+                MutabilityContextItem::variable(decl_mut.clone(), props.clone()),
             )
         });
 

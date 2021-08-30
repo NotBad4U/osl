@@ -19,7 +19,6 @@ fn main() {
 
     match lang_c::driver::parse(&Config::default(), TEST_C_FILE) {
         Ok(ast) => {
-            println!("{:#?}", ast);
             info!("transpiling {}...", TEST_C_FILE);
             let stmts = cfrontend::transpile_c_program(ast, Configuration::new(true));
             println!("{}", cfrontend::ast::render::render_program(stmts));
