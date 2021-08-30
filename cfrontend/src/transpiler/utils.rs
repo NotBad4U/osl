@@ -68,10 +68,7 @@ pub fn get_function_parameters_from_declarator(
     declaration: &Declarator,
 ) -> Vec<ParameterDeclaration> {
     match &declaration.derived.last().unwrap().node {
-        DerivedDeclarator::Function(Node {
-            node: FunctionDeclarator { parameters, .. },
-            ..
-        }) => parameters
+        DerivedDeclarator::Function(node!(FunctionDeclarator { parameters, .. })) => parameters
             .into_iter()
             .map(|param| param.node.clone())
             .collect(),
@@ -109,13 +106,9 @@ pub fn get_return_fun_mutability_from_fun_def(
 pub fn is_void(specifiers: &[Node<DeclarationSpecifier>]) -> bool {
     matches!(
         specifiers,
-        [Node {
-            node: DeclarationSpecifier::TypeSpecifier(Node {
-                node: TypeSpecifier::Void,
-                ..
-            }),
-            ..
-        },]
+        [node!(DeclarationSpecifier::TypeSpecifier(node!(
+            TypeSpecifier::Void
+        )))]
     )
 }
 
@@ -136,13 +129,9 @@ pub fn is_const(specifiers: &[Node<DeclarationSpecifier>]) -> bool {
     matches!(
         specifiers,
         [
-            Node {
-                node: DeclarationSpecifier::TypeQualifier(Node {
-                    node: TypeQualifier::Const,
-                    ..
-                }),
-                ..
-            },
+            node!(DeclarationSpecifier::TypeQualifier(node!(
+                TypeQualifier::Const
+            ))),
             ..
         ]
     )
@@ -154,13 +143,9 @@ pub fn is_const_field(specifiers: &[Node<SpecifierQualifier>]) -> bool {
     matches!(
         specifiers,
         [
-            Node {
-                node: SpecifierQualifier::TypeQualifier(Node {
-                    node: TypeQualifier::Const,
-                    ..
-                }),
-                ..
-            },
+            node!(SpecifierQualifier::TypeQualifier(node!(
+                TypeQualifier::Const
+            ))),
             ..
         ]
     )
@@ -171,13 +156,7 @@ pub fn is_const_field(specifiers: &[Node<SpecifierQualifier>]) -> bool {
 pub fn is_a_ref(declarator: &Declarator) -> bool {
     matches!(
         declarator.derived.as_slice(),
-        [
-            Node {
-                node: DerivedDeclarator::Pointer(_),
-                ..
-            },
-            ..
-        ]
+        [node!(DerivedDeclarator::Pointer(_)), ..]
     )
 }
 
@@ -186,14 +165,11 @@ pub fn is_a_ref(declarator: &Declarator) -> bool {
 pub fn is_a_ref_const(declarator: &Declarator) -> bool {
     matches!(
         declarator.derived.as_slice(),
-        [Node {
-            node: DerivedDeclarator::Pointer(p),
-            ..
-        },
-         ..
+        [
+            node!(DerivedDeclarator::Pointer(p)), ..
         ]
             if matches!(p.as_slice(), [
-                    Node{ node: PointerQualifier::TypeQualifier(Node{ node: TypeQualifier::Const, .. }), .. },
+                    node!(PointerQualifier::TypeQualifier(node!(TypeQualifier::Const))),
                     ..
                 ]
             )
@@ -202,25 +178,17 @@ pub fn is_a_ref_const(declarator: &Declarator) -> bool {
 
 pub fn get_declarator_id(decl: &Declarator) -> Option<String> {
     match &decl.kind.node {
-        DeclaratorKind::Identifier(Node {
-            node: Identifier { ref name },
-            ..
-        }) => Some(name.to_string()),
-        DeclaratorKind::Declarator(box Node { node, .. }) => get_declarator_id(node),
+        DeclaratorKind::Identifier(node!(Identifier { ref name })) => Some(name.to_string()),
+        DeclaratorKind::Declarator(box node!(node)) => get_declarator_id(node),
         _ => None,
     }
 }
 
 pub fn is_typedef_declaration(declaration: &Declaration) -> bool {
     match declaration.specifiers.as_slice() {
-        [Node {
-            node:
-                DeclarationSpecifier::StorageClass(Node {
-                    node: StorageClassSpecifier::Typedef,
-                    ..
-                }),
-            ..
-        }, ..] => true,
+        [node!(DeclarationSpecifier::StorageClass(node!(
+            StorageClassSpecifier::Typedef
+        ))), ..] => true,
         _ => false,
     }
 }

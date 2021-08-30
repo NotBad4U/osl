@@ -10,37 +10,21 @@ impl Transpiler {
                 Stmts::from(Stmt::Expression(Exp::Id(name.to_string())))
             }
             // transpile free(x)
-            Expression::Call(box Node {
-                node:
-                    CallExpression {
-                        callee:
-                            box Node {
-                                node:
-                                    Expression::Identifier(box Node {
-                                        node: Identifier { name },
-                                        ..
-                                    }),
-                                ..
-                            },
-                        arguments,
-                    },
-                ..
-            }) if utils::is_deallocate_memory_function(name) => {
-                self.transpile_deallocate(arguments)
-            }
-            Expression::Call(box Node { node: call, .. }) => self.transpile_call_expression(&call),
-            Expression::BinaryOperator(box Node { node: bin_op, .. }) => {
-                self.transpile_binary_operator(bin_op)
-            }
+            Expression::Call(
+                box node!(CallExpression {
+                    callee: box node!(Expression::Identifier(box node!(Identifier { name }))),
+                    arguments,
+                }),
+            ) if utils::is_deallocate_memory_function(name) => self.transpile_deallocate(arguments),
+            Expression::Call(box node!(call)) => self.transpile_call_expression(&call),
+            Expression::BinaryOperator(box node!(bin_op)) => self.transpile_binary_operator(bin_op),
             Expression::Constant(constant) => Stmts::from(self.transpile_constant(&constant.node)),
-            Expression::Cast(box Node { node: cast, .. }) => self.transpile_cast_expression(&cast),
+            Expression::Cast(box node!(cast)) => self.transpile_cast_expression(&cast),
             Expression::StringLiteral(_) => {
                 Stmts::from(Stmt::Expression(Exp::NewResource(Props::new())))
             }
-            Expression::UnaryOperator(box Node { node: unary, .. }) => {
-                self.transpile_unary_expression(&unary)
-            }
-            Expression::Member(box Node { node: m, .. }) => self.transpile_struct_member(m),
+            Expression::UnaryOperator(box node!(unary)) => self.transpile_unary_expression(&unary),
+            Expression::Member(box node!(m)) => self.transpile_struct_member(m),
             e => {
                 unimplemented!(
                     "{}",
@@ -72,10 +56,7 @@ impl Transpiler {
     pub(super) fn transpile_deallocate(&mut self, arguments: &Vec<Node<Expression>>) -> Stmts {
         let argument_to_free = arguments.first().unwrap(); // Free has only one parameter: void free(void *ptr);
         let identifier = match argument_to_free.node {
-            Expression::Identifier(box Node {
-                node: Identifier { ref name },
-                ..
-            }) => name,
+            Expression::Identifier(box node!(Identifier { ref name })) => name,
             ref e => unimplemented!(
                 "{}",
                 self.reporter.unimplemented(
@@ -169,14 +150,9 @@ impl Transpiler {
                 right,
             ) => self.transpile_mutable_assign_expression(right),
             // a[..]
-            (
-                Expression::Identifier(box Node {
-                    node: Identifier { name },
-                    ..
-                }),
-                BinaryOperator::Index,
-                _,
-            ) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
+            (Expression::Identifier(box node!(Identifier { name })), BinaryOperator::Index, _) => {
+                Stmts::from(Stmt::Expression(Exp::Id(name.to_string())))
+            }
             (left, _, _) => unimplemented!(
                 "{}",
                 self.reporter
@@ -189,10 +165,7 @@ impl Transpiler {
         match (&unary.operand.node, &unary.operator.node) {
             // ++T, --T, T++, T--
             (
-                Expression::Identifier(box Node {
-                    node: Identifier { name },
-                    ..
-                }),
+                Expression::Identifier(box node!(Identifier { name })),
                 UnaryOperator::PostDecrement
                 | UnaryOperator::PostIncrement
                 | UnaryOperator::PreDecrement
@@ -207,10 +180,7 @@ impl Transpiler {
             )),
             // *T
             (
-                Expression::Identifier(box Node {
-                    node: Identifier { name },
-                    ..
-                }),
+                Expression::Identifier(box node!(Identifier { name })),
                 UnaryOperator::Indirection,
             ) => Stmts::from(Stmt::Expression(Exp::Deref(box Exp::Id(name.to_string())))),
             // &T
@@ -251,27 +221,13 @@ impl Transpiler {
         match (left, right) {
             // Change Value of Array elements
             (
-                Expression::BinaryOperator(box Node {
-                    node:
-                        BinaryOperatorExpression {
-                            operator:
-                                Node {
-                                    node: BinaryOperator::Index,
-                                    ..
-                                },
-                            lhs:
-                                box Node {
-                                    node:
-                                        Expression::Identifier(box Node {
-                                            node: Identifier { name },
-                                            ..
-                                        }),
-                                    ..
-                                },
-                            ..
-                        },
-                    ..
-                }),
+                Expression::BinaryOperator(
+                    box node!(BinaryOperatorExpression {
+                        operator: node!(BinaryOperator::Index),
+                        lhs: box node!(Expression::Identifier(box node!(Identifier { name }))),
+                        ..
+                    }),
+                ),
                 right,
             ) => {
                 let mut stmts = normalize_stmts_expression(self.transpile_expression(right));
@@ -287,43 +243,19 @@ impl Transpiler {
             // Malloc, Calloc, etc. returns a pointer of type void which can be cast into a pointer of any form.
             // Most usage of malloc follow this pattern.
             (
-                Expression::Identifier(box Node {
-                    node: Identifier { name: left_id },
-                    ..
-                }),
+                Expression::Identifier(box node!(Identifier { name: left_id })),
                 // Initial memory allocation : x = (T*) malloc(y);
-                Expression::Cast(box Node {
-                    node:
-                        CastExpression {
-                            expression:
-                                box Node {
-                                    node:
-                                        Expression::Call(box Node {
-                                            node:
-                                                CallExpression {
-                                                    callee:
-                                                        box Node {
-                                                            node:
-                                                                Expression::Identifier(box Node {
-                                                                    node: Identifier { name },
-                                                                    ..
-                                                                }),
-                                                            ..
-                                                        },
-                                                    ..
-                                                },
-                                            ..
-                                        }),
-                                    ..
-                                },
-                            type_name:
-                                Node {
-                                    node: TypeName { declarator, .. },
-                                    ..
-                                },
-                        },
-                    ..
-                }),
+                Expression::Cast(
+                    box node!(CastExpression {
+                        expression: box node!(Expression::Call(box node!(CallExpression {
+                            callee: box node!(Expression::Identifier(box node!(Identifier {
+                                name
+                            }))),
+                            ..
+                        }))),
+                        type_name: node!(TypeName { declarator, .. }),
+                    }),
+                ),
             ) if utils::is_allocate_memory_function(name) => Stmts::from(Stmt::Transfer(
                 Exp::NewResource(utils::get_props_from_declarator(&declarator)),
                 Exp::Id(left_id.to_string()),
@@ -348,47 +280,27 @@ impl Transpiler {
             // Address assignment a = &b;
             // We should consider this as a borrow
             (
-                Expression::Identifier(box Node { node: left_id, .. }),
-                Expression::UnaryOperator(box Node {
-                    node:
-                        UnaryOperatorExpression {
-                            operator:
-                                Node {
-                                    node: UnaryOperator::Address,
-                                    ..
-                                },
-                            operand:
-                                box Node {
-                                    node: Expression::Identifier(box Node { node: right_id, .. }),
-                                    ..
-                                },
-                        },
-                    ..
-                }),
+                Expression::Identifier(box node!(left_id)),
+                Expression::UnaryOperator(
+                    box node!(UnaryOperatorExpression {
+                        operator: node!(UnaryOperator::Address),
+                        operand: box node!(Expression::Identifier(box node!(right_id))),
+                    }),
+                ),
             ) => Stmts::from(self.transpile_ref_assignment(left_id, right_id)),
             // a = <Constant>;
-            (
-                Expression::Identifier(box Node {
-                    node: Identifier { name },
-                    ..
-                }),
-                Expression::Constant(_),
-            ) => Stmts::from(Stmt::Transfer(
-                Exp::NewResource(
-                    self.context
-                        .get_props_of_variable(name)
-                        .expect(&format!("{}", name)),
-                ),
-                Exp::Id(name.to_string()),
-            )),
+            (Expression::Identifier(box node!(Identifier { name })), Expression::Constant(_)) => {
+                Stmts::from(Stmt::Transfer(
+                    Exp::NewResource(
+                        self.context
+                            .get_props_of_variable(name)
+                            .expect(&format!("{}", name)),
+                    ),
+                    Exp::Id(name.to_string()),
+                ))
+            }
             // Default: a = b
-            (
-                Expression::Identifier(box Node {
-                    node: Identifier { name },
-                    ..
-                }),
-                right,
-            ) => {
+            (Expression::Identifier(box node!(Identifier { name })), right) => {
                 // Get all the expression to check before transfering a new resource to the left Identifier.
                 // For exemple: A = A + 1;
                 // Here we have to read first A, and after Transfer a NewResource to A.
@@ -421,7 +333,7 @@ impl Transpiler {
         right: &Expression,
     ) -> Stmts {
         match (&unary.operator.node, &unary.operand.node, right) {
-            (UnaryOperator::Indirection, Expression::Identifier(box Node { node, .. }), right) => {
+            (UnaryOperator::Indirection, Expression::Identifier(box node!(node)), right) => {
                 let mut stmts = self.transpile_expression(right);
                 stmts
                     .0
@@ -482,11 +394,8 @@ fn normalize_stmts_expression(stmts: Stmts) -> Stmts {
 /// We have to iterate recursively to extract the structure tag.
 fn get_structure_tag(member: &MemberExpression) -> String {
     match &(*member.expression).node {
-        Expression::Member(box Node { node: ref m, .. }) => get_structure_tag(m),
-        Expression::Identifier(box Node {
-            node: Identifier { name },
-            ..
-        }) => name.into(),
+        Expression::Member(box node!(ref m)) => get_structure_tag(m),
+        Expression::Identifier(box node!(Identifier { name })) => name.into(),
         _ => unreachable!(),
     }
 }

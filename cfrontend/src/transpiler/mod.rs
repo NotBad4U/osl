@@ -210,14 +210,12 @@ impl Transpiler {
             Statement::Return(Some(ref r)) => self.transpile_return_statement(&r.node),
             Statement::Return(None) => Stmts::new(),
             Statement::Compound(ref block_items) => self.transpile_block_items(block_items),
-            Statement::If(Node {
-                node: ref if_stmt, ..
-            }) => self.transpile_branchs(if_stmt),
+            Statement::If(node!(ref if_stmt)) => self.transpile_branchs(if_stmt),
             Statement::While(ref while_stmt) => self.transpile_while_statement(&while_stmt.node),
             Statement::For(ref forloop) => self.transpile_forloop_statement(&forloop.node),
             Statement::DoWhile(ref dowhile) => self.transpile_dowhile_statement(&dowhile.node),
             Statement::Asm(_) => Stmts::new(), // ignore it
-            Statement::Switch(Node { ref node, .. }) => self.transpile_switch_case(node),
+            Statement::Switch(node!(ref switch_stmt)) => self.transpile_switch_case(switch_stmt),
             Statement::Goto(Node { span, .. }) => {
                 unimplemented!(
                     "{}",
@@ -267,9 +265,7 @@ impl Transpiler {
             .iter()
             .fold(Vec::<Stmt>::new(), |mut acc, item| {
                 acc.append(&mut match item.node {
-                    BlockItem::Statement(Node { node: ref stmt, .. }) => {
-                        self.transpile_statement(stmt).0
-                    }
+                    BlockItem::Statement(node!(ref stmt)) => self.transpile_statement(stmt).0,
                     BlockItem::Declaration(ref declaration) => {
                         self.transpile_declaration(&declaration.node).0
                     }
@@ -306,14 +302,11 @@ impl Transpiler {
             blocks = stmts
                 .iter()
                 .map(|ref stmt| match &stmt.node {
-                    BlockItem::Statement(Node {
-                        node:
-                            Statement::Labeled(Node {
-                                node: LabeledStatement { box statement, .. },
-                                ..
-                            }),
-                        ..
-                    }) => self.transpile_statement(&statement.node),
+                    BlockItem::Statement(
+                        node!(Statement::Labeled(
+                            node!(LabeledStatement { box statement, .. })
+                        )),
+                    ) => self.transpile_statement(&statement.node),
                     _ => Stmts::new(),
                 })
                 .filter(|stmts| stmts.is_empty() == false) // filter the Break and empty block

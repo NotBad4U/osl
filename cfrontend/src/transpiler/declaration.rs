@@ -53,21 +53,17 @@ impl Transpiler {
                 // const struct T
                 [
                     node!(
-                        DeclarationSpecifier::TypeQualifier(Node {
-                            node: TypeQualifier::Const,
-                            ..
-                    })),
+                        DeclarationSpecifier::TypeQualifier(node!(TypeQualifier::Const))
+                    ),
                     node!(
-                        DeclarationSpecifier::TypeSpecifier(Node {
-                            node: TypeSpecifier::Struct(Node{ node: structure, .. }),
-                            ..
-                    })),
+                        DeclarationSpecifier::TypeSpecifier(
+                            node!(TypeSpecifier::Struct(node!(structure))))),
                     ..
                 ]
                 // struct T
                 | [
                     node!(
-                        DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Struct(Node{ node: structure, .. })))
+                        DeclarationSpecifier::TypeSpecifier(node!(TypeSpecifier::Struct(node!(structure))))
                     ),
                     ..
                 ],
@@ -229,14 +225,10 @@ impl Transpiler {
             .declarators
             .iter()
             .map(
-                |Node {
-                     node:
-                         InitDeclarator {
-                             declarator,
-                             initializer,
-                         },
-                     ..
-                 }| (get_declarator_id(&declarator.node).unwrap(), initializer),
+                |node!(InitDeclarator {
+                     declarator,
+                     initializer,
+                 })| (get_declarator_id(&declarator.node).unwrap(), initializer),
             )
             .collect();
 
