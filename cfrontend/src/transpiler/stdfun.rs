@@ -152,7 +152,7 @@ impl StdlibFunction {
             // int abs(int x) Returns the absolute value of x.
             "abs".into() => Stmt::Function("abs".into(), Parameters(vec![
                 Parameter::new("x", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
-            ]), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Return(Exp::Id("x".into())))),
+            ]), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
 
             // int rand(void) Returns a pseudo-random number in the range of 0 to RAND_MAX.
             "rand".into() => Stmt::Function("rand".into(), Parameters::new(), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
