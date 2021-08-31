@@ -295,7 +295,7 @@ impl Transpiler {
     }
 
     fn transpile_switch_case(&mut self, switch: &SwitchStatement) -> Stmts {
-        let condition = self.transpile_boolean_condition(&switch.expression.node);
+        let condition = self.transpile_normalized_expression(&switch.expression.node);
         let mut blocks = Blocks(vec![]);
 
         if let Statement::Compound(ref stmts) = switch.statement.node {

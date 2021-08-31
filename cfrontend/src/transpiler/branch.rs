@@ -20,7 +20,7 @@ impl Transpiler {
             blocks.0.push(else_stmts)
         }
 
-        let mut stmts = self.transpile_boolean_condition(&if_stmt.condition.node);
+        let mut stmts = self.transpile_normalized_expression(&if_stmt.condition.node);
         stmts.0.push(Stmt::Branch(blocks));
         stmts
     }

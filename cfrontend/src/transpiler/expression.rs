@@ -35,7 +35,7 @@ impl Transpiler {
     }
 
     /// transpile expression but filter Val statement to only keep read and transfer
-    pub(super) fn transpile_boolean_condition(&mut self, exp: &Expression) -> Stmts {
+    pub(super) fn transpile_normalized_expression(&mut self, exp: &Expression) -> Stmts {
         normalize_stmts_expression(self.transpile_expression(exp))
     }
 
