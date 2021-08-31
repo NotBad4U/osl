@@ -264,7 +264,7 @@ impl Transpiler {
     /// T a = <expression>
     /// TODO: For now this function is a little raw, maybe we can put some code in common with
     /// with other transpilation expressions functions
-    fn transpile_initializer(&self, declarator: String, initializer: &Initializer) -> Stmts {
+    fn transpile_initializer(&mut self, declarator: String, initializer: &Initializer) -> Stmts {
         let mutability = self
             .context
             .get_variable_mutability(declarator.as_str())
@@ -307,11 +307,7 @@ impl Transpiler {
 
                     Stmts::from(Stmt::Transfer(Exp::NewResource(props), Exp::Id(declarator)))
                 }
-                ref e => unimplemented!(
-                    "{}",
-                    self.reporter
-                        .unimplemented(expression.span, &format!("{:?}", e))
-                ),
+                ref e => self.transpile_normalized_expression(e),
             },
             Initializer::List(list) => unimplemented!(
                 "{}",
