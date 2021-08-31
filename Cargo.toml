@@ -3,6 +3,10 @@ name = "osl"
 version = "0.1.0"
 edition = "2018"
 
+[lib]
+name = "osl"
+path = "src/lib.rs"
+
 [dependencies]
 cfrontend = { path = "cfrontend" }
 log = "0.4.0"
