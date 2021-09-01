@@ -309,10 +309,10 @@ impl Transpiler {
                 }
                 ref e => self.transpile_normalized_expression(e),
             },
-            Initializer::List(list) => unimplemented!(
-                "{}",
-                self.reporter.unimplemented(list.first().unwrap().span, "")
-            ),
+            Initializer::List(_) => Stmts::from(Stmt::Transfer(
+                Exp::NewResource(Props::new()),
+                Exp::Id(declarator),
+            )), // FIXME: get props from context
         }
     }
 

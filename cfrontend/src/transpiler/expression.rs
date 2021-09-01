@@ -149,14 +149,16 @@ impl Transpiler {
                 | BinaryOperator::AssignBitwiseOr,
                 right,
             ) => self.transpile_mutable_assign_expression(right),
-            // a[..]
-            (Expression::Identifier(box node!(Identifier { name })), BinaryOperator::Index, _) => {
-                Stmts::from(Stmt::Expression(Exp::Id(name.to_string())))
+            // a[..][..][..][..]...
+            (left, BinaryOperator::Index, _) => {
+                Stmts::from(Stmt::Expression(Exp::Id(get_matrices_tag(&left))))
             }
-            (left, _, _) => unimplemented!(
+            (left, op, right) => unimplemented!(
                 "{}",
-                self.reporter
-                    .unimplemented(get_span_from_expression(left), "")
+                self.reporter.unimplemented(
+                    get_span_from_expression(left),
+                    &format!("{:#?} \n {:?} \n {:#?}", left, op, right)
+                )
             ),
         }
     }
@@ -397,5 +399,17 @@ fn get_structure_tag(member: &MemberExpression) -> String {
         Expression::Member(box node!(ref m)) => get_structure_tag(m),
         Expression::Identifier(box node!(Identifier { name })) => name.into(),
         _ => unreachable!(),
+    }
+}
+
+/// C-Lang library put the matrices tag at the tail of the list.
+/// We have to iterate recursively to extract the matrices tag.
+fn get_matrices_tag(expression: &Expression) -> String {
+    match expression {
+        Expression::BinaryOperator(box node!(BinaryOperatorExpression{ box lhs, .. })) => {
+            get_matrices_tag(&lhs.node)
+        }
+        Expression::Identifier(box node!(Identifier { name })) => name.into(),
+        _ => unimplemented!("Finish the visitor"),
     }
 }

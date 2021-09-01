@@ -209,6 +209,27 @@ call main();"###;
 }
 
 #[test]
+//FIXME: newResource() has no props.
+fn it_should_transpile_declaration_of_matrice() {
+    let c_program = r###" 
+        void main () {
+            int a[5][2] = { {0,0}, {1,2}, {2,4}, {3,6},{4,8}};
+            printf("a[1][1] = %d\n", a[1][2][3]);
+        }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl a;
+    transfer newResource() a;
+    call printf2(newResource(), a);
+};
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
 fn it_should_transpile_declaration_of_structure_type() {
     let c_program = r###" 
     struct complex
