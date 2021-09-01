@@ -37,4 +37,4 @@ cfrontend/*.c
 
 /target
 
-*.c
+test.c
