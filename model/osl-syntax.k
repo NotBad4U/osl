@@ -51,6 +51,7 @@ syntax Stmt
 	 | Exp ";"				[klabel(#expStmt),strict]
 	 | val(Exp) 				[strict]
 	 | Function ";"
+        | "debug"
 
 syntax Prop
        ::= "copy"
@@ -76,6 +77,7 @@ syntax Exps
 syntax Value
        ::= #rs(Props)
          | #loc(Int)
+         | #ref(Int)
 	 | #Loc(Value,Int)
 	 | "#void"
 

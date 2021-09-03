@@ -38,6 +38,9 @@ syntax Exp
 
 rule #lv(newResource(Ps:Props)) => newResource(Ps)
 
+// evaluate the expression: Transfer (call F) X
+rule #lv( call F:Id (Es:Exps) ) => call F:Id (Es:Exps)
+
 rule <k> #lv(X:Id) => #loc(I) ...  </k>
      <env> ... X |-> I:Int ...  </env>
 
@@ -116,6 +119,19 @@ rule <k> #Transfer(#loc(F:Int), #loc(L:Int)) => #TransferV(#loc(F), #loc(L)) ...
 rule <k> #Transfer(#rs(R:Props), #loc(L)) => . ... </k>
      <store> ... L |-> (_ => #rs(R)) ... </store>
 
+// return of a function
+// Transfer an immutable reference into L.
+// Can be see like borrow a borrowed L.
+rule <k> #Transfer(#ref(F), #loc(L)) => #TransferIB(#loc(F), #loc(L)) ... </k>
+     <store> ... F |-> #rs(PS:Props) ... </store>
+     requires notBool #inProps(mut, PS)
+
+// return of a function
+// Transfer a mutable reference into L
+// Can be see like mborrow an mborrowed L.
+rule <k> #Transfer(#ref(F), #loc(L)) => #TransferMB(#loc(F), #loc(L)) ... </k>
+     <store> ... F |-> #rs(PS:Props) ... </store>
+     requires #inProps(mut, PS)
 
 rule <k> #TransferV(#loc(F), #loc(L)) => #Transfer(#rs(PS), #loc(L)) ... </k>
      <store> ... (F |-> #rs(PS)) => (F |-> #uninit)  ... </store>
