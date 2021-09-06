@@ -8,5 +8,6 @@ jobs:
     - rust: beta
   fast_finish: true
 script:
-  - cargo build --workspace --verbose
-  - cargo test --workspace --no-fail-fast
+  - cd cfrontend
+  - cargo build --verbose
+  - cargo test --no-fail-fast

@@ -3,7 +3,7 @@ int main()
 {
     int year;
     printf("Enter a year: ");
-    scanf("%d", &year);
+    year = 1940;
 
     // leap year if perfectly divisible by 400
     if (year % 400 == 0)

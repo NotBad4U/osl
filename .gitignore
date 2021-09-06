@@ -38,3 +38,5 @@ cfrontend/*.c
 /target
 
 test.c
+
+.krun*

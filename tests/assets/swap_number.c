@@ -2,9 +2,11 @@
 int main() {
   double first, second, temp;
   printf("Enter first number: ");
-  scanf("%lf", &first);
+  //scanf("%lf", &first);
+  first = 4;
   printf("Enter second number: ");
-  scanf("%lf", &second);
+  second = 5;
+  //scanf("%lf", &second);
 
   // value of first is assigned to temp
   temp = first;
