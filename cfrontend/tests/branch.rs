@@ -21,9 +21,9 @@ fn it_should_transpile_if_else_statement() {
     let expected_osl_program = r###"
         fn main() ->  #voidTy {
             decl age;
-            transfer newResource(mut,copy) age;
+            transfer newResource(copy,mut) age;
             decl limit;
-            transfer newResource(mut,copy) limit;
+            transfer newResource(copy,mut) limit;
             decl ok;
             read(age);
             read(limit);
@@ -60,7 +60,7 @@ fn it_should_transpile_if_statement_and_ignore_constant() {
     let expected_osl_program = r###"
         fn main() ->  #voidTy {
             decl age;
-            transfer newResource(mut,copy) age;
+            transfer newResource(copy,mut) age;
             decl ok;
             read(age);
             @

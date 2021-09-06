@@ -51,7 +51,7 @@ fn it_should_transpile_return() {
     "###;
 
     let expected_osl_program = r###"
-fn main() -> #own(mut) {
+fn main() -> #own(copy,mut) {
     decl a;
     decl b;
     a

@@ -59,10 +59,10 @@ fn it_should_find_the_mutability_of_the_return_type() {
     "###;
 
     let expected_osl_program = r###"
-fn mutable() -> #own(mut) {
+fn mutable() -> #own(copy,mut) {
 };
 
-fn immutable() -> #own() {
+fn immutable() -> #own(copy) {
 };
 
 fn mutable_ref() -> #ref('rt,#own(mut)) {

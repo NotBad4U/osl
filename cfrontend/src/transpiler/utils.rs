@@ -193,6 +193,19 @@ pub fn is_typedef_declaration(declaration: &Declaration) -> bool {
     }
 }
 
+pub fn is_copy(fun_def: &FunctionDefinition) -> bool {
+    fun_def
+        .declarator
+        .node
+        .derived
+        .iter()
+        .find(|d| {
+            matches!(d.node, DerivedDeclarator::Array(_))
+                || matches!(d.node, DerivedDeclarator::Pointer(_))
+        })
+        .is_none()
+}
+
 pub fn is_copyable(declaration: &Declaration) -> bool {
     let init_declarator = &declaration.declarators.first().unwrap().node;
 

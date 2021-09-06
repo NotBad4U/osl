@@ -94,7 +94,7 @@ fn it_should_transpile_simple_type_declaration_with_an_init() {
     let expected_osl_program = r###"
 fn main() -> #voidTy {
 decl a;
-transfer newResource(mut,copy) a;
+transfer newResource(copy,mut) a;
 };
 call main();"###;
 
@@ -112,7 +112,7 @@ fn it_should_transpile_simple_type_mut_borrow_declaration_with_an_init() {
 
     let expected_osl_program = r###"fn main() -> #voidTy {
 decl a;
-transfer newResource(mut,copy) a;
+transfer newResource(copy,mut) a;
 decl b;
 b mborrow a;
 };
@@ -177,7 +177,7 @@ fn it_should_transpile_declaration_with_init() {
     let expected_osl_program = r###"
 fn main() -> #voidTy {
 decl a;
-transfer newResource(mut,copy) a;
+transfer newResource(copy,mut) a;
 decl b;
 transfer newResource(copy) b;
 };

@@ -147,12 +147,12 @@ impl fmt::Display for Prop {
 
 impl fmt::Display for Props {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let props_str = self
+        let mut props_vec = self
             .iter()
             .map(|prop| format!("{}", prop))
-            .collect::<Vec<String>>()
-            .join(",");
-        write!(f, "{}", props_str)
+            .collect::<Vec<String>>();
+        props_vec.sort();
+        write!(f, "{}", props_vec.join(","))
     }
 }
 

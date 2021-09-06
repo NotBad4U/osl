@@ -85,8 +85,15 @@ impl Transpiler {
             &get_function_parameters_from_declarator(&function_def.declarator.node),
         );
 
-        let return_type =
+        let mut return_type =
             self.transpile_return_type_function_declaration(&parameters, &mut_return_type);
+
+        match return_type {
+            Type::Own(ref mut props) if utils::is_copy(&function_def) => {
+                props.0.push(Prop::Copy);
+            }
+            _ => {}
+        };
 
         self.context.insert_in_last_scope(
             fn_id.clone(),

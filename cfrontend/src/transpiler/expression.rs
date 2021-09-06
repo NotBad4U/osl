@@ -46,7 +46,7 @@ impl Transpiler {
     fn transpile_constant(&self, constant: &Constant) -> Stmt {
         match constant {
             Constant::Float(_) | Constant::Integer(_) => {
-                Stmt::Val(Exp::NewResource(Props::from(Prop::Copy)))
+                Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut])))
             }
             Constant::Character(_) => Stmt::Val(Exp::NewResource(Props::new())),
         }
