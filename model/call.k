@@ -30,6 +30,8 @@ rule <k> call F:Id (Es:Exps) => { #bindParams(Ps, Es, SS) } ~> T  ... </k>
 
 rule V:Value ~> #void => #void
 
+rule <k> #voidTy => #void ... </k>
+
 // Return statement
 // We verify that the returned value
 // as the same props than the returned type.
