@@ -52,6 +52,7 @@ syntax Stmt
 	 | val(Exp) 				[strict]
 	 | Function ";"
         | "debug"
+        | "unsafe" Block ";"              //[klabel(#unsafe)]
 
 syntax Prop
        ::= "copy"

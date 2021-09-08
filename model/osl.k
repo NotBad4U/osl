@@ -211,16 +211,22 @@ rule <k> #borrowImmCK(L:Int, BEG:Int, END:Int, L1:Int) => #loc(L1) ... </k>
      <indexes> #indexes(C:Int,_) </indexes>
      <timer> TIMER:Int </timer>
      <write> WRITE:Set </write>
-     requires (#borrowimmck(L, Rho, BEG, TIMER , L1) ==Bool false) andBool
-     	      (#writeCK(L1, BEG, TIMER,WRITE))
+     <unsafe-mode> UNSAFE_BLOCK:Bool </unsafe-mode>
+     requires ( UNSAFE_BLOCK ==Bool true )
+               orBool
+               ((#borrowimmck(L, Rho, BEG, TIMER , L1) ==Bool false) andBool
+     	      (#writeCK(L1, BEG, TIMER,WRITE)))
 
 rule <k> #borrowMutCK(L:Int,BEG:Int, END:Int,L1:Int) => #loc(L1) ... </k>
      <store> Rho:Map => Rho[L <- #br(BEG, TIMER, #mutRef(L1))] </store>
      <indexes> #indexes(C:Int, _) </indexes>
      <timer> TIMER:Int </timer>
      <write> WRITE:Set </write>
-     requires (#borrowmutck(L, Rho, BEG, TIMER , L1) ==Bool false) andBool
-     	      (#writeCK(L1, BEG, TIMER,WRITE))
+     <unsafe-mode> UNSAFE_BLOCK:Bool </unsafe-mode>
+     requires  ( UNSAFE_BLOCK ==Bool true )
+               orBool
+               ((#borrowmutck(L, Rho, BEG, TIMER , L1) ==Bool false) andBool
+     	      (#writeCK(L1, BEG, TIMER,WRITE)))
      	           
 
 syntax Bool

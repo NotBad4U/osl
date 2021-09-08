@@ -23,6 +23,7 @@ configuration
 	<stack> .List  </stack>
 	<write> .Set </write>
 	<timer> 0:Int </timer>
+       <unsafe-mode> false:Bool </unsafe-mode>
      	<indexes> #indexes(0,0) </indexes>
      </state>
     </states>     

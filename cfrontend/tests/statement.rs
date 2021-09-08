@@ -61,3 +61,34 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+
+#[test]
+fn it_should_transpile_unsafe_block() {
+    let c_program = r###"
+    void main() {
+        unsafe: {
+            int a;
+        };
+        UNSAFE: {
+            int a;
+        };
+        int b;
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    unsafe{
+        decl a;
+    };
+    unsafe{
+        decl a;
+    };
+    decl b;
+};
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}

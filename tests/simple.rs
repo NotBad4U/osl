@@ -21,11 +21,14 @@ fn it_should_validate_swap_number() {
     )));
 }
 
-
-
 #[test]
 fn it_should_not_validate_borrow_clash() {
+    assert!(common::is_valid(&PathBuf::from(r"tests/assets/borrow_clash.c")) == false);
+}
+
+#[test]
+fn it_should_validate_borrow_clash_when_in_unsafe_block() {
     assert!(common::is_valid(&PathBuf::from(
-        r"tests/assets/borrow_clash.c"
-    )) == false );
+        r"tests/assets/borrow_clash_unsafe.c"
+    )));
 }

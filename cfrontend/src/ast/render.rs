@@ -52,6 +52,11 @@ fn render_stmt(stmt: &Stmt, level: usize) -> String {
             buff.push_str(&render_stmts(block, level + INDENTATION_SIZE));
             buff.push_str(&format!("{:indent$}}};\n", "", indent = level));
         }
+        Stmt::Unsafe(block) => {
+            buff.push_str(&format!("{:indent$}unsafe{{\n", "", indent = level));
+            buff.push_str(&render_stmts(block, level + INDENTATION_SIZE));
+            buff.push_str(&format!("{:indent$}}};\n", "", indent = level));
+        }
         e => buff.push_str(&format!("{:indent$}{}\n", "", e, indent = level)),
     }
 
@@ -118,9 +123,10 @@ impl fmt::Display for Stmt {
             Stmt::Branch(blocks) => {
                 write!(f, "@{}", blocks)
             }
-            Stmt::Loop(block) => write!(f, "!{{\n{}\n}}", block),
+            Stmt::Loop(block) => write!(f, "!{{\n{}\n}};", block),
             Stmt::Deallocate(exp) => write!(f, "deallocate {};", exp),
             Stmt::Comment(comment) => write!(f, "// {}", comment),
+            Stmt::Unsafe(block) => write!(f, "unsafe{{\n{}\n}};", block),
             Stmt::Return(e) => write!(f, "{}", e), // like expression but without semicolon
         }
     }

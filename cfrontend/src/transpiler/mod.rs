@@ -232,7 +232,17 @@ impl Transpiler {
             }
             Statement::Break => unimplemented!("break statement is not supported"),
             Statement::Continue => Stmts::new(), // ignore it
-            Statement::Labeled(_) => Stmts::new(),
+            Statement::Labeled(
+                node!(LabeledStatement {
+                    label: node!(Label::Identifier(node!(Identifier { ref name }))),
+                    statement: box node!(ref statement)
+                }),
+            ) if name.to_lowercase() == "unsafe" => {
+                Stmts::from(Stmt::Unsafe(self.transpile_statement(&statement)))
+            }
+            Statement::Labeled(Node { span, .. }) => {
+                unimplemented!("{}", self.reporter.unimplemented(span, "todo"))
+            }
         }
     }
 

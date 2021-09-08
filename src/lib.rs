@@ -66,8 +66,10 @@ pub fn is_valid(k_output: &str) -> bool {
         .is_match(k_output)
 }
 
-
-pub fn save_in_file(path_tmp_file: &PathBuf, stmts: cfrontend::ast::Stmts) -> Result<(), Box<dyn Error>> {
+pub fn save_in_file(
+    path_tmp_file: &PathBuf,
+    stmts: cfrontend::ast::Stmts,
+) -> Result<(), Box<dyn Error>> {
     let mut file = File::create(path_tmp_file)?;
     file.write_all(
         format!("{}", cfrontend::ast::render::render_program(stmts))
