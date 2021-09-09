@@ -107,14 +107,6 @@ rule <k> #Transfer(#loc(F:Int), #loc(L:Int)) => #TransferV(#loc(F), #loc(L)) ...
      <indexes> #indexes(C:Int, _:Int) </indexes>
      requires (notBool #existRef(#immRef(F), #list2Set(values(STORE)),C)) andBool
 	      (notBool #existRef(#mutRef(F), #list2Set(values(STORE)),C))
-	      
-
-rule <k> #Transfer(#loc(F:Int), #loc(L:Int)) => #TransferV(#loc(F), #loc(L)) ... </k>
-     <store> STORE:Map   </store>
-     <indexes> #indexes(C:Int, _:Int) </indexes>
-     requires (notBool #existRef(#immRef(F), #list2Set(values(STORE)),C)) andBool
-	      (notBool #existRef(#mutRef(F), #list2Set(values(STORE)),C))
-
 
 rule <k> #Transfer(#rs(R:Props), #loc(L)) => . ... </k>
      <store> ... L |-> (_ => #rs(R)) ... </store>
