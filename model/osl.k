@@ -372,4 +372,11 @@ rule deallocate E:Exp ; => #Deallocate(#lv(E))
 
 rule #Deallocate(#rs(Ps:Props)) => .
 
+// Only an owner of a resource has the  authority to deallocate the resource.
+// With this rules, you can still use the deref on a borrow to get the owner. 
+// This should not be a problem  because if we use the borrow later,
+// then the semantic will not be valid.
+rule <k> #Deallocate(#loc(I:Int)) => . ... </k>
+     <store> ... (I |-> #rs(_) => I |-> #uninit)  ... </store>
+
 endmodule
