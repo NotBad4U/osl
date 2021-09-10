@@ -303,6 +303,7 @@ call main();"###;
     assert_equal_program(c_program, expected_osl_program);
 }
 
+#[test]
 fn it_should_transpile_declaration_of_enum_variable() {
     let c_program = r###" 
     enum {Mon, Tue, Wed, Thur, Fri, Sat, Sun};
@@ -316,7 +317,53 @@ fn it_should_transpile_declaration_of_enum_variable() {
     let expected_osl_program = r###"
 fn main() -> #voidTy {
     decl day;
-    transfer newResource(copy) c2;
+    transfer newResource(copy) day;
+};
+
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_declaration_with_calculus_as_initializer() {
+    let c_program = r###" 
+    void main() {
+    double p = 3;
+    double q = 7;
+    double n=p*q;
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl p;
+    transfer newResource(copy,mut) p;
+    decl q;
+    transfer newResource(copy,mut) q;
+    decl n;
+    read(p);
+    read(q);
+    transfer newResource(copy,mut) n;
+};
+
+call main();"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_declaration_with_call_function_as_initializer() {
+    let c_program = r###" 
+    void main() {
+    double c = pow(x,y);
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl c;
+    transfer call pow(x,y) c; 
 };
 
 call main();"###;

@@ -307,7 +307,27 @@ impl Transpiler {
 
                     Stmts::from(Stmt::Transfer(Exp::NewResource(props), Exp::Id(declarator)))
                 }
-                ref e => self.transpile_normalized_expression(e),
+                ref e => {
+                    let mut stmts = self.transpile_normalized_expression(e);
+                    if let Some(stmt) = stmts.0.last_mut() {
+                        match stmt {
+                            Stmt::Expression(Exp::Call(name, args)) => {
+                                *stmt = Stmt::Transfer(
+                                    Exp::Call(name.clone(), args.clone()),
+                                    Exp::Id(declarator),
+                                )
+                            }
+                            _ => stmts.0.push(Stmt::Transfer(
+                                Exp::NewResource(
+                                    self.context.get_props_of_variable(&declarator).unwrap(),
+                                ),
+                                Exp::Id(declarator),
+                            )),
+                        };
+                    };
+
+                    stmts
+                }
             },
             Initializer::List(_) => Stmts::from(Stmt::Transfer(
                 Exp::NewResource(Props::new()),
