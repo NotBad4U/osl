@@ -108,8 +108,17 @@ rule <k> #Transfer(#loc(F:Int), #loc(L:Int)) => #TransferV(#loc(F), #loc(L)) ...
      requires (notBool #existRef(#immRef(F), #list2Set(values(STORE)),C)) andBool
 	      (notBool #existRef(#mutRef(F), #list2Set(values(STORE)),C))
 
+// Transfer a resource to an owner
 rule <k> #Transfer(#rs(R:Props), #loc(L)) => . ... </k>
-     <store> ... L |-> (_ => #rs(R)) ... </store>
+     <store> ... (L |-> #uninit => L |-> #rs(R)) ... </store>
+
+rule <k> #Transfer(#rs(R:Props), #loc(L)) => . ... </k>
+     <store> ... (L |-> #rs(_) => L |-> #rs(R)) ... </store>
+
+// Tansfer a resource through a mutable reference and let the mutref untouch
+// NOTE: It is not allow to transfer a resource through an immutable reference
+rule <k> #Transfer(#rs(R:Props), #loc(L)) => #Transfer(#rs(R:Props), #loc(MR)) ... </k>
+     <store> ... L |-> #br(_, _, #mutRef(MR)) ... </store>
 
 // return of a function
 // Transfer an immutable reference into L.
