@@ -66,7 +66,10 @@ macro_rules! printf {
                 $( Parameter::new(&uncollision_param($args), Type::ref_from($args, Type::own())) , )*
             ]),
             Type::VoidTy,
-            Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()))
+            Stmts(vec![
+                Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()),
+                $( Stmt::Expression(Exp::Read(box Exp::Id(uncollision_param($args)))), )*
+            ])
         )
     };
 }
@@ -88,7 +91,10 @@ macro_rules! fprintf {
                 $( Parameter::new(&uncollision_param($args), Type::ref_from($args, Type::own())) , )*
             ]),
             Type::VoidTy,
-            Stmts::from(Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string())),
+            Stmts(vec![
+                Stmt::Comment(GENERATED_FUNCTION_COMMENT.to_string()),
+                $( Stmt::Expression(Exp::Read(box Exp::Id(uncollision_param($args)))), )*
+            ])
         )
     };
 }
