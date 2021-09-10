@@ -127,7 +127,7 @@ impl fmt::Display for Stmt {
             Stmt::Deallocate(exp) => write!(f, "deallocate {};", exp),
             Stmt::Comment(comment) => write!(f, "// {}", comment),
             Stmt::Unsafe(block) => write!(f, "unsafe{{\n{}\n}};", block),
-            Stmt::Return(e) => write!(f, "{}", e), // like expression but without semicolon
+            Stmt::Return(e) => write!(f, "val({})", e), // like expression but without semicolon
         }
     }
 }

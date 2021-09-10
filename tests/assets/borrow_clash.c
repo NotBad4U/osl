@@ -17,6 +17,6 @@ int main()
     int x = 45;
     const int *y1 = &x; // y1 borrow x;
     int *y2 = &x; // y2 mborrow x;
-    y1;  // read(y1) but y2 mborrow x
+    printf("%d", y1);  // read(y1) but y2 mborrow x
     return 0;
 }

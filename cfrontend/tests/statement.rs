@@ -54,14 +54,13 @@ fn it_should_transpile_return() {
 fn main() -> #own(copy,mut) {
     decl a;
     decl b;
-    a
+    val(a)
 };
 call main();
 "###;
 
     assert_equal_program(c_program, expected_osl_program);
 }
-
 
 #[test]
 fn it_should_transpile_unsafe_block() {

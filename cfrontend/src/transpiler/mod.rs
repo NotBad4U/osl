@@ -301,9 +301,10 @@ impl Transpiler {
 
         if let Some(stmt) = stmts.0.get_mut(last_index) {
             match stmt {
-                Stmt::Expression(e) => {
-                    *stmt = Stmt::Return((*e).clone());
-                }
+                Stmt::Expression(e) => match e {
+                    Exp::Id(id) => *stmt = Stmt::Return(Exp::Id(id.clone())),
+                    e => *stmt = Stmt::Return((*e).clone()),
+                },
                 _ => {}
             };
         }

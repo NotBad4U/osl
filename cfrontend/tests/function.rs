@@ -14,7 +14,7 @@ fn the_lifetime_of_the_one_input_parameter_gets_assigned_to_the_output_lifetime(
 
     let expected_osl_program = r###"
 fn foo(x:#ref('a,#own(mut))) -> #ref('a,#own(mut)) {
-    x
+    val(x)
 };
 
 fn main() -> #voidTy {
