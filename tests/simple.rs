@@ -32,3 +32,10 @@ fn it_should_validate_borrow_clash_when_in_unsafe_block() {
         r"tests/assets/borrow_clash_unsafe.c"
     )));
 }
+
+#[test]
+fn it_should_validate_simple_RSA() {
+    assert!(common::is_valid(&PathBuf::from(
+        r"tests/assets/simple_rsa.c"
+    )));
+}
