@@ -17,6 +17,12 @@ rule <k> #block(Ss:Stmts) => Ss ~> #blockend ... </k>
 
 rule V:Value ~> #blockend => #blockend ~> V
 
+// skip the next statements when we have an early return in a block statement
+// example:
+// { ..., val(newResource()); decl x; ... }
+// The decl x and the rest will be skipped.
+rule V:Value ~> Ss:Stmts ~> #blockend => V ~> #blockend
+
 rule <k> #blockend => #blockend ... </k>
      <env> ... X |-> L:Int ... </env>
      <store> ... ((L |-> _) => .Map ) ...  </store>
