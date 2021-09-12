@@ -174,9 +174,21 @@ impl StdlibFunction {
             ), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
 
             // long int atol(const char *str)
-            "atol;".into() => Stmt::Function("atol".into(), Parameters::from(
+            "atol".into() => Stmt::Function("atol".into(), Parameters::from(
                 Parameter::new("ptr", Type::Ref("a".into(), box Type::Own(Props::new())))
             ), Type::Own(Props::from(Prop::Copy)), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
+
+            //FIXME: The name in hash should be pow instead of pow2
+            "pow2".into() => Stmt::Function("pow".into(), Parameters(vec![
+                Parameter::new("powx", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("powy", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+            ]), Type::Own(Props::get_all_props()), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
+
+            //FIXME: The name in hash should be fmod instead of fmod2
+            "fmod2".into() => Stmt::Function("fmod".into(), Parameters(vec![
+                Parameter::new("fmodx", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("fmody", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+            ]), Type::Own(Props::get_all_props()), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
         ])
     }
 
