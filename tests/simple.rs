@@ -39,3 +39,11 @@ fn it_should_validate_simple_RSA() {
         r"tests/assets/simple_rsa.c"
     )));
 }
+
+#[test]
+fn it_should_not_validate_double_free() {
+    assert!(common::is_valid(&PathBuf::from(
+        r"tests/assets/double_free.c"
+    )) == false);
+}
+
