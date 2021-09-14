@@ -34,7 +34,8 @@ impl Transpiler {
             e => {
                 unimplemented!(
                     "{}{:#?}",
-                    self.reporter.unimplemented(get_span_from_expression(e), ""), e
+                    self.reporter.unimplemented(get_span_from_expression(e), ""),
+                    e
                 )
             }
         }
@@ -98,7 +99,9 @@ impl Transpiler {
             .map(|exp| match exp {
                 Stmt::Expression(e) => e,
                 Stmt::Val(e) => e,
-                _ => { unreachable!() },
+                _ => {
+                    unreachable!()
+                }
             })
             .collect::<Vec<Exp>>();
 
@@ -321,7 +324,11 @@ impl Transpiler {
                     Stmts::from(Stmt::Transfer(e.clone(), Exp::Id(name.into())))
                 } else {
                     stmts.0.push(Stmt::Transfer(
-                        Exp::NewResource(self.context.get_props_of_variable(name).expect(&format!("{}", name))),
+                        Exp::NewResource(
+                            self.context
+                                .get_props_of_variable(name)
+                                .expect(&format!("{}", name)),
+                        ),
                         Exp::Id(name.into()),
                     ));
                     normalize_stmts_expression(stmts)
@@ -341,14 +348,16 @@ impl Transpiler {
                 right,
             ) => {
                 let mut stmts = self.transpile_normalized_expression(&right);
-                stmts.0.append(&mut self.transpile_normalized_expression(rhs).0);
+                stmts
+                    .0
+                    .append(&mut self.transpile_normalized_expression(rhs).0);
                 stmts.0.push(Stmt::Transfer(
                     Exp::NewResource(Props::new()),
                     Exp::Id(get_matrices_tag(&lhs)),
                 ));
 
                 stmts
-            },
+            }
             (left, _) => {
                 unimplemented!(
                     "{}",
