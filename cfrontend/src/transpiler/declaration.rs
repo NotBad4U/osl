@@ -144,8 +144,6 @@ impl Transpiler {
                     MutabilityContextItem::variable(Mutability::MutOwner, props.clone()),
                 );
 
-                println!("{:#?}", self.context.context);
-
                 if init.initializer.is_some() {
                     acc.0.push(Stmt::Transfer(
                         Exp::NewResource(props.clone()),
@@ -358,7 +356,7 @@ impl Transpiler {
                         }))
                     ))), ..] => match self.context.types.get(name).cloned() {
                         Some(Ctype::Struct(props)) => props,
-                        _ => unreachable!("The structure was not captured before"),
+                        _ => unreachable!("The structure {} was not captured before", name),
                     },
                     // declaration of a structure in this structure
                     [node!(SpecifierQualifier::TypeSpecifier(node!(
