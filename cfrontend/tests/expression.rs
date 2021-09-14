@@ -181,3 +181,49 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_matrice_id() {
+    let c_program = r###"
+    void main() {
+        int a[10];
+        a[10];
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl a;
+    a;
+}; 
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
+
+#[test]
+fn it_should_transpile_matrice_assign_between_matrice() {
+    let c_program = r###"
+    void main() {
+        int a[10][10];
+        int b[10][10];
+        int c[10][10];
+        a[0][0] = b[4][7] + c[9][9];
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl a;
+    decl b;
+    decl c;
+    read(b);
+    read(c);
+    transfer newResource() a;
+}; 
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}

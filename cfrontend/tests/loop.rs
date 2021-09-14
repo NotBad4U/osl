@@ -94,3 +94,36 @@ call main();
 
     assert_equal_program(c_program, expected_osl_program);
 }
+
+#[test]
+fn it_should_transpile_for_loop_with_multiple_expressions() {
+    let c_program = r###"
+    void main () {
+        int i, j;     
+        for(i = 0, j = 0; i < 20; i++, j++){
+        }
+    }
+    "###;
+
+    let expected_osl_program = r###"
+fn main() -> #voidTy {
+    decl i;
+    decl j;
+    // loop init
+    transfer newResource(copy,mut) i;
+    transfer newResource(copy,mut) j;
+    // loop invariant
+    read(i);
+    !{
+        transfer newResource(copy,mut) i;
+        transfer newResource(copy,mut) j;
+        // loop invariant
+        read(i);
+    };
+};
+
+call main();
+"###;
+
+    assert_equal_program(c_program, expected_osl_program);
+}
