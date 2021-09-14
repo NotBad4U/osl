@@ -25,10 +25,16 @@ impl Transpiler {
             }
             Expression::UnaryOperator(box node!(unary)) => self.transpile_unary_expression(&unary),
             Expression::Member(box node!(m)) => self.transpile_struct_member(m),
+            Expression::Comma(box expressions) => {
+                expressions.iter().fold(Stmts::new(), |mut acc, e| {
+                    acc.0.append(&mut self.transpile_expression(&e.node).0);
+                    acc
+                })
+            }
             e => {
                 unimplemented!(
-                    "{}",
-                    self.reporter.unimplemented(get_span_from_expression(e), "")
+                    "{}{:#?}",
+                    self.reporter.unimplemented(get_span_from_expression(e), ""), e
                 )
             }
         }
@@ -89,7 +95,11 @@ impl Transpiler {
                     .expect("waiting an expression")
                     .clone()
             })
-            .map(|exp| extract!(Stmt::Expression(_), exp).unwrap())
+            .map(|exp| match exp {
+                Stmt::Expression(e) => e,
+                Stmt::Val(e) => e,
+                _ => { unreachable!() },
+            })
             .collect::<Vec<Exp>>();
 
         // the call to std function need to be a little modify because they use
@@ -296,7 +306,7 @@ impl Transpiler {
                     Exp::NewResource(
                         self.context
                             .get_props_of_variable(name)
-                            .expect(&format!("{}", name)),
+                            .expect(&format!("can't get props from {}", name)),
                     ),
                     Exp::Id(name.to_string()),
                 ))
@@ -311,7 +321,7 @@ impl Transpiler {
                     Stmts::from(Stmt::Transfer(e.clone(), Exp::Id(name.into())))
                 } else {
                     stmts.0.push(Stmt::Transfer(
-                        Exp::NewResource(self.context.get_props_of_variable(name).unwrap()),
+                        Exp::NewResource(self.context.get_props_of_variable(name).expect(&format!("{}", name))),
                         Exp::Id(name.into()),
                     ));
                     normalize_stmts_expression(stmts)
@@ -319,6 +329,26 @@ impl Transpiler {
             }
             // *a = b;
             (Expression::UnaryOperator(unary), right) => self.transpile_deref(&unary.node, right),
+            // a[][].. = ....
+            (
+                Expression::BinaryOperator(
+                    box node!(BinaryOperatorExpression {
+                        operator: node!(BinaryOperator::Index),
+                        lhs: box node!(lhs),
+                        rhs: box node!(rhs)
+                    }),
+                ),
+                right,
+            ) => {
+                let mut stmts = self.transpile_normalized_expression(&right);
+                stmts.0.append(&mut self.transpile_normalized_expression(rhs).0);
+                stmts.0.push(Stmt::Transfer(
+                    Exp::NewResource(Props::new()),
+                    Exp::Id(get_matrices_tag(&lhs)),
+                ));
+
+                stmts
+            },
             (left, _) => {
                 unimplemented!(
                     "{}",
