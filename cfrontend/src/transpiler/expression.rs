@@ -1,4 +1,5 @@
 use lang_c::span::Span;
+use anyhow::Result;
 
 use super::*;
 use crate::node;
@@ -27,7 +28,7 @@ impl Transpiler {
             Expression::Member(box node!(m)) => self.transpile_struct_member(m),
             Expression::Comma(box expressions) => {
                 expressions.iter().fold(Stmts::new(), |mut acc, e| {
-                    acc.0.append(&mut self.transpile_expression(&e.node).0);
+                    acc.append(self.transpile_expression(&e.node));
                     acc
                 })
             }
@@ -221,7 +222,7 @@ impl Transpiler {
         right: &Expression,
     ) -> Stmts {
         let mut stmts = self.transpile_expression(left);
-        stmts.0.extend(self.transpile_expression(right).0);
+        stmts.extend(self.transpile_expression(right));
         stmts
     }
 
@@ -246,7 +247,7 @@ impl Transpiler {
                 right,
             ) => {
                 let mut stmts = normalize_stmts_expression(self.transpile_expression(right));
-                stmts.0.push(Stmt::Transfer(
+                stmts.push(Stmt::Transfer(
                     Exp::NewResource(self.context.get_props_of_variable(name).unwrap()),
                     Exp::Id(name.to_string()),
                 ));
@@ -323,7 +324,7 @@ impl Transpiler {
                 if let [Stmt::Expression(e)] = stmts.0.as_slice() {
                     Stmts::from(Stmt::Transfer(e.clone(), Exp::Id(name.into())))
                 } else {
-                    stmts.0.push(Stmt::Transfer(
+                    stmts.push(Stmt::Transfer(
                         Exp::NewResource(
                             self.context
                                 .get_props_of_variable(name)
@@ -351,7 +352,7 @@ impl Transpiler {
                 stmts
                     .0
                     .append(&mut self.transpile_normalized_expression(rhs).0);
-                stmts.0.push(Stmt::Transfer(
+                stmts.push(Stmt::Transfer(
                     Exp::NewResource(Props::new()),
                     Exp::Id(get_matrices_tag(&lhs)),
                 ));
@@ -426,7 +427,7 @@ fn normalize_stmts_expression(stmts: Stmts) -> Stmts {
             _ => stmt,
         })
         .fold(Stmts::new(), |mut acc, stmt| {
-            acc.0.push(stmt);
+            acc.push(stmt);
             acc
         }) // love you collect...
 }

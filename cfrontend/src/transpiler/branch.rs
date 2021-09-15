@@ -21,7 +21,7 @@ impl Transpiler {
         }
 
         let mut stmts = self.transpile_normalized_expression(&if_stmt.condition.node);
-        stmts.0.push(Stmt::Branch(blocks));
+        stmts.push(Stmt::Branch(blocks));
         stmts
     }
 }

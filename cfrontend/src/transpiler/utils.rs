@@ -28,11 +28,11 @@ pub fn get_props_from_specifiers_qualifier_and_declaration(
         .node;
 
     if (is_a_ref(&declarator) && !is_const_field(specifiers)) || !is_const_field(specifiers) {
-        props.0.push(Prop::Mut);
+        props.push(Prop::Mut);
     }
 
     if declarator.derived.is_empty() {
-        props.0.push(Prop::Copy);
+        props.push(Prop::Copy);
     }
 
     props
@@ -221,11 +221,11 @@ pub fn get_props_from_declaration(declaration: &Declaration) -> Props {
     // construct the props by looking at the types
     let mut props = Props::new();
     if is_copyable(declaration) {
-        props.0.push(Prop::Copy);
+        props.push(Prop::Copy);
     }
 
     if let Mutability::MutOwner = decl_mut {
-        props.0.push(Prop::Mut);
+        props.push(Prop::Mut);
     }
 
     props
@@ -252,7 +252,7 @@ pub fn get_props_from_declarator(declarator: &Option<Node<Declarator>>) -> Props
     let mut props = Props(vec![]);
 
     if let None = declarator {
-        props.0.push(Prop::Copy)
+        props.push(Prop::Copy)
     }
 
     props

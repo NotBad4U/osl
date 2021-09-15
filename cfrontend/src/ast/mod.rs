@@ -15,6 +15,10 @@ impl Parameters {
     pub fn new() -> Self {
         Self(vec![])
     }
+
+    pub fn push(&mut self, parameter:Parameter) {
+        self.0.push(parameter)
+    }
 }
 
 impl ops::Deref for Parameters {
@@ -51,6 +55,12 @@ impl ops::Deref for Blocks {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl Blocks {
+    pub fn push(&mut self, stmts:Stmts) {
+        self.0.push(stmts)
     }
 }
 
@@ -94,6 +104,22 @@ impl Stmts {
     pub fn new() -> Self {
         Self(vec![])
     }
+
+    pub fn get(&self) -> &Vec<Stmt> {
+        &self.0
+    }
+
+    pub fn push(&mut self, stmt:Stmt) {
+        self.0.push(stmt)
+    }
+
+    pub fn append(&mut self, mut stmts:Stmts) {
+        self.0.append(&mut stmts.0)
+    }
+
+    pub fn extend(&mut self, stmts: Stmts) {
+        self.0.extend(stmts.0.into_iter())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -133,6 +159,10 @@ impl Props {
 
     pub fn get_all_props() -> Self {
         Self(vec![Prop::Mut, Prop::Copy])
+    }
+
+    pub fn push(&mut self, prop:Prop) {
+        self.0.push(prop)
     }
 }
 

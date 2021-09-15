@@ -4,6 +4,8 @@ use crate::node;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
+use anyhow::Result;
+
 impl Transpiler {
     pub(super) fn transpile_declaration(&mut self, declaration: &Declaration) -> Stmts {
         match (
@@ -136,7 +138,7 @@ impl Transpiler {
             .map(|n| &n.node)
             .fold(Stmts::new(), |mut acc, init| {
                 let id = utils::get_declarator_id(&init.declarator.node).expect("missing id");
-                acc.0.push(Stmt::Declaration(id.to_string()));
+                acc.push(Stmt::Declaration(id.to_string()));
 
                 //TODO: get props from context
                 self.context.insert_in_last_scope(
@@ -145,7 +147,7 @@ impl Transpiler {
                 );
 
                 if init.initializer.is_some() {
-                    acc.0.push(Stmt::Transfer(
+                    acc.push(Stmt::Transfer(
                         Exp::NewResource(props.clone()),
                         Exp::Id(id.to_string()),
                     ));
@@ -181,10 +183,10 @@ impl Transpiler {
 
         self.context.insert_in_last_scope(name, mut_context);
 
-        stmts.0.push(Stmt::Declaration(name.to_string()));
+        stmts.push(Stmt::Declaration(name.to_string()));
 
         if is_init {
-            stmts.0.push(Stmt::Transfer(
+            stmts.push(Stmt::Transfer(
                 Exp::NewResource(props),
                 Exp::Id(name.to_string()),
             ))
@@ -242,16 +244,16 @@ impl Transpiler {
             Stmts::new(),
             |mut stmts, (id, initializer)| match initializer {
                 Some(_) => {
-                    stmts.0.push(Stmt::Declaration(id.clone()));
+                    stmts.push(Stmt::Declaration(id.clone()));
 
                     if let Some(node!(node)) = initializer {
-                        stmts.0.extend(self.transpile_initializer(id, &node).0);
+                        stmts.extend(self.transpile_initializer(id, &node));
                     }
 
                     stmts
                 }
                 None => {
-                    stmts.0.push(Stmt::Declaration(id));
+                    stmts.push(Stmt::Declaration(id));
                     stmts
                 }
             },
@@ -296,11 +298,11 @@ impl Transpiler {
                     let mut props = Props::new();
 
                     if let Mutability::MutOwner = mutability {
-                        props.0.push(Prop::Mut);
+                        props.push(Prop::Mut);
                     }
 
                     if let Constant::Float(_) | Constant::Integer(_) = constant.node {
-                        props.0.push(Prop::Copy);
+                        props.push(Prop::Copy);
                     }
 
                     Stmts::from(Stmt::Transfer(Exp::NewResource(props), Exp::Id(declarator)))
@@ -315,7 +317,7 @@ impl Transpiler {
                                     Exp::Id(declarator),
                                 )
                             }
-                            _ => stmts.0.push(Stmt::Transfer(
+                            _ => stmts.push(Stmt::Transfer(
                                 Exp::NewResource(
                                     self.context.get_props_of_variable(&declarator).unwrap(),
                                 ),

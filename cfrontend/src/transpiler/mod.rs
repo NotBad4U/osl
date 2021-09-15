@@ -2,6 +2,7 @@ use enum_extract::extract;
 use lang_c::ast::*;
 use lang_c::span;
 use lang_c::span::Node;
+use anyhow::Result;
 
 use std::collections::HashMap;
 
@@ -29,6 +30,67 @@ pub struct Transpiler {
     reporter: diagnostic::CodespanReporter,
     stdfun: StdlibFunction,
     config: Configuration,
+}
+
+#[derive(Debug, Clone)]
+pub enum Effect {
+    /// Represent a statement: transfer e1 e2
+    Write(Exp, Exp),
+    Read(Exp),
+    Deref(Exp),
+    Call(Exp),
+}
+
+impl Into<Stmt> for Effect {
+    fn into(self) -> Stmt {
+        match self {
+            Self::Write(e1, e2) => Stmt::Transfer(e1, e2),
+            Self::Read(e) if matches!(e, Exp::Read(_)) => Stmt::Expression(e),
+            Self::Read(e) => Stmt::Expression(Exp::Read(box e)),
+            Self::Deref(e) if matches!(e, Exp::Deref(_))  => Stmt::Expression(e),
+            Self::Deref(e) => Stmt::Expression(Exp::Deref(box e)),
+            Self::Call(e) => Stmt::Expression(e),
+        }
+    }
+}
+
+pub struct TranspiledElement {
+    // The effects relied to the below statement
+    effects: Vec<Effect>,
+    // The transpile statement
+    statement: Stmt,
+}
+
+impl TranspiledElement {
+    fn new(effects: Option<Vec<Effect>>, stmt: Stmt) -> Self {
+        Self {
+            effects:  effects.unwrap_or(Vec::default()),
+            statement: stmt,
+        }
+    }
+
+    fn add_effect(&mut self, eff: Effect) {
+        self.effects.push(eff)
+    }
+
+    fn append_effects(&mut self, mut eff: Vec<Effect>) {
+        self.effects.append(&mut eff)
+    }
+
+    fn get_effects(&self) -> &Vec<Effect> {
+        &self.effects
+    }
+}
+
+impl Into<Stmts> for TranspiledElement {
+    fn into(self) -> Stmts {
+        let mut stmts = self.effects.into_iter().fold(Stmts::new(), |mut acc, eff| {
+            acc.push(eff.into());
+            acc
+        });
+        stmts.push(self.statement);
+        stmts
+    }
 }
 
 impl Transpiler {
@@ -90,7 +152,7 @@ impl Transpiler {
 
         match return_type {
             Type::Own(ref mut props) if utils::is_copy(&function_def) => {
-                props.0.push(Prop::Copy);
+                props.push(Prop::Copy);
             }
             _ => {}
         };
@@ -184,7 +246,7 @@ impl Transpiler {
                     ),
                 };
 
-                acc.0.push(param);
+                acc.push(param);
                 acc
             })
     }
@@ -329,13 +391,13 @@ impl Transpiler {
                 })
                 .filter(|stmts| stmts.is_empty() == false) // filter the Break and empty block
                 .fold(Blocks(vec![]), |mut acc, stmts| {
-                    acc.0.push(stmts);
+                    acc.push(stmts);
                     acc
                 });
         }
 
         let mut stmts = Stmts::from(condition);
-        stmts.0.push(Stmt::Branch(blocks));
+        stmts.push(Stmt::Branch(blocks));
 
         stmts
     }

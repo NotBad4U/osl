@@ -5,11 +5,11 @@ impl Transpiler {
         let condition = self.transpile_normalized_expression(&while_stmt.expression.node);
         let mut block = self.transpile_statement(&while_stmt.statement.node);
 
-        block.0.push(Stmt::Comment("loop invariant".into()));
-        block.0.extend(condition.0.clone());
+        block.push(Stmt::Comment("loop invariant".into()));
+        block.extend(condition.clone());
 
         let mut stmts = condition;
-        stmts.0.push(Stmt::Loop(block));
+        stmts.push(Stmt::Loop(block));
         stmts
     }
 
@@ -17,7 +17,7 @@ impl Transpiler {
         let condition = self.transpile_normalized_expression(&while_stmt.expression.node);
 
         let mut block = self.transpile_statement(&while_stmt.statement.node);
-        block.0.extend(condition.0);
+        block.extend(condition);
 
         Stmts::from(Stmt::Loop(block))
     }
@@ -45,17 +45,17 @@ impl Transpiler {
             .as_ref()
             .map(|step| self.transpile_expression(&step.node))
             .unwrap_or(Stmts::new());
-        block.0.extend(step.0);
+        block.extend(step);
 
-        stmts.0.push(Stmt::Comment("loop init".into()));
-        stmts.0.extend(initializer.0);
+        stmts.push(Stmt::Comment("loop init".into()));
+        stmts.extend(initializer);
 
-        stmts.0.push(Stmt::Comment("loop invariant".into()));
-        stmts.0.extend(condition.0.clone());
+        stmts.push(Stmt::Comment("loop invariant".into()));
+        stmts.extend(condition.clone());
 
-        block.0.push(Stmt::Comment("loop invariant".into()));
-        block.0.extend(condition.0);
-        stmts.0.push(Stmt::Loop(block));
+        block.push(Stmt::Comment("loop invariant".into()));
+        block.extend(condition);
+        stmts.push(Stmt::Loop(block));
 
         stmts
     }
