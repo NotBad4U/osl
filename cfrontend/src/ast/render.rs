@@ -181,7 +181,9 @@ impl fmt::Display for Exp {
             Exp::Call(callee, exps) => write!(f, "call {}({})", callee, exps),
             Exp::Deref(exp) => write!(f, "*{}", exp),
             Exp::Read(exp) => write!(f, "read({})", exp),
-            Exp::Write(box exp1, box exp2) => write!(f, "{}", Stmt::Transfer(exp1.clone(), exp2.clone()))
+            Exp::Write(box exp1, box exp2) => write!(f, "{}", Stmt::Transfer(exp1.clone(), exp2.clone())),
+            Exp::Unit => write!(f, ""),
+            Exp::Statement(box stmt) => write!(f, "{}", stmt),
         }
     }
 }

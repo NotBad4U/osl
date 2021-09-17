@@ -195,6 +195,9 @@ pub enum Exp {
     Deref(Box<Exp>),
     Read(Box<Exp>),
     Write(Box<Exp>, Box<Exp>),
+    Unit,
+    /// use for borrow and mborrow
+    Statement(Box<Stmt>),
 }
 
 /// Only for function arguments call

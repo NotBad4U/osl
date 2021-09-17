@@ -45,7 +45,7 @@ impl Transpiler {
             ForInitializer::Declaration(d) => unimplemented!(), /*self.transpile_declaration(&d)*/
             ForInitializer::StaticAssert(node) => Err(TranspilationError::Unsupported(
                 node.span,
-                "Static assert are not supported",
+                "Static assert are not supported".into(),
             )),
         }?;
 

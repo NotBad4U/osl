@@ -310,7 +310,7 @@ impl Transpiler {
                             Exp::Id(declarator),
                             Exp::Id(right_id.name.clone()),
                         ))),
-                        _ => Err(TranspilationError::Unsupported(span, "If we reach this code then it should be a problem in Context or storing context")), // If we reach this code then it should be a problem in Context or storing context
+                        _ => Err(TranspilationError::Unsupported(span, "If we reach this code then it should be a problem in Context or storing context".into())), // If we reach this code then it should be a problem in Context or storing context
                     }
                 }
                 Expression::Identifier(box node!(ref id)) => Ok(Stmts::from(Stmt::Transfer(

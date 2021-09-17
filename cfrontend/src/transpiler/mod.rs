@@ -88,6 +88,12 @@ pub struct EffectsExp {
     expression: Exp,
 }
 
+impl From<Exp> for EffectsExp {
+    fn from(exp: Exp) -> Self {
+        EffectsExp::new(None, exp)
+    }
+}
+
 impl EffectsExp {
     fn new(effects: Option<Vec<Effect>>, expression: Exp) -> Self {
         Self {
@@ -270,7 +276,7 @@ impl Transpiler {
             ExternalDeclaration::Declaration(node!(declaration)) => self.transpile_declaration(&declaration),
             ExternalDeclaration::StaticAssert(ref node) => Err(TranspilationError::Unsupported(
                 node.span,
-                "not relevant for ownership type",
+                "not relevant for ownership type".into(),
             )),
         }
     }
@@ -351,11 +357,11 @@ impl Transpiler {
             Statement::Switch(node!(ref switch_stmt)) => self.transpile_switch_case(switch_stmt),
             Statement::Goto(Node { span, .. }) => Err(TranspilationError::Unsupported(
                 span,
-                "OSL doesn't support unconditional jump",
+                "OSL doesn't support unconditional jump".into(),
             )),
             Statement::Break | Statement::Continue => Err(TranspilationError::Unsupported(
                 statement.span,
-                "No semantic in K to support it",
+                "No semantic in K to support it".into(),
             )),
             Statement::Labeled(
                 node!(LabeledStatement {
@@ -367,7 +373,7 @@ impl Transpiler {
                 .map(|statements| Stmts::from(Stmt::Unsafe(statements))),
             Statement::Labeled(Node { span, .. }) => Err(TranspilationError::Unsupported(
                 span,
-                "No semantic in K to support label",
+                "No semantic in K to support label".into(),
             )),
         }
     }
@@ -417,7 +423,7 @@ impl Transpiler {
                     }
                     BlockItem::StaticAssert(ref assert) => Err(TranspilationError::Unsupported(
                         assert.span,
-                        "Not relevant for ownership type",
+                        "Not relevant for ownership type".into(),
                     )),
                 };
 
@@ -465,7 +471,7 @@ impl Transpiler {
                     }
                     BlockItem::StaticAssert(ref assert) => Err(TranspilationError::Unsupported(
                         assert.span,
-                        "Not relevant for ownership type",
+                        "Not relevant for ownership type".into(),
                     )),
                 })
                 .filter(|res| matches!(res, Ok(stmts) if stmts.is_empty() == false)) // filter the Break and empty block

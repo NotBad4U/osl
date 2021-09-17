@@ -8,11 +8,11 @@ use annotate_snippets::{
     display_list::{DisplayList, FormatOptions},
     snippet::{AnnotationType, Slice, Snippet, SourceAnnotation},
 };
-use lang_c::span::Span;
 use cfrontend::configuration::Configuration;
 use cfrontend::transpiler::errors::TranspilationError;
 use env_logger::Builder;
 use lang_c::driver::Config;
+use lang_c::span::Span;
 use log::LevelFilter;
 
 const TEST_C_FILE: &str = "test.c";
@@ -38,11 +38,14 @@ fn main() {
 fn print_errors(source: &str, errors: Vec<TranspilationError>) {
     errors.into_iter().for_each(|e| match e {
         TranspilationError::Unimplemented(span) => unimplemented(source, span),
-        TranspilationError::Unsupported(span, reason) => unsupported(source, span, reason),
+        TranspilationError::Unsupported(span, reason) => unsupported(source, span, reason.as_str()),
         TranspilationError::Unknown(span) => unimplemented(source, span),
         TranspilationError::Compound(errors) => print_errors(source, errors),
         TranspilationError::Message(msg) => eprint!("{}", msg),
-        TranspilationError::NotTranspilable(span, reason) => unsupported(source, span, reason.as_str()),
+        TranspilationError::MessageSpan(span, msg) => report_error(source, span, msg.as_str()),
+        TranspilationError::NotTranspilable(span, reason) => {
+            unsupported(source, span, reason.as_str())
+        }
     })
 }
 
@@ -104,6 +107,29 @@ fn unknown(source: &str, span: Span) {
             annotations: vec![SourceAnnotation {
                 label: "",
                 annotation_type: AnnotationType::Warning,
+                range: (span.start, span.end),
+            }],
+        }],
+        opt: FormatOptions {
+            color: true,
+            ..Default::default()
+        },
+    };
+    eprint!("{}", DisplayList::from(snippet))
+}
+
+fn report_error(source: &str, span: Span, message: &str) {
+    let snippet = Snippet {
+        title: None,
+        footer: vec![],
+        slices: vec![Slice {
+            source: source,
+            line_start: 0,
+            origin: None,
+            fold: true,
+            annotations: vec![SourceAnnotation {
+                label: message,
+                annotation_type: AnnotationType::Error,
                 range: (span.start, span.end),
             }],
         }],

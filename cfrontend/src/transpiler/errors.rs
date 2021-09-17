@@ -4,11 +4,12 @@ pub type Result<T, E = TranspilationError> = std::result::Result<T, E>;
 
 #[derive(Debug,Clone)]
 pub enum TranspilationError {
-    Unsupported(Span, &'static str),
+    Unsupported(Span, String),
     Unimplemented(Span),
     Unknown(Span),
     Compound(Vec<TranspilationError>),
     Message(String),
+    MessageSpan(Span, String),
     NotTranspilable(Span, String)
 }
 
