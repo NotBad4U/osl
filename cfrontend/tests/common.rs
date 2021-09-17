@@ -4,7 +4,10 @@ use lang_c::driver::{parse, parse_preprocessed, Config};
 #[allow(dead_code)]
 fn transpile_preprocessed_c_program(c_program: String) -> ast::Stmts {
     match parse_preprocessed(&Config::default(), c_program.clone()) {
-        Ok(ast) => cfrontend::transpile_c_program(ast, Configuration::new(false)),
+        Ok(ast) => match cfrontend::transpile_c_program(ast, Configuration::new(false)) {
+            Ok(stmts) => stmts,
+            Err(e) => panic!("{:#?}", e),
+        }
         Err(e) => panic!("{}", e),
     }
 }
@@ -12,7 +15,10 @@ fn transpile_preprocessed_c_program(c_program: String) -> ast::Stmts {
 #[allow(dead_code)]
 fn transpile_c_program(path: &str) -> ast::Stmts {
     let ast = parse(&Config::default(), path).unwrap();
-    cfrontend::transpile_c_program(ast, Configuration::new(false))
+    match cfrontend::transpile_c_program(ast, Configuration::new(false)) {
+        Ok(stmts) => stmts,
+        Err(e) => panic!("{:#?}", e),
+    }
 }
 
 #[allow(dead_code)]

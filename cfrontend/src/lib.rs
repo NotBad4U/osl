@@ -24,14 +24,15 @@ use lang_c::driver::Parse;
 
 pub mod ast;
 pub mod configuration;
-mod transpiler;
+pub mod transpiler;
+
+use crate::transpiler::errors::TranspilationError;
 
 /// Transpile a C program file parsed by lang_c driver.
 /// This function is the entry-point of this library.
 /// Other binary should call this function after parsed the
 /// C program.
-pub fn transpile_c_program(parse: Parse, config: configuration::Configuration) -> ast::Stmts {
+pub fn transpile_c_program(parse: Parse, config: configuration::Configuration) -> Result<ast::Stmts, Vec<TranspilationError>> {
     let mut transpiler = transpiler::Transpiler::new(parse.source, config);
-    transpiler.transpile_translation_unit(&parse.unit);
-    ast::Stmts(transpiler.stmts)
+    transpiler.transpile_translation_unit(&parse.unit)
 }

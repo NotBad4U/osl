@@ -3,12 +3,26 @@ use lang_c::span::Node;
 
 use crate::ast::*;
 use crate::transpiler::context::Mutability;
+use crate::transpiler::errors::TranspilationError;
 
 #[macro_export]
 macro_rules! node {
     ($pattern:pat) => {
         Node { node: $pattern, .. }
     };
+}
+
+pub fn collect_statements(results: Vec<Result<Stmts, TranspilationError>>) -> Result<Stmts, TranspilationError> {
+    let mut stmts: Stmts = Stmts::new();
+    for el in results.into_iter() {
+        if el.is_ok() {
+            stmts.append(el.unwrap());
+        } else {
+            return Err(el.unwrap_err());
+        }
+    }
+
+    Ok(stmts)
 }
 
 pub fn get_props_from_specifiers_qualifier_and_declaration(

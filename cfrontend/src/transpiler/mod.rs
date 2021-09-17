@@ -2,20 +2,23 @@ use enum_extract::extract;
 use lang_c::ast::*;
 use lang_c::span;
 use lang_c::span::Node;
-use anyhow::Result;
 
 use std::collections::HashMap;
 
 use crate::ast::*;
 use crate::configuration::Configuration;
+use crate::error_msg;
+use crate::transpiler::errors::Result;
+use crate::transpiler::errors::TranspilationError;
 use context::*;
 use stdfun::StdlibFunction;
 use utils::*;
 
+pub mod errors;
+
 mod branch;
 mod context;
 mod declaration;
-mod diagnostic;
 mod expression;
 mod loops;
 mod stdfun;
@@ -24,10 +27,8 @@ mod utils;
 
 #[derive(Debug)]
 pub struct Transpiler {
-    pub stmts: Vec<crate::ast::Stmt>,
     context: MutabilityContext,
     typedefs: HashMap<String, Vec<TypeSpecifier>>,
-    reporter: diagnostic::CodespanReporter,
     stdfun: StdlibFunction,
     config: Configuration,
 }
@@ -36,9 +37,14 @@ pub struct Transpiler {
 pub enum Effect {
     /// Represent a statement: transfer e1 e2
     Write(Exp, Exp),
+    /// Read the value of a variable
     Read(Exp),
     Deref(Exp),
     Call(Exp),
+    /// Create a new ressource
+    Constant(Exp),
+    // look at a variable
+    Lookup(String),
 }
 
 impl Into<Stmt> for Effect {
@@ -47,25 +53,46 @@ impl Into<Stmt> for Effect {
             Self::Write(e1, e2) => Stmt::Transfer(e1, e2),
             Self::Read(e) if matches!(e, Exp::Read(_)) => Stmt::Expression(e),
             Self::Read(e) => Stmt::Expression(Exp::Read(box e)),
-            Self::Deref(e) if matches!(e, Exp::Deref(_))  => Stmt::Expression(e),
+            Self::Deref(e) if matches!(e, Exp::Deref(_)) => Stmt::Expression(e),
             Self::Deref(e) => Stmt::Expression(Exp::Deref(box e)),
             Self::Call(e) => Stmt::Expression(e),
+            Self::Constant(e) => Stmt::Val(e),
+            Self::Lookup(id) => Stmt::Expression(Exp::Id(id.into())),
         }
     }
 }
 
-pub struct TranspiledElement {
-    // The effects relied to the below statement
-    effects: Vec<Effect>,
-    // The transpile statement
-    statement: Stmt,
+impl std::convert::TryInto<Exp> for Effect {
+    type Error = TranspilationError;
+
+    fn try_into(self) -> Result<Exp, Self::Error> {
+        match self {
+            Self::Write(e1, e2) => Err(TranspilationError::Message(format!("Write {:?} {:?}", e1, e2).into())),
+            Self::Read(e) if matches!(e, Exp::Read(_)) => Ok(e),
+            Self::Read(e) => Ok(Exp::Read(box e)),
+            Self::Deref(e) if matches!(e, Exp::Deref(_)) => Ok(e),
+            Self::Deref(e) => Ok(Exp::Deref(box e)),
+            Self::Call(e) => Ok(e),
+            Self::Constant(e) => Ok(e),
+            Self::Lookup(id) => Ok(Exp::Id(id.into())),
+        }
+    }
 }
 
-impl TranspiledElement {
-    fn new(effects: Option<Vec<Effect>>, stmt: Stmt) -> Self {
+pub struct EffectsExp {
+    /// The effects relied to the below statement
+    /// x = foo() + y;
+    /// The effect will be: Call(foo), read(y)
+    effects: Vec<Effect>,
+    /// The transpile statement
+    expression: Exp,
+}
+
+impl EffectsExp {
+    fn new(effects: Option<Vec<Effect>>, expression: Exp) -> Self {
         Self {
-            effects:  effects.unwrap_or(Vec::default()),
-            statement: stmt,
+            effects: effects.unwrap_or(Vec::default()),
+            expression,
         }
     }
 
@@ -80,60 +107,96 @@ impl TranspiledElement {
     fn get_effects(&self) -> &Vec<Effect> {
         &self.effects
     }
+
+    fn fmap_stmts<F>(self, func: F) -> Stmts  where F: Fn(Exp) -> Stmt {
+        let mut stmts = self.effects.into_iter().fold(Stmts::new(), |mut acc, eff| {
+            acc.push(eff.into());
+            acc
+        });
+        stmts.push(func(self.expression));
+        stmts
+    }
 }
 
-impl Into<Stmts> for TranspiledElement {
+impl Into<Stmts> for EffectsExp {
     fn into(self) -> Stmts {
         let mut stmts = self.effects.into_iter().fold(Stmts::new(), |mut acc, eff| {
             acc.push(eff.into());
             acc
         });
-        stmts.push(self.statement);
+        stmts.push(Stmt::Expression(self.expression));
         stmts
     }
 }
 
+use std::fmt::Debug;
+
 impl Transpiler {
     pub fn new(source: String, config: Configuration) -> Self {
         Self {
-            stmts: Vec::new(),
             context: MutabilityContext::new(),
             typedefs: HashMap::new(),
-            reporter: diagnostic::CodespanReporter::new(source),
             stdfun: StdlibFunction::new(),
             config,
         }
     }
 
     /// Entry point of the transpilation of a C Program.
-    pub fn transpile_translation_unit<'ast>(&mut self, translation_unit: &'ast TranslationUnit) {
-        if self.config.intrinsic {
+    pub fn transpile_translation_unit<'ast>(
+        &mut self,
+        translation_unit: &'ast TranslationUnit,
+    ) -> Result<Stmts, Vec<TranspilationError>> {
+        let std_funcs = if self.config.intrinsic {
             // Add the Intrinsics function at the top of the transpiled files.
             // If you want to now the list of std functions supported, you can
             // find them in the module: stdfun.
-            let std_funcs: Vec<Stmt> = self
-                .stdfun
+            self.stdfun
                 .get_std_functions()
                 .iter()
                 .map(|func| (*func).clone())
-                .collect();
-            std_funcs.into_iter().for_each(|func| self.stmts.push(func));
-        }
+                .fold(Stmts::new(), |mut acc, function| {
+                    acc.push(function);
+                    acc
+                })
+        } else {
+            Stmts::new()
+        };
 
-        for element in &translation_unit.0 {
-            self.transpile_external_declaration(&element.node, &element.span);
-        }
+        let (ast, errors) = translation_unit
+            .0
+            .iter()
+            .fold(Vec::new(), |mut results, node!(external_declaration)| {
+                results.push(self.transpile_external_declaration(&external_declaration));
+                results
+            })
+            .into_iter()
+            .fold((Stmts::new(), vec![]), |(mut ast, mut errors), result| {
+                match result {
+                    Ok(stmts) => ast.append(stmts),
+                    Err(e) => errors.push(e),
+                };
 
-        // Append the call to C main function. OSL, as Python, doesn't need an entrypoint like the C main function.
-        // We simulate the main function by adding this call at the bottom of the transpiled file.
-        // This method work because in C there exist only functions and variables declarations at the top level.
-        self.stmts.push(Stmt::Expression(Exp::Call(
-            "main".to_string(),
-            Exps(vec![]),
-        )));
+                (ast, errors)
+            });
+
+        if errors.is_empty() {
+            let mut program = std_funcs;
+            program.append(ast);
+            // Append the call to C main function. OSL, as Python, doesn't need an entrypoint like the C main function.
+            // We simulate the main function by adding this call at the bottom of the transpiled file.
+            // This method work because in C there exist only functions and variables declarations at the top level.
+            program.push(Stmt::Expression(Exp::Call("main".into(), Exps(vec![]))));
+
+            Ok(program)
+        } else {
+            Err(errors)
+        }
     }
 
-    pub(super) fn transpile_function_def<'ast>(&mut self, function_def: &'ast FunctionDefinition) {
+    pub(super) fn transpile_function_def<'ast>(
+        &mut self,
+        function_def: &'ast FunctionDefinition,
+    ) -> Result<Stmt> {
         self.context.create_new_scope();
 
         // Extract ownership information from the function definition
@@ -141,7 +204,7 @@ impl Transpiler {
         let mut_return_type = get_return_fun_mutability_from_fun_def(function_def);
 
         // Inductive recursion on the compound statements
-        let block_stmts = self.transpile_statement(&function_def.statement.node);
+        let block_stmts = self.transpile_statement(&function_def.statement)?;
 
         let parameters = self.transpile_parameters_declaration(
             &get_function_parameters_from_declarator(&function_def.declarator.node),
@@ -162,11 +225,10 @@ impl Transpiler {
             MutabilityContextItem::Function(return_type.clone()),
         );
 
-        // Create the AST OSL corresponding node
-        self.stmts
-            .push(Stmt::Function(fn_id, parameters, return_type, block_stmts));
-
         self.context.pop_last_scope();
+
+        // Create the AST OSL corresponding node
+        Ok(Stmt::Function(fn_id, parameters, return_type, block_stmts))
     }
 
     fn transpile_return_type_function_declaration(
@@ -200,19 +262,16 @@ impl Transpiler {
     pub(super) fn transpile_external_declaration(
         &mut self,
         external_declaration: &ExternalDeclaration,
-        _span: &span::Span,
-    ) {
-        match *external_declaration {
-            ExternalDeclaration::FunctionDefinition(ref f) => {
-                self.transpile_function_def(&f.node);
+    ) -> Result<Stmts, TranspilationError> {
+        match external_declaration {
+            ExternalDeclaration::FunctionDefinition(node!(fun_def)) => {
+                self.transpile_function_def(fun_def).map(Stmts::from)
             }
-            ExternalDeclaration::Declaration(ref d) => {
-                let stmts = self.transpile_declaration(&d.node);
-                self.stmts.extend(stmts.0);
-            }
-            ExternalDeclaration::StaticAssert(_) => {
-                unimplemented!()
-            }
+            ExternalDeclaration::Declaration(node!(declaration)) => self.transpile_declaration(&declaration),
+            ExternalDeclaration::StaticAssert(ref node) => Err(TranspilationError::Unsupported(
+                node.span,
+                "not relevant for ownership type",
+            )),
         }
     }
 
@@ -272,39 +331,44 @@ impl Transpiler {
         }
     }
 
-    pub fn transpile_statement(&mut self, statement: &Statement) -> Stmts {
-        match *statement {
-            Statement::Expression(Some(ref e)) => Stmts::from(self.transpile_expression(&e.node)),
-            Statement::Expression(None) => Stmts::new(),
+    /// Transpile statements of the program with a recursive approach.
+    pub fn transpile_statement(&mut self, statement: &Node<Statement>) -> Result<Stmts> {
+        match statement.node {
+            Statement::Expression(Some(ref e)) => self
+                .transpile_expression(&e.node)
+                .map(|effstmt| effstmt.into()),
+            Statement::Expression(None) => Ok(Stmts::new()),
             Statement::Return(Some(ref r)) => self.transpile_return_statement(&r.node),
-            Statement::Return(None) => Stmts::new(),
+            Statement::Return(None) => Ok(Stmts::new()),
             Statement::Compound(ref block_items) => self.transpile_block_items(block_items),
             Statement::If(node!(ref if_stmt)) => self.transpile_branchs(if_stmt),
             Statement::While(ref while_stmt) => self.transpile_while_statement(&while_stmt.node),
             Statement::For(ref forloop) => self.transpile_forloop_statement(&forloop.node),
             Statement::DoWhile(ref dowhile) => self.transpile_dowhile_statement(&dowhile.node),
-            Statement::Asm(_) => Stmts::new(), // ignore it
+            // Ignore assembly statements because it is not possible to evalutate them
+            // for our ownership type semantic.
+            Statement::Asm(_) => Ok(Stmts::new()),
             Statement::Switch(node!(ref switch_stmt)) => self.transpile_switch_case(switch_stmt),
-            Statement::Goto(Node { span, .. }) => {
-                unimplemented!(
-                    "{}",
-                    self.reporter
-                        .unimplemented(span, "OSL doesn't support unconditional jump")
-                )
-            }
-            Statement::Break => unimplemented!("break statement is not supported"),
-            Statement::Continue => Stmts::new(), // ignore it
+            Statement::Goto(Node { span, .. }) => Err(TranspilationError::Unsupported(
+                span,
+                "OSL doesn't support unconditional jump",
+            )),
+            Statement::Break | Statement::Continue => Err(TranspilationError::Unsupported(
+                statement.span,
+                "No semantic in K to support it",
+            )),
             Statement::Labeled(
                 node!(LabeledStatement {
                     label: node!(Label::Identifier(node!(Identifier { ref name }))),
-                    statement: box node!(ref statement)
+                    statement: box ref node
                 }),
-            ) if name.to_lowercase() == "unsafe" => {
-                Stmts::from(Stmt::Unsafe(self.transpile_statement(&statement)))
-            }
-            Statement::Labeled(Node { span, .. }) => {
-                unimplemented!("{}", self.reporter.unimplemented(span, "todo"))
-            }
+            ) if name.to_lowercase() == "unsafe" => self
+                .transpile_statement(&node)
+                .map(|statements| Stmts::from(Stmt::Unsafe(statements))),
+            Statement::Labeled(Node { span, .. }) => Err(TranspilationError::Unsupported(
+                span,
+                "No semantic in K to support label",
+            )),
         }
     }
 
@@ -339,66 +403,77 @@ impl Transpiler {
     }
 
     /// Transpile a list of statement in a block
-    pub(super) fn transpile_block_items(&mut self, block_items: &Vec<Node<BlockItem>>) -> Stmts {
-        let stmts = block_items
-            .iter()
-            .fold(Vec::<Stmt>::new(), |mut acc, item| {
-                acc.append(&mut match item.node {
-                    BlockItem::Statement(node!(ref stmt)) => self.transpile_statement(stmt).0,
+    pub(super) fn transpile_block_items(
+        &mut self,
+        block_items: &Vec<Node<BlockItem>>,
+    ) -> Result<Stmts, TranspilationError> {
+        let (ast, errors) = block_items.iter().fold(
+            (Stmts::new(), Vec::new()),
+            |(mut statements, mut errors), item| {
+                let res = match item.node {
+                    BlockItem::Statement(ref stmt) => self.transpile_statement(&stmt),
                     BlockItem::Declaration(ref declaration) => {
-                        self.transpile_declaration(&declaration.node).0
+                        self.transpile_declaration(&declaration.node)
                     }
-                    _ => unimplemented!(),
-                });
-                acc
-            });
+                    BlockItem::StaticAssert(ref assert) => Err(TranspilationError::Unsupported(
+                        assert.span,
+                        "Not relevant for ownership type",
+                    )),
+                };
 
-        Stmts(stmts)
-    }
+                match res {
+                    Ok(stmts) => statements.append(stmts),
+                    Err(e) => errors.push(e),
+                }
 
-    fn transpile_return_statement(&mut self, exp: &Expression) -> Stmts {
-        let mut stmts = self.transpile_expression(exp);
+                (statements, errors)
+            },
+        );
 
-        let last_index = stmts.0.len() - 1;
-
-        if let Some(stmt) = stmts.0.get_mut(last_index) {
-            match stmt {
-                Stmt::Expression(e) => match e {
-                    Exp::Id(id) => *stmt = Stmt::Return(Exp::Id(id.clone())),
-                    e => *stmt = Stmt::Return((*e).clone()),
-                },
-                _ => {}
-            };
+        if errors.is_empty() {
+            Ok(ast)
+        } else {
+            Err(TranspilationError::Compound(errors))
         }
-
-        stmts
     }
 
-    fn transpile_switch_case(&mut self, switch: &SwitchStatement) -> Stmts {
-        let condition = self.transpile_normalized_expression(&switch.expression.node);
-        let mut blocks = Blocks(vec![]);
+    fn transpile_return_statement(&mut self, exp: &Expression) -> Result<Stmts> {
+        self.transpile_expression(exp)
+            .map(|mut effstmt|
+                //FIXME: manage effect
+                Stmts::from(Stmt::Return(effstmt.expression))
+            )
+    }
 
-        if let Statement::Compound(ref stmts) = switch.statement.node {
-            blocks = stmts
+    fn transpile_switch_case(&mut self, switch: &SwitchStatement) -> Result<Stmts> {
+        let mut statements: Stmts = self.transpile_expression(&switch.expression.node)?.into();
+
+        let blocks_transpiled = if let Statement::Compound(ref stmts) = switch.statement.node {
+            stmts
                 .iter()
                 .map(|ref stmt| match &stmt.node {
                     BlockItem::Statement(
                         node!(Statement::Labeled(
                             node!(LabeledStatement { box statement, .. })
                         )),
-                    ) => self.transpile_statement(&statement.node),
-                    _ => Stmts::new(),
+                    ) => self.transpile_statement(&statement),
+                    BlockItem::Statement(statement) => {
+                        Err(TranspilationError::Unknown(statement.span))
+                    }
+                    BlockItem::Declaration(ref declaration) => {
+                        Err(TranspilationError::Unknown(declaration.span))
+                    }
+                    BlockItem::StaticAssert(ref assert) => Err(TranspilationError::Unsupported(
+                        assert.span,
+                        "Not relevant for ownership type",
+                    )),
                 })
-                .filter(|stmts| stmts.is_empty() == false) // filter the Break and empty block
-                .fold(Blocks(vec![]), |mut acc, stmts| {
-                    acc.push(stmts);
-                    acc
-                });
-        }
-
-        let mut stmts = Stmts::from(condition);
-        stmts.push(Stmt::Branch(blocks));
-
-        stmts
+                .filter(|res| matches!(res, Ok(stmts) if stmts.is_empty() == false)) // filter the Break and empty block
+                .collect::<Result<Vec<_>, _>>()
+        } else {
+            error_msg!("The switch statement don't use a Compound statement structure".into())
+        }?;
+        statements.push(Stmt::Branch(Blocks(blocks_transpiled)));
+        Ok(statements)
     }
 }

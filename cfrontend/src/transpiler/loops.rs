@@ -1,62 +1,70 @@
 use super::*;
+use crate::node;
 
 impl Transpiler {
-    pub(super) fn transpile_while_statement(&mut self, while_stmt: &WhileStatement) -> Stmts {
-        let condition = self.transpile_normalized_expression(&while_stmt.expression.node);
-        let mut block = self.transpile_statement(&while_stmt.statement.node);
+    pub(super) fn transpile_while_statement(
+        &mut self,
+        while_stmt: &WhileStatement,
+    ) -> Result<Stmts> {
+        let condition = self
+            .transpile_expression(&while_stmt.expression.node)?
+            .into();
+        let block = self.transpile_statement(&while_stmt.statement)?;
 
-        block.push(Stmt::Comment("loop invariant".into()));
-        block.extend(condition.clone());
-
-        let mut stmts = condition;
+        // construct AST
+        let mut stmts = Stmts::from(Stmt::Comment("loop invariant".into()));
+        stmts.append(condition);
         stmts.push(Stmt::Loop(block));
-        stmts
+        Ok(stmts)
     }
 
-    pub(super) fn transpile_dowhile_statement(&mut self, while_stmt: &DoWhileStatement) -> Stmts {
-        let condition = self.transpile_normalized_expression(&while_stmt.expression.node);
-
-        let mut block = self.transpile_statement(&while_stmt.statement.node);
+    pub(super) fn transpile_dowhile_statement(
+        &mut self,
+        while_stmt: &DoWhileStatement,
+    ) -> Result<Stmts> {
+        let condition = self
+            .transpile_expression(&while_stmt.expression.node)?
+            .into();
+        let mut block = self.transpile_statement(&while_stmt.statement)?;
         block.extend(condition);
-
-        Stmts::from(Stmt::Loop(block))
+        Ok(Stmts::from(Stmt::Loop(block)))
     }
 
-    pub(super) fn transpile_forloop_statement(&mut self, forloop_stmt: &ForStatement) -> Stmts {
-        let mut stmts = Stmts::new();
-
-        let initializer = match &forloop_stmt.initializer.node {
-            ForInitializer::Empty => Stmts::new(),
-            ForInitializer::Expression(e) => self.transpile_expression(&e.node),
-            ForInitializer::Declaration(d) => self.transpile_declaration(&d.node),
-            ForInitializer::StaticAssert(_) => unimplemented!(),
-        };
-
-        let condition = forloop_stmt
+    pub(super) fn transpile_forloop_statement(&mut self, forloop: &ForStatement) -> Result<Stmts> {
+        let condition = forloop
             .condition
             .as_ref()
-            .map(|cond| self.transpile_normalized_expression(&cond.node))
-            .unwrap_or(Stmts::new());
+            .map(|box node!(cond)| self.transpile_expression(cond).map(Into::into))
+            .unwrap_or(Ok(Stmts::new()))?;
 
-        let mut block = self.transpile_statement(&forloop_stmt.statement.node);
+        let initializer = match &forloop.initializer.node {
+            ForInitializer::Empty => Ok(Stmts::new()),
+            ForInitializer::Expression(box node!(e)) => {
+                self.transpile_expression(&e).map(Into::into)
+            }
+            ForInitializer::Declaration(d) => unimplemented!(), /*self.transpile_declaration(&d)*/
+            ForInitializer::StaticAssert(node) => Err(TranspilationError::Unsupported(
+                node.span,
+                "Static assert are not supported",
+            )),
+        }?;
 
-        let step = forloop_stmt
+        let mut header_of_loop = initializer;
+        header_of_loop.append(condition.clone());
+
+        let step_increments = forloop
             .step
             .as_ref()
-            .map(|step| self.transpile_expression(&step.node))
-            .unwrap_or(Stmts::new());
-        block.extend(step);
+            .map(|step| self.transpile_expression(&step.node).map(Into::into))
+            .unwrap_or(Ok(Stmts::new()))?;
 
-        stmts.push(Stmt::Comment("loop init".into()));
-        stmts.extend(initializer);
+        let mut block_statements = self.transpile_statement(&forloop.statement)?;
+        block_statements.append(condition);
+        block_statements.append(step_increments);
 
-        stmts.push(Stmt::Comment("loop invariant".into()));
-        stmts.extend(condition.clone());
+        let mut statements_for_loop = header_of_loop;
+        statements_for_loop.push(Stmt::Loop(block_statements));
 
-        block.push(Stmt::Comment("loop invariant".into()));
-        block.extend(condition);
-        stmts.push(Stmt::Loop(block));
-
-        stmts
+        Ok(statements_for_loop)
     }
 }
