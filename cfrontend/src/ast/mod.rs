@@ -16,7 +16,7 @@ impl Parameters {
         Self(vec![])
     }
 
-    pub fn push(&mut self, parameter:Parameter) {
+    pub fn push(&mut self, parameter: Parameter) {
         self.0.push(parameter)
     }
 }
@@ -59,7 +59,7 @@ impl ops::Deref for Blocks {
 }
 
 impl Blocks {
-    pub fn push(&mut self, stmts:Stmts) {
+    pub fn push(&mut self, stmts: Stmts) {
         self.0.push(stmts)
     }
 }
@@ -109,11 +109,11 @@ impl Stmts {
         &self.0
     }
 
-    pub fn push(&mut self, stmt:Stmt) {
+    pub fn push(&mut self, stmt: Stmt) {
         self.0.push(stmt)
     }
 
-    pub fn append(&mut self, mut stmts:Stmts) {
+    pub fn append(&mut self, mut stmts: Stmts) {
         self.0.append(&mut stmts.0)
     }
 
@@ -161,7 +161,7 @@ impl Props {
         Self(vec![Prop::Mut, Prop::Copy])
     }
 
-    pub fn push(&mut self, prop:Prop) {
+    pub fn push(&mut self, prop: Prop) {
         self.0.push(prop)
     }
 }

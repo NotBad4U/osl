@@ -12,7 +12,9 @@ macro_rules! node {
     };
 }
 
-pub fn collect_statements(results: Vec<Result<Stmts, TranspilationError>>) -> Result<Stmts, TranspilationError> {
+pub fn collect_statements(
+    results: Vec<Result<Stmts, TranspilationError>>,
+) -> Result<Stmts, TranspilationError> {
     let mut stmts: Stmts = Stmts::new();
     for el in results.into_iter() {
         if el.is_ok() {

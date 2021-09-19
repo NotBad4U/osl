@@ -62,23 +62,22 @@ impl Into<Stmt> for Effect {
     }
 }
 
-impl std::convert::TryInto<Exp> for Effect {
-    type Error = TranspilationError;
-
-    fn try_into(self) -> Result<Exp, Self::Error> {
+impl Into<Exp> for Effect {
+    fn into(self) -> Exp {
         match self {
-            Self::Write(e1, e2) => Err(TranspilationError::Message(format!("Write {:?} {:?}", e1, e2).into())),
-            Self::Read(e) if matches!(e, Exp::Read(_)) => Ok(e),
-            Self::Read(e) => Ok(Exp::Read(box e)),
-            Self::Deref(e) if matches!(e, Exp::Deref(_)) => Ok(e),
-            Self::Deref(e) => Ok(Exp::Deref(box e)),
-            Self::Call(e) => Ok(e),
-            Self::Constant(e) => Ok(e),
-            Self::Lookup(id) => Ok(Exp::Id(id.into())),
+            Self::Write(e1, e2) => Exp::Statement(box Stmt::Transfer(e1, e2)),
+            Self::Read(e) if matches!(e, Exp::Read(_)) => e,
+            Self::Read(e) => Exp::Read(box e),
+            Self::Deref(e) if matches!(e, Exp::Deref(_)) => e,
+            Self::Deref(e) => Exp::Deref(box e),
+            Self::Call(e) => e,
+            Self::Constant(e) => e,
+            Self::Lookup(id) => Exp::Id(id.into()),
         }
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct EffectsExp {
     /// The effects relied to the below statement
     /// x = foo() + y;
@@ -114,7 +113,10 @@ impl EffectsExp {
         &self.effects
     }
 
-    fn fmap_stmts<F>(self, func: F) -> Stmts  where F: Fn(Exp) -> Stmt {
+    fn fmap_stmts<F>(self, func: F) -> Stmts
+    where
+        F: Fn(Exp) -> Stmt,
+    {
         let mut stmts = self.effects.into_iter().fold(Stmts::new(), |mut acc, eff| {
             acc.push(eff.into());
             acc
@@ -191,7 +193,9 @@ impl Transpiler {
             // Append the call to C main function. OSL, as Python, doesn't need an entrypoint like the C main function.
             // We simulate the main function by adding this call at the bottom of the transpiled file.
             // This method work because in C there exist only functions and variables declarations at the top level.
-            program.push(Stmt::Expression(Exp::Call("main".into(), Exps(vec![]))));
+            program.push(Stmt::Expression(Exp::Statement(box Stmt::Expression(
+                Exp::Call("main".into(), Exps(vec![])),
+            ))));
 
             Ok(program)
         } else {
@@ -273,7 +277,9 @@ impl Transpiler {
             ExternalDeclaration::FunctionDefinition(node!(fun_def)) => {
                 self.transpile_function_def(fun_def).map(Stmts::from)
             }
-            ExternalDeclaration::Declaration(node!(declaration)) => self.transpile_declaration(&declaration),
+            ExternalDeclaration::Declaration(node!(declaration)) => {
+                self.transpile_declaration(&declaration)
+            }
             ExternalDeclaration::StaticAssert(ref node) => Err(TranspilationError::Unsupported(
                 node.span,
                 "not relevant for ownership type".into(),
@@ -398,12 +404,14 @@ impl Transpiler {
             });
 
         match left_mut {
-            Mutability::ImmRef => {
-                Stmt::Borrow(Exp::Id(lhs.name.clone()), Exp::Id(rhs.name.clone()))
-            }
-            Mutability::MutRef => {
-                Stmt::MBorrow(Exp::Id(lhs.name.clone()), Exp::Id(rhs.name.clone()))
-            }
+            Mutability::ImmRef => Stmt::Expression(Exp::Statement(box Stmt::Borrow(
+                Exp::Id(lhs.name.clone()),
+                Exp::Id(rhs.name.clone()),
+            ))),
+            Mutability::MutRef => Stmt::Expression(Exp::Statement(box Stmt::MBorrow(
+                Exp::Id(lhs.name.clone()),
+                Exp::Id(rhs.name.clone()),
+            ))),
             _ => panic!("This should be a reference"),
         }
     }
@@ -444,11 +452,13 @@ impl Transpiler {
     }
 
     fn transpile_return_statement(&mut self, exp: &Expression) -> Result<Stmts> {
-        self.transpile_expression(exp)
-            .map(|mut effstmt|
-                //FIXME: manage effect
-                Stmts::from(Stmt::Return(effstmt.expression))
-            )
+        self.transpile_expression(exp).map(|effstmt| {
+            //FIXME: manage effect
+            Stmts::from(match effstmt.expression {
+                Exp::Statement(box Stmt::Expression(e)) => Stmt::Return(e),
+                expression => Stmt::Return(expression),
+            })
+        })
     }
 
     fn transpile_switch_case(&mut self, switch: &SwitchStatement) -> Result<Stmts> {

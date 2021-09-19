@@ -30,9 +30,10 @@ pub fn is_osl_model_compiled() -> bool {
 
 pub fn transpile_c_code(input: &PathBuf) -> Result<cfrontend::ast::Stmts, Box<dyn Error>> {
     let ast = lang_c::driver::parse(&Config::default(), input.to_string_lossy().into_owned())?;
-    let stmts = cfrontend::transpile_c_program(ast, Configuration::new(true));
-
-    Ok(stmts)
+    match cfrontend::transpile_c_program(ast, Configuration::new(true)) {
+        Ok(stmts) => Ok(stmts),
+        Err(err) => panic!("{:?}", err),
+    }
 }
 
 // Run the krun script and get the output

@@ -32,7 +32,10 @@ use crate::transpiler::errors::TranspilationError;
 /// This function is the entry-point of this library.
 /// Other binary should call this function after parsed the
 /// C program.
-pub fn transpile_c_program(parse: Parse, config: configuration::Configuration) -> Result<ast::Stmts, Vec<TranspilationError>> {
+pub fn transpile_c_program(
+    parse: Parse,
+    config: configuration::Configuration,
+) -> Result<ast::Stmts, Vec<TranspilationError>> {
     let mut transpiler = transpiler::Transpiler::new(parse.source, config);
     transpiler.transpile_translation_unit(&parse.unit)
 }

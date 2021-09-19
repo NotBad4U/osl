@@ -4,7 +4,7 @@ impl Transpiler {
     /// Transpile an If - Else (optional) statement recursively
     pub(super) fn transpile_branchs(&mut self, if_stmt: &IfStatement) -> Result<Stmts> {
         let condition_result: Result<Stmts> = self
-            .transpile_expression(&if_stmt.condition.node)
+            .transpile_condition_expression(&if_stmt.condition.node)
             .map(Into::into);
 
         let (then_statements, else_statements) = self
@@ -22,7 +22,12 @@ impl Transpiler {
             })?;
 
         condition_result.and_then(|mut condition_statement| {
-            condition_statement.push(Stmt::Branch(Blocks(vec![then_statements, else_statements])));
+            let blocks = if else_statements.is_empty() {
+                vec![then_statements]
+            } else {
+                vec![then_statements, else_statements]
+            };
+            condition_statement.push(Stmt::Branch(Blocks(blocks)));
             Ok(condition_statement)
         })
     }

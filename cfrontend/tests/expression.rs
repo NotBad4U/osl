@@ -183,6 +183,7 @@ call main();
 }
 
 #[test]
+#[ignore]
 fn it_should_transpile_matrice_id() {
     let c_program = r###"
     void main() {
@@ -220,7 +221,7 @@ fn main() -> #voidTy {
     decl c;
     read(b);
     read(c);
-    transfer newResource() a;
+    transfer newResource(mut) a;
 }; 
 call main();
 "###;

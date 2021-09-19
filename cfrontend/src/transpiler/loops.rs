@@ -6,13 +6,14 @@ impl Transpiler {
         &mut self,
         while_stmt: &WhileStatement,
     ) -> Result<Stmts> {
-        let condition = self
-            .transpile_expression(&while_stmt.expression.node)?
+        let condition: Stmts = self
+            .transpile_condition_expression(&while_stmt.expression.node)?
             .into();
-        let block = self.transpile_statement(&while_stmt.statement)?;
+        let mut block = self.transpile_statement(&while_stmt.statement)?;
+        block.append(condition.clone());
 
         // construct AST
-        let mut stmts = Stmts::from(Stmt::Comment("loop invariant".into()));
+        let mut stmts = Stmts::new();
         stmts.append(condition);
         stmts.push(Stmt::Loop(block));
         Ok(stmts)
@@ -23,7 +24,7 @@ impl Transpiler {
         while_stmt: &DoWhileStatement,
     ) -> Result<Stmts> {
         let condition = self
-            .transpile_expression(&while_stmt.expression.node)?
+            .transpile_condition_expression(&while_stmt.expression.node)?
             .into();
         let mut block = self.transpile_statement(&while_stmt.statement)?;
         block.extend(condition);
@@ -34,7 +35,7 @@ impl Transpiler {
         let condition = forloop
             .condition
             .as_ref()
-            .map(|box node!(cond)| self.transpile_expression(cond).map(Into::into))
+            .map(|box node!(cond)| self.transpile_condition_expression(cond).map(Into::into))
             .unwrap_or(Ok(Stmts::new()))?;
 
         let initializer = match &forloop.initializer.node {
@@ -42,7 +43,7 @@ impl Transpiler {
             ForInitializer::Expression(box node!(e)) => {
                 self.transpile_expression(&e).map(Into::into)
             }
-            ForInitializer::Declaration(d) => unimplemented!(), /*self.transpile_declaration(&d)*/
+            ForInitializer::Declaration(d) => self.transpile_declaration(&d.node),
             ForInitializer::StaticAssert(node) => Err(TranspilationError::Unsupported(
                 node.span,
                 "Static assert are not supported".into(),
@@ -59,8 +60,8 @@ impl Transpiler {
             .unwrap_or(Ok(Stmts::new()))?;
 
         let mut block_statements = self.transpile_statement(&forloop.statement)?;
-        block_statements.append(condition);
         block_statements.append(step_increments);
+        block_statements.append(condition);
 
         let mut statements_for_loop = header_of_loop;
         statements_for_loop.push(Stmt::Loop(block_statements));

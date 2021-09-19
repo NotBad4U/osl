@@ -12,6 +12,7 @@ use cfrontend::configuration::Configuration;
 use cfrontend::transpiler::errors::TranspilationError;
 use env_logger::Builder;
 use lang_c::driver::Config;
+use lang_c::driver::Error;
 use lang_c::span::Span;
 use log::LevelFilter;
 
@@ -26,12 +27,36 @@ fn main() {
     match lang_c::driver::parse(&Config::default(), TEST_C_FILE) {
         Ok(ast) => {
             info!("transpiling {}...", TEST_C_FILE);
-            match cfrontend::transpile_c_program(ast.clone(), Configuration::new(true)) {
+            match cfrontend::transpile_c_program(ast.clone(), Configuration::new(false)) {
                 Ok(stmts) => println!("{}", cfrontend::ast::render::render_program(stmts)),
                 Err(errors) => print_errors(ast.source.as_str(), errors),
             }
         }
-        Err(e) => eprintln!("Error C parsing source code: {}", e),
+        Err(Error::PreprocessorError(error)) => eprintln!("{}", error),
+        Err(Error::SyntaxError(error)) => {
+            eprint!(
+                "{}",
+                DisplayList::from(Snippet {
+                    title: None,
+                    footer: vec![],
+                    slices: vec![Slice {
+                        source: error.source.as_str(),
+                        line_start: error.line,
+                        origin: None,
+                        fold: true,
+                        annotations: vec![SourceAnnotation {
+                            label: error.to_string().as_str(),
+                            annotation_type: AnnotationType::Error,
+                            range: (error.column, error.offset),
+                        }],
+                    }],
+                    opt: FormatOptions {
+                        color: true,
+                        ..Default::default()
+                    },
+                })
+            )
+        }
     }
 }
 

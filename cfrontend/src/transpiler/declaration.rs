@@ -333,12 +333,17 @@ impl Transpiler {
                         Exp::Id(declarator),
                     )))
                 }
-                ref expression => self.transpile_expression(expression).map(|mut effstmt| {
+                ref expression => self.transpile_expression(expression).map(|effstmt| {
                     effstmt.fmap_stmts(|expression| match expression {
-                        Exp::Call(name, args) => Stmt::Transfer(
-                            Exp::Call(name.clone(), args.clone()),
-                            Exp::Id(declarator.clone()),
-                        ),
+                        Exp::Statement(box Stmt::Expression(Exp::Call(name, args))) => {
+                            Stmt::Transfer(
+                                Exp::Call(name.clone(), args.clone()),
+                                Exp::Id(declarator.clone()),
+                            )
+                        }
+                        Exp::Statement(box Stmt::Expression(wrapped_expression)) => {
+                            Stmt::Transfer(wrapped_expression, Exp::Id(declarator.clone()))
+                        }
                         _ => Stmt::Transfer(
                             Exp::NewResource(
                                 self.context.get_props_of_variable(&declarator).unwrap(),

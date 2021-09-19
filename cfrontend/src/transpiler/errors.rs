@@ -2,7 +2,7 @@ use lang_c::span::Span;
 
 pub type Result<T, E = TranspilationError> = std::result::Result<T, E>;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum TranspilationError {
     Unsupported(Span, String),
     Unimplemented(Span),
@@ -10,7 +10,7 @@ pub enum TranspilationError {
     Compound(Vec<TranspilationError>),
     Message(String),
     MessageSpan(Span, String),
-    NotTranspilable(Span, String)
+    NotTranspilable(Span, String),
 }
 
 #[macro_export]

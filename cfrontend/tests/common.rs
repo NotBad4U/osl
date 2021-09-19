@@ -7,7 +7,7 @@ fn transpile_preprocessed_c_program(c_program: String) -> ast::Stmts {
         Ok(ast) => match cfrontend::transpile_c_program(ast, Configuration::new(false)) {
             Ok(stmts) => stmts,
             Err(e) => panic!("{:#?}", e),
-        }
+        },
         Err(e) => panic!("{}", e),
     }
 }

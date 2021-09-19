@@ -19,7 +19,17 @@ impl Transpiler {
             ) if utils::is_deallocate_memory_function(name) => {
                 Ok(EffectsExp::from(self.transpile_deallocate(arguments)?))
             }
-            Expression::Call(box node!(call)) => self.transpile_call_expression(&call),
+            Expression::Call(box node!(call)) => self.transpile_call_expression(&call).map(
+                |EffectsExp {
+                     effects,
+                     expression,
+                 }| {
+                    EffectsExp::new(
+                        Some(effects),
+                        Exp::Statement(box Stmt::Expression(expression)),
+                    )
+                },
+            ),
             Expression::BinaryOperator(box node!(bin_op)) => self.transpile_binary_operator(bin_op),
             Expression::Constant(constant) => Ok(EffectsExp::new(
                 None,
@@ -37,6 +47,36 @@ impl Transpiler {
                 expression,
             ))),
         }
+    }
+
+    pub(super) fn transpile_condition_expression(
+        &mut self,
+        expression: &Expression,
+    ) -> Result<EffectsExp> {
+        self.transpile_expression(expression).map(
+            |EffectsExp {
+                 effects,
+                 expression,
+             }| {
+                EffectsExp::new(
+                    Some(
+                        effects
+                            .into_iter()
+                            .filter(|effect| matches!(effect, Effect::Constant(_)) == false)
+                            .map(|effect| match effect {
+                                Effect::Lookup(id) => Effect::Read(Exp::Id(id)),
+                                effect => effect,
+                            })
+                            .collect(),
+                    ),
+                    match expression {
+                        Exp::Id(id) => Exp::Read(box Exp::Id(id)),
+                        Exp::NewResource(_) => Exp::Unit,
+                        expression => expression,
+                    },
+                )
+            },
+        )
     }
 
     fn transpile_cast_expression(&mut self, cast: &CastExpression) -> Result<EffectsExp> {
@@ -90,6 +130,23 @@ impl Transpiler {
             (Vec::new(), Vec::new()),
             |mut acc, expression| {
                 self.transpile_expression(expression)
+                    .map(
+                        |EffectsExp {
+                             effects,
+                             expression,
+                         }| match expression {
+                            Exp::Statement(box Stmt::Expression(expression_wrapped)) => {
+                                EffectsExp {
+                                    effects,
+                                    expression: expression_wrapped,
+                                }
+                            }
+                            expression => EffectsExp {
+                                effects,
+                                expression,
+                            },
+                        },
+                    )
                     .and_then(|mut effexp| {
                         acc.0.append(&mut effexp.effects);
                         acc.1.push(effexp.expression);
@@ -124,7 +181,7 @@ impl Transpiler {
 
         match (left, operator, right) {
             // Basic assignment a = b;
-            //(left, BinaryOperator::Assign, right) => self.transpile_assign_expression(left, right),
+            (left, BinaryOperator::Assign, right) => self.transpile_assign_expression(left, right),
             (
                 left,
                 BinaryOperator::Greater
@@ -162,10 +219,9 @@ impl Transpiler {
                 right,
             ) => self.transpile_mutable_assign_expression(right),
             // a[..][..][..][..]...
-            (left, BinaryOperator::Index, _) => Ok(EffectsExp::new(
-                None,
-                Exp::Read(box Exp::Id(get_matrices_tag(&left))),
-            )),
+            (left, BinaryOperator::Index, _) => {
+                Ok(EffectsExp::new(None, Exp::Id(get_matrices_tag(&left))))
+            }
             (left, op, right) => Err(TranspilationError::Unsupported(
                 get_span_from_expression(left),
                 format!("{:#?} \n {:?} \n {:#?}", left, op, right),
@@ -248,24 +304,6 @@ impl Transpiler {
         right: &Expression,
     ) -> Result<EffectsExp> {
         match (left, right) {
-            // Change Value of Array elements
-            (
-                Expression::BinaryOperator(
-                    box node!(BinaryOperatorExpression {
-                        operator: node!(BinaryOperator::Index),
-                        lhs: box node!(Expression::Identifier(box node!(Identifier { name }))),
-                        ..
-                    }),
-                ),
-                right,
-            ) => Ok(EffectsExp::new(
-                Some(self.get_effects_of_expression(right)?),
-                Exp::Write(
-                    box Exp::NewResource(self.context.get_props_of_variable(name).unwrap()),
-                    box Exp::Id(name.to_string()),
-                ),
-            )),
-            //Expression::Identifier(box Node{ node: Identifier{name}, .. } ), , _) => Stmts::from(Stmt::Expression(Exp::Id(name.to_string()))),
             // parse dynamic memory allocation assignment:  ptr = (cast-type*) malloc(byte-size)
             // Malloc, Calloc, etc. returns a pointer of type void which can be cast into a pointer of any form.
             // Most usage of malloc follow this pattern.
@@ -337,13 +375,49 @@ impl Transpiler {
                     ),
                 ))
             }
+            // *a = b;
+            (Expression::UnaryOperator(unary), right) => self
+                .transpile_deref(&unary.node, right)
+                .map(|effexp| match effexp.effects.as_slice() {
+                    [effect] => EffectsExp::new(
+                        None,
+                        Exp::Write(box effect.clone().into(), box effexp.expression),
+                    ),
+                    _ => effexp,
+                }),
+            // a[][].. = ....
             (
-                Expression::Identifier(box node!(Identifier { name: left })),
-                Expression::Identifier(box node!(Identifier { name: right })),
-            ) => Ok(EffectsExp::new(
-                None,
-                Exp::Write(box Exp::Id(right.into()), box Exp::Id(left.into())),
-            )),
+                Expression::BinaryOperator(
+                    box node!(BinaryOperatorExpression {
+                        operator: node!(BinaryOperator::Index),
+                        lhs: box Node { node: lhs, span },
+                        rhs: box node!(rhs)
+                    }),
+                ),
+                right,
+            ) => {
+                let mut effects_right = self.get_effects_of_expression(right)?;
+                let mut effects_rhs = self.get_effects_of_expression(rhs)?;
+                effects_rhs.append(&mut effects_right);
+
+                let effects: Vec<_> = effects_rhs
+                    .into_iter()
+                    .filter(|effect| matches!(effect, Effect::Constant(_)) == false)
+                    .collect();
+
+                let id = get_matrices_tag(&lhs);
+                let props = self.context.get_props_of_variable(&id).ok_or(
+                    TranspilationError::MessageSpan(
+                        *span,
+                        "Cannot find props in the context".to_string(),
+                    ),
+                )?;
+
+                Ok(EffectsExp::new(
+                    Some(effects),
+                    Exp::Write(box Exp::NewResource(props), box Exp::Id(id)),
+                ))
+            }
             // Default: a = <expression>
             (
                 Expression::Identifier(box Node {
@@ -363,37 +437,21 @@ impl Transpiler {
                         "can't find his Props in context".into(),
                     ),
                 )?;
-                Ok(EffectsExp::new(
-                    Some(effects),
-                    Exp::Write(box Exp::NewResource(props), box Exp::Id(name.into())),
-                ))
-            }
-            // *a = b;
-            (Expression::UnaryOperator(unary), right) => self
-                .transpile_deref(&unary.node, right)
-                .map(|expression| EffectsExp::new(None, expression)),
-            // a[][].. = ....
-            (
-                Expression::BinaryOperator(
-                    box node!(BinaryOperatorExpression {
-                        operator: node!(BinaryOperator::Index),
-                        lhs: box node!(lhs),
-                        rhs: box node!(rhs)
-                    }),
-                ),
-                right,
-            ) => {
-                let mut effects_right = self.get_effects_of_expression(right)?;
-                let mut effects_rhs = self.get_effects_of_expression(rhs)?;
-                effects_rhs.append(&mut effects_right);
 
-                Ok(EffectsExp::new(
-                    Some(effects_rhs),
-                    Exp::Write(
-                        box Exp::NewResource(Props::new()),
-                        box Exp::Id(get_matrices_tag(&lhs)),
-                    ),
-                ))
+                if effects.len() == 1 {
+                    Ok(EffectsExp::new(
+                        None,
+                        Exp::Write(
+                            box (effects.into_iter().nth(0).map(Into::into).unwrap()),
+                            box Exp::Id(name.into()),
+                        ),
+                    ))
+                } else {
+                    Ok(EffectsExp::new(
+                        Some(effects),
+                        Exp::Write(box Exp::NewResource(props), box Exp::Id(name.into())),
+                    ))
+                }
             }
             (left, _) => Err(TranspilationError::Unimplemented(get_span_from_expression(
                 left,
@@ -410,14 +468,10 @@ impl Transpiler {
             Expression::Identifier(box node!(Identifier { name })) => {
                 Ok(vec![Effect::Read(Exp::Id(name.clone()))])
             }
-            Expression::Constant(box node!(_)) => {
-                Ok(vec![Effect::Constant(Exp::NewResource(Props::new()))])
-            }
-            Expression::StringLiteral(_) => {
-                Ok(vec![Effect::Constant(Exp::NewResource(Props::new()))])
-            }
+            Expression::Constant(box node!(_)) => Ok(vec![]),
+            Expression::StringLiteral(_) => Ok(vec![]),
             Expression::Member(box node!(MemberExpression { identifier, .. })) => {
-                Ok(vec![Effect::Read(Exp::Id(identifier.node.name.clone()))])
+                Ok(vec![Effect::Lookup(identifier.node.name.clone())])
             }
             Expression::Call(
                 box node!(CallExpression {
@@ -426,12 +480,42 @@ impl Transpiler {
                 }),
             ) => arguments
                 .iter()
-                .map(|node!(argument)| self.get_effects_of_expression(argument))
+                .map(|node!(argument)| {
+                    self.get_effects_of_expression(argument).map(|effects| {
+                        effects.into_iter().map(|effect| match effect {
+                            Effect::Read(Exp::Id(id)) => Effect::Lookup(id),
+                            effect => effect,
+                        })
+                    })
+                })
                 .collect::<Result<Vec<_>, _>>()
                 .map(|vecs| vecs.into_iter().flatten().collect())
-                .map(|args: Vec<_>| vec![Effect::Call(Exp::Call(name.to_string(), Exps(vec![])))]), //FIXME
-            Expression::UnaryOperator(box node!(UnaryOperatorExpression{box operand, ..})) => {
+                .map(|args: Vec<_>| args.into_iter().map(Into::into).collect())
+                .map(|args| vec![Effect::Call(Exp::Call(name.to_string(), Exps(args)))]),
+            Expression::UnaryOperator(
+                box node!(UnaryOperatorExpression{box operand, operator}),
+            ) => {
+                // If its a C indirection (*) and we have only one effect, then wrap it into a Deref expression
+                // We raise an Unsupported if we have more than one effects. The program can be simplify for us.
                 self.get_effects_of_expression(&operand.node)
+                    .and_then(|effects| match operator.node {
+                        UnaryOperator::Indirection => {
+                            if effects.len() == 1 {
+                                Ok(vec![Effect::Deref(
+                                    effects.into_iter().nth(0).map(|effect| match effect {
+                                        Effect::Read(Exp::Id(id)) => Effect::Lookup(id).into(),
+                                        effect => effect.into()
+                                    }).unwrap(),
+                                )])
+                            } else {
+                                Err(TranspilationError::NotTranspilable(
+                                    operand.span,
+                                    "Cannot transpile it into deref expression".into(),
+                                ))
+                            }
+                        }
+                        _ => Ok(effects),
+                    })
             }
             Expression::BinaryOperator(box node!(BinaryOperatorExpression { lhs, rhs, .. })) => {
                 let mut effects = self.get_effects_of_expression(&lhs.node)?;
@@ -477,10 +561,12 @@ impl Transpiler {
         &mut self,
         unary: &UnaryOperatorExpression,
         right: &Expression,
-    ) -> Result<Exp> {
+    ) -> Result<EffectsExp> {
         match (&unary.operator.node, &unary.operand.node, right) {
             (UnaryOperator::Indirection, Expression::Identifier(box node!(node)), right) => {
-                Ok(Exp::Deref(box Exp::Id(node.name.clone())))
+                self.get_effects_of_expression(right).map(|effects| {
+                    EffectsExp::new(Some(effects), Exp::Deref(box Exp::Id(node.name.clone())))
+                })
             }
             (_operator, operand, _expression) => Err(TranspilationError::NotTranspilable(
                 get_span_from_expression(operand),
