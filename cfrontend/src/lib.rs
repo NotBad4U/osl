@@ -36,6 +36,6 @@ pub fn transpile_c_program(
     parse: Parse,
     config: configuration::Configuration,
 ) -> Result<ast::Stmts, Vec<TranspilationError>> {
-    let mut transpiler = transpiler::Transpiler::new(parse.source, config);
+    let mut transpiler = transpiler::Transpiler::new(config);
     transpiler.transpile_translation_unit(&parse.unit)
 }

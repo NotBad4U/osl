@@ -208,6 +208,7 @@ checksum = "b16bd47d9e329435e309c58469fe0791c2d0d1ba96ec0954152a5ae2b04387dc"
 name = "osl"
 version = "0.1.0"
 dependencies = [
+ "annotate-snippets",
  "cfrontend",
  "env_logger 0.9.0",
  "lang-c",

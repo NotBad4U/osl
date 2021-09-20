@@ -7,7 +7,6 @@ use structopt::StructOpt;
 
 use std::error::Error;
 use std::fmt;
-use std::fs::File;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
@@ -92,35 +91,41 @@ fn main() -> Result<(), Box<dyn Error>> {
     setup_opam()?;
 
     info!("[4/5] Transpiling {}", opt.input.to_string_lossy());
-    let stmts = transpile_c_code(&opt.input)?;
+    match transpile_c_code(&opt.input) {
+        Ok(stmts) => {
+            if opt.only_transpile {
+                info!("[5/5] dry-run mode active, krun will not be started");
+                println!("{}", cfrontend::ast::render::render_program(stmts));
+                return Ok(());
+            }
 
-    if opt.only_transpile {
-        info!("[5/5] dry-run mode active, krun will not be started");
-        println!("{}", cfrontend::ast::render::render_program(stmts));
-        return Ok(());
+            let osl_file_tmp = opt.output.clone().unwrap_or(PathBuf::from(format!(
+                "{}.osl",
+                opt.input.to_string_lossy()
+            )));
+
+            save_in_file(&osl_file_tmp, stmts)?;
+
+            info!("[5/5] Running OSL");
+            let k_output = krun(&osl_file_tmp)?;
+
+            if is_valid(k_output.as_str()) {
+                info!("Program valid ✓")
+            } else {
+                error!("Program invalid ✘");
+                io::stdout().write_all(k_output.as_bytes())?;
+            }
+
+            if opt.keep == false {
+                trace!("Deleting OSL file {}", osl_file_tmp.to_string_lossy());
+                std::fs::remove_file(osl_file_tmp)?;
+            }
+
+            Ok(())
+        }
+        Err(errors) => {
+            errors.iter().for_each(|err| eprintln!("{}", err));
+            Err("Cannot transpile the C program".into())
+        }
     }
-
-    let osl_file_tmp = opt.output.clone().unwrap_or(PathBuf::from(format!(
-        "{}.osl",
-        opt.input.to_string_lossy()
-    )));
-
-    save_in_file(&osl_file_tmp, stmts);
-
-    info!("[5/5] Running OSL");
-    let k_output = krun(&osl_file_tmp)?;
-
-    if is_valid(k_output.as_str()) {
-        info!("Program valid ✓")
-    } else {
-        error!("Program invalid ✘");
-        io::stdout().write_all(k_output.as_bytes())?;
-    }
-
-    if opt.keep == false {
-        trace!("Deleting OSL file {}", osl_file_tmp.to_string_lossy());
-        std::fs::remove_file(osl_file_tmp)?;
-    }
-
-    Ok(())
 }

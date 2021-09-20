@@ -120,29 +120,6 @@ fn unsupported(source: &str, span: Span, reason: &str) {
     eprint!("{}", DisplayList::from(snippet))
 }
 
-fn unknown(source: &str, span: Span) {
-    let snippet = Snippet {
-        title: None,
-        footer: vec![],
-        slices: vec![Slice {
-            source: source,
-            line_start: 0,
-            origin: None,
-            fold: true,
-            annotations: vec![SourceAnnotation {
-                label: "",
-                annotation_type: AnnotationType::Warning,
-                range: (span.start, span.end),
-            }],
-        }],
-        opt: FormatOptions {
-            color: true,
-            ..Default::default()
-        },
-    };
-    eprint!("{}", DisplayList::from(snippet))
-}
-
 fn report_error(source: &str, span: Span, message: &str) {
     let snippet = Snippet {
         title: None,

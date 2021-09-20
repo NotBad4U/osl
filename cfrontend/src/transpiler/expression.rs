@@ -502,10 +502,14 @@ impl Transpiler {
                         UnaryOperator::Indirection => {
                             if effects.len() == 1 {
                                 Ok(vec![Effect::Deref(
-                                    effects.into_iter().nth(0).map(|effect| match effect {
-                                        Effect::Read(Exp::Id(id)) => Effect::Lookup(id).into(),
-                                        effect => effect.into()
-                                    }).unwrap(),
+                                    effects
+                                        .into_iter()
+                                        .nth(0)
+                                        .map(|effect| match effect {
+                                            Effect::Read(Exp::Id(id)) => Effect::Lookup(id).into(),
+                                            effect => effect.into(),
+                                        })
+                                        .unwrap(),
                                 )])
                             } else {
                                 Err(TranspilationError::NotTranspilable(
