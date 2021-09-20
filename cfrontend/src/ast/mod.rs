@@ -142,6 +142,14 @@ impl Type {
     pub fn ref_from(lifetime: &str, r#type: Type) -> Self {
         Type::Ref(lifetime.to_string(), box r#type)
     }
+
+    pub fn props(&self) -> Props {
+        match self {
+            Type::Own(props) => props.clone(),
+            Type::Ref(_, r#type) => r#type.props(),
+            Type::VoidTy => Props::new(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]

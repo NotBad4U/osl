@@ -1,6 +1,5 @@
 use enum_extract::extract;
 use lang_c::ast::*;
-use lang_c::span;
 use lang_c::span::Node;
 
 use std::collections::HashMap;
@@ -101,18 +100,6 @@ impl EffectsExp {
         }
     }
 
-    fn add_effect(&mut self, eff: Effect) {
-        self.effects.push(eff)
-    }
-
-    fn append_effects(&mut self, mut eff: Vec<Effect>) {
-        self.effects.append(&mut eff)
-    }
-
-    fn get_effects(&self) -> &Vec<Effect> {
-        &self.effects
-    }
-
     fn fmap_stmts<F>(self, func: F) -> Stmts
     where
         F: Fn(Exp) -> Stmt,
@@ -140,7 +127,7 @@ impl Into<Stmts> for EffectsExp {
 use std::fmt::Debug;
 
 impl Transpiler {
-    pub fn new(source: String, config: Configuration) -> Self {
+    pub fn new(config: Configuration) -> Self {
         Self {
             context: MutabilityContext::new(),
             typedefs: HashMap::new(),
@@ -213,12 +200,12 @@ impl Transpiler {
         let fn_id = get_declarator_id(&function_def.declarator.node).unwrap();
         let mut_return_type = get_return_fun_mutability_from_fun_def(function_def);
 
-        // Inductive recursion on the compound statements
-        let block_stmts = self.transpile_statement(&function_def.statement)?;
-
         let parameters = self.transpile_parameters_declaration(
             &get_function_parameters_from_declarator(&function_def.declarator.node),
         );
+
+        // Inductive recursion on the compound statements
+        let block_stmts = self.transpile_statement(&function_def.statement)?;
 
         let mut return_type =
             self.transpile_return_type_function_declaration(&parameters, &mut_return_type);
@@ -288,7 +275,7 @@ impl Transpiler {
     }
 
     pub(super) fn transpile_parameters_declaration(
-        &self,
+        &mut self,
         params: &Vec<ParameterDeclaration>,
     ) -> Parameters {
         params
@@ -301,7 +288,9 @@ impl Transpiler {
                 // In other words, a function with one parameter gets one lifetime parameter: fn foo(x: ref('a, Type));
                 // a function with two parameters gets two separate lifetime parameters: fn foo(x: ref('a, Type), y: ref('b, Type)); and so on.
                 // This follow the rules of input lifetimes of Rust lang function.
-                let param = match self.get_function_parameter_mutability(param) {
+                let mutability = self.get_function_parameter_mutability(param);
+
+                let param = match mutability {
                     Mutability::MutOwner => Parameter(id, Type::Own(Props::from(Prop::Mut))),
                     Mutability::ImmOwner => Parameter(id, Type::Own(Props::new())),
                     Mutability::MutRef => Parameter(
@@ -316,6 +305,11 @@ impl Transpiler {
                         Type::Ref(utils::generate_lifetime(index), box Type::Own(Props::new())),
                     ),
                 };
+
+                self.context.insert_in_last_scope(
+                    param.0.clone(),
+                    MutabilityContextItem::variable(mutability, param.1.props()),
+                );
 
                 acc.push(param);
                 acc
