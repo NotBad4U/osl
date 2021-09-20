@@ -31,14 +31,20 @@ bool isSafe(int board[N][N], int row, int col)
             return false;
 
     /* Check upper diagonal on left side */
-    for (i = row, j = col; i >= 0 && j >= 0; i--, j--)
+    for (i = row; i >= 0 && j >= 0; i--) {
+      j = col;
         if (board[i][j])
             return false;
+        j--;
+    }
 
     /* Check lower diagonal on left side */
-    for (i = row, j = col; j >= 0 && i < N; i++, j--)
+    for (i = row; j >= 0 && i < N; i++) {
+        j = col;
         if (board[i][j])
             return false;
+        j--;
+    }
 
     return true;
 }
