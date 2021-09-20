@@ -1,6 +1,7 @@
 use std::{fmt, ops};
 
 pub mod render;
+pub mod zipper;
 
 type Id = String;
 type LifetimeMarker = String;
