@@ -6,11 +6,15 @@ impl Transpiler {
         &mut self,
         while_stmt: &WhileStatement,
     ) -> Result<Stmts> {
+        self.context.create_new_scope();
+
         let condition: Stmts = self
             .transpile_condition_expression(&while_stmt.expression.node)?
             .into();
         let mut block = self.transpile_statement(&while_stmt.statement)?;
         block.append(condition.clone());
+
+        self.context.pop_last_scope();
 
         // construct AST
         let mut stmts = Stmts::new();
@@ -23,15 +27,22 @@ impl Transpiler {
         &mut self,
         while_stmt: &DoWhileStatement,
     ) -> Result<Stmts> {
+        self.context.create_new_scope();
+
         let condition = self
             .transpile_condition_expression(&while_stmt.expression.node)?
             .into();
         let mut block = self.transpile_statement(&while_stmt.statement)?;
         block.extend(condition);
+
+        self.context.pop_last_scope();
+
         Ok(Stmts::from(Stmt::Loop(block)))
     }
 
     pub(super) fn transpile_forloop_statement(&mut self, forloop: &ForStatement) -> Result<Stmts> {
+        self.context.create_new_scope();
+
         let condition = forloop
             .condition
             .as_ref()
@@ -65,6 +76,8 @@ impl Transpiler {
 
         let mut statements_for_loop = header_of_loop;
         statements_for_loop.push(Stmt::Loop(block_statements));
+
+        self.context.pop_last_scope();
 
         Ok(statements_for_loop)
     }

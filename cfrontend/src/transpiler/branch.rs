@@ -3,6 +3,8 @@ use super::*;
 impl Transpiler {
     /// Transpile an If - Else (optional) statement recursively
     pub(super) fn transpile_branchs(&mut self, if_stmt: &IfStatement) -> Result<Stmts> {
+        self.context.create_new_scope();
+
         let condition_result: Result<Stmts> = self
             .transpile_condition_expression(&if_stmt.condition.node)
             .map(Into::into);
@@ -20,6 +22,8 @@ impl Transpiler {
                     Err(e) => Err(e),
                 }
             })?;
+
+        self.context.pop_last_scope();
 
         condition_result.and_then(|mut condition_statement| {
             let blocks = if else_statements.is_empty() {

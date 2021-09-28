@@ -141,6 +141,9 @@ impl Transpiler {
         &mut self,
         translation_unit: &'ast TranslationUnit,
     ) -> Result<Stmts, Vec<TranspilationError>> {
+        // Scope for global variables
+        self.context.create_new_scope();
+
         let std_funcs = if self.config.intrinsic {
             // Add the Intrinsics function at the top of the transpiled files.
             // If you want to now the list of std functions supported, you can
