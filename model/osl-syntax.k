@@ -89,9 +89,6 @@ syntax Uninit
 syntax BranchTmp
        ::= #secondBranch(Blocks)
 
-syntax LOCK
-       ::= #compare(K)
-
 syntax Int
        ::= #cint(Int,Int)
 

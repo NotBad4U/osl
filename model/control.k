@@ -40,7 +40,66 @@ rule <k> #secondBranch(B:Block, Bs:Blocks) ~> Rest:K => #secondBranch(Bs) ~> Res
 	</state> )
 
 
-rule <k> #repeat(B:Block) => B ... </k>
+// rule <k> #repeat(B:Block) => B ... </k>
+
+syntax Separator
+       ::= #loopSep(Int) // The Ints represent the Id of the two states to compare
+          | #evaluate(Block)
+
+rule <k> ! B:Block ; ~> Rest:K => #loopSep(NS)  ~> Rest </k>
+     <env> ENV:Map </env>
+     <store> STORE:Map </store>
+     <stack> STACK:List </stack>
+     <timer> TIMER:Int </timer>
+     <write> WRITE:Set  </write>
+     <unsafe-mode> UNSAFE_BLOCK:Bool </unsafe-mode>
+     <indexes> #indexes(A:Int,C:Int) </indexes>
+     <nstate> NS:Int => NS +Int 1 </nstate>
+     (.Bag =>
+          <state>
+	          <index> NS </index>
+               <k> #evaluate(B) </k>
+	          <env> ENV </env>
+	          <store> STORE </store>
+	          <stack> STACK </stack>
+	          <timer> TIMER </timer>
+               <unsafe-mode> UNSAFE_BLOCK </unsafe-mode>
+               <write> WRITE  </write>
+               <indexes> #indexes(A,C) </indexes>
+          </state>
+     )
+
+
+//NOTE: maybe  we can improve this rule by removing the #compare(.)
+rule #evaluate(#block(Ss:Stmts)) => Ss
+
+syntax Bool ::=
+     #compareStore(Map,Map) [function]
+     | #compareElem(Int, K, K) [function]
+
+rule
+     <state>
+          <k> #loopSep(I:Int) ~> Rest:K => Rest </k>
+          <store> STORE </store>
+          ...
+     </state>
+     (<state>
+          <index> I </index>
+          <k> . </k>
+          <store> STORE2 </store>
+          ...
+     </state>  => .Bag)
+     requires #compareStore(STORE, STORE2) ==Bool true
+
+rule #compareStore((Key:Int |-> #rs(Props)) M, M2:Map) => #compareElem(Key, #rs(Props), M2[Key]) andBool #compareStore(M,M2)
+rule #compareStore((Key:Int |-> Val) M, M2:Map) => true andBool #compareStore(M,M2)
+rule #compareStore(.Map, M2) => true
+
+rule #compareElem(Key, #rs(P1), #rs(P2)) => true
+     requires P1 ==K P2
+rule #compareElem(Key, #rs(P), #uninit) => false
+
+//rule #compareElem(#rs(P), _) => false
 
 // syntax Separator
 //        ::= #loopSep(Int)
