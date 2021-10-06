@@ -40,12 +40,31 @@ rule <k> #secondBranch(B:Block, Bs:Blocks) ~> Rest:K => #secondBranch(Bs) ~> Res
 	</state> )
 
 
-// rule <k> #repeat(B:Block) => B ... </k>
-
 syntax Separator
        ::= #loopSep(Int) // The Ints represent the Id of the two states to compare
           | #evaluate(Block)
 
+
+// Proposition: All owners keep the own of their resource after a loop iteration.
+// If a resource is moved(transfered)/deallocate in previous iteration of loop, it become not available
+// for the next iteration. This Rust example illustrate the error:
+//
+// ```
+// let x = P(4);
+// loop {
+//   let y = x;
+//       ^^^^^^^ Value moved here, in previous iteration of loop
+// }
+// ```
+// Compiler Error: The value is use of moved value: `x`
+//
+//
+// For checking this property, we proceed like this:
+// First, we evaluate the loop in another <State>.
+// Then we verify that each owner in the main <Store>
+// are still the owner of their resource by comparing the Value.
+//
+// NOTE: If the resource has the prop Copy, then the transfer is possible.
 rule <k> ! B:Block ; ~> Rest:K => #loopSep(NS)  ~> Rest </k>
      <env> ENV:Map </env>
      <store> STORE:Map </store>
@@ -54,6 +73,9 @@ rule <k> ! B:Block ; ~> Rest:K => #loopSep(NS)  ~> Rest </k>
      <write> WRITE:Set  </write>
      <unsafe-mode> UNSAFE_BLOCK:Bool </unsafe-mode>
      <indexes> #indexes(A:Int,C:Int) </indexes>
+     // Create a new state with a copy of the current context
+     // for evaluating the block of the loop without
+     // without polluting the main context.
      <nstate> NS:Int => NS +Int 1 </nstate>
      (.Bag =>
           <state>
@@ -69,13 +91,14 @@ rule <k> ! B:Block ; ~> Rest:K => #loopSep(NS)  ~> Rest </k>
           </state>
      )
 
-
-//NOTE: maybe  we can improve this rule by removing the #compare(.)
+// evaluate the block of the loop
 rule #evaluate(#block(Ss:Stmts)) => Ss
 
+// The block of the loop has been evaluated.
+// We can now compare the two Store and verify the property above.
 syntax Bool ::=
-     #compareStore(Map,Map) [function]
-     | #compareElem(Int, K, K) [function]
+     #IsMoveOccurred(Map,Map) [function]
+     | #IsMoved(Int, K, K) [function]
 
 rule
      <state>
@@ -89,157 +112,20 @@ rule
           <store> STORE2 </store>
           ...
      </state>  => .Bag)
-     requires #compareStore(STORE, STORE2) ==Bool true
+     requires #IsMoveOccurred(STORE, STORE2) ==Bool true
 
-rule #compareStore((Key:Int |-> #rs(Props)) M, M2:Map) => #compareElem(Key, #rs(Props), M2[Key]) andBool #compareStore(M,M2)
-rule #compareStore((Key:Int |-> Val) M, M2:Map) => true andBool #compareStore(M,M2)
-rule #compareStore(.Map, M2) => true
+// Check if the owner has still the owner of his resource after the evaluation of the loop
+rule #IsMoveOccurred((Key:Int |-> #rs(Props)) M, M2:Map) => #IsMoved(Key, #rs(Props), M2[Key]) andBool #IsMoveOccurred(M,M2)
 
-rule #compareElem(Key, #rs(P1), #rs(P2)) => true
+// skip this check if the resource is uninit or a reference
+rule #IsMoveOccurred((Key:Int |-> #uninit) M, M2:Map) => true andBool #IsMoveOccurred(M,M2)
+rule #IsMoveOccurred((Key:Int |-> #br(_,_,_)) M, M2:Map) => true andBool #IsMoveOccurred(M,M2)
+rule #IsMoveOccurred(.Map, M2) => true
+
+rule #IsMoved(Key, #rs(P1), #rs(P2)) => true
      requires P1 ==K P2
-rule #compareElem(Key, #rs(P), #uninit) => false
-
-//rule #compareElem(#rs(P), _) => false
-
-// syntax Separator
-//        ::= #loopSep(Int)
-
-// rule <k> ! B:Block ; ~> Rest:K => B ~> #loopSep(0)  ~> ! B ; ~> Rest </k>
-//      <env> ENV:Map </env>
-//      <store> STORE:Map </store>
-//      <stack> STACK:List </stack>
-//      <timer> TIMER:Int </timer>
-//      <write> WRITE:Set  </write>
-//      <indexes> #indexes(A:Int,C:Int) </indexes>     
-//      <nstate> NS:Int => NS +Int 2 </nstate>
-//      (.Bag =>
-//         <state>
-// 	 <index> NS </index>
-//      	 <k> #compare(! B ; ~> Rest) </k>
-// 	 <env> ENV </env>
-// 	 <store> STORE </store>
-// 	 <stack> STACK </stack>
-// 	 <timer> TIMER </timer>
-//          <write> WRITE  </write>
-//      	 <indexes> #indexes(A,C) </indexes>
-//  	</state> )
-//       (.Bag =>
-//         <state>
-// 	 <index> NS +Int 1 </index>
-//      	 <k> Rest </k>
-// 	 <env> ENV </env>
-// 	 <store> STORE </store>
-// 	 <stack> STACK </stack>
-// 	 <timer> TIMER </timer>
-//          <write> WRITE  </write>
-//      	 <indexes> #indexes(A,C) </indexes>
-//  	</state> ) 
-
-
-
-// rule <k> #loopSep(N:Int) ~> Rest:K => Rest  </k> 
-//      <nstate> NS:Int </nstate>
-//      requires N >=Int NS
-
-// rule <k> #loopSep(N:Int) ~> Rest:K => #loopSep(N +Int 1) ~> Rest  </k> 
-     
-
-// syntax LoopItem
-//        ::= #decompose(K)
-
-// rule #decompose(! B:Block ; ~> Rest:K) => Rest
-
-// rule <state>
-//       <k> #loopSep(N:Int) ~> Rest:K => #removeState </k>
-//       <env> ENV:Map </env>
-//       <store> STORE:Map </store>
-//       <stack> STACK:List </stack>
-//       ...
-//      </state>
-//      <state> 
-//      	 <index> N </index>
-// 	 <k> Pro:K </k>
-// 	 <env> ENV1:Map </env>
-// 	 <store> STORE1:Map </store>
-// 	 <stack> STACK1:List </stack>
-// 	 ...
-//      </state>
-//      requires (Pro ==K #compare(Rest)) andBool #compareS(STORE, STORE1)
-
-// syntax RItem
-//        ::= "#removeState"
-
-// rule   (<state>
-// 	   <k> #removeState  </k>
-// 	   ...
-//        </state>) => .Bag
-
-
-// rule <k> #loopSep(N:Int) ~> Rest:K => #loopSep(N +Int 1) ~> Rest </k>
-//      <env> ENV:Map </env>
-//      <store> STORE:Map </store>
-//      <stack> STACK </stack>
-//      <state> 
-//      	 <index> N </index>
-// 	 <k> Pro:K </k>
-// 	 <env> ENV1:Map </env>
-// 	 <store> STORE1:Map </store>
-// 	 <stack> STACK1 </stack>
-// 	 ...
-//      </state>
-//      requires (Pro =/=K #compare(Rest)) orBool (#compareS(STORE, STORE1)  ==Bool false)
-
-
-// syntax Bool
-//        ::= #compareS(Map,Map)   [function]
-//        	 | #compareE(Map,Map)  	[function]
-// 	 | #compareA(K,K)      [function]
-
-
-// rule #compareS(M1:Map, M2:Map) => (size(M1) ==Int size(M2)) andBool #compareE(M1,M2)
-
-// rule #compareE((Key:Int |-> Val) M, M2:Map) => #compareA(Val, M2[Key]) andBool #compareE(M,M2)
-
-// rule #compareE(.Map, M2) => true
-
-// rule #compareA(#uninit, #uninit) => true
-// rule #compareA(#uninit, #rs(_)) => false
-// rule #compareA(#rs(_), #uninit) => false
-// rule #compareA(#rs(P), #rs(P)) => true
-// rule #compareA(#uninit, #br(_,_,_)) => false
-// rule #compareA(#br(_,_,_), #uninit) => false
-
-// rule #compareA(#rs(_), #br(_,_,_)) => false
-// rule #compareA(#br(_,_,_), #rs(_)) => false
-
-
-// rule #compareA(#rs(P), #rs(P1)) => false
-//      requires P =/=K P1
-
-// rule #compareA(#br(_,_,R1), #br(_,_,R1)) => true
-
-// rule #compareA(#br(_,_,R1), #br(_,_,R2)) => false
-//      requires R1 =/=K R2
-
-
-
-
-
+// A variable has been moved and will be use in the next loop iteration.
+rule #IsMoved(Key, #rs(P), #uninit) => false
+rule #IsMoved(Key, #rs(P), #br(_,_,_)) => false
 
 endmodule
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
