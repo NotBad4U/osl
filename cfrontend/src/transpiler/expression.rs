@@ -455,6 +455,14 @@ impl Transpiler {
                     ))
                 }
             }
+            (Expression::Member(box member), right) => {
+                get_structure_tag(&member.node).and_then(|name| {
+                    self.transpile_assign_expression(
+                        &Expression::Identifier(box Node::new(Identifier { name }, member.span)),
+                        right,
+                    )
+                })
+            }
             (left, _) => Err(TranspilationError::Unimplemented(get_span_from_expression(
                 left,
             ))),
