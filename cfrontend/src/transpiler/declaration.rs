@@ -382,7 +382,8 @@ impl Transpiler {
                         }))
                     ))), ..] => match self.context.types.get(name).cloned() {
                         Some(Ctype::Struct(props)) => props,
-                        _ => unreachable!("The structure {} was not captured before", name),
+                        Some(Ctype::Enum(_)) => Props::from(Prop::Copy),
+                        None => Props::new(),
                     },
                     // declaration of a structure in this structure
                     [node!(SpecifierQualifier::TypeSpecifier(node!(
