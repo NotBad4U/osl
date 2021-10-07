@@ -264,6 +264,8 @@ impl Transpiler {
             )),
             // &T
             (e, UnaryOperator::Address) => self.transpile_expression(e),
+            // sizeof T
+            (_, UnaryOperator::SizeOf) => Ok(EffectsExp::new(None, Exp::NewResource(Props::get_all_props()))),
             (operand, _) => Err(TranspilationError::Unimplemented(get_span_from_expression(
                 operand,
             ))),
