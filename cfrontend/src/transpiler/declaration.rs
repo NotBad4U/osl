@@ -2,6 +2,7 @@ use super::*;
 use crate::node;
 use std::collections::HashSet;
 use std::iter::FromIterator;
+use lang_c::span::Span;
 
 impl Transpiler {
     pub(super) fn transpile_declaration(&mut self, declaration: &Declaration) -> Result<Stmts> {
@@ -286,72 +287,15 @@ impl Transpiler {
         declarator: String,
         initializer: &Initializer,
     ) -> Result<Stmts> {
-        let mutability = self
-            .context
-            .get_variable_mutability(declarator.as_str())
-            .unwrap();
-
         match initializer {
-            Initializer::Expression(ref expression) => match expression.node {
-                Expression::UnaryOperator(box Node {
-                    node:
-                        UnaryOperatorExpression {
-                            operator: node!(UnaryOperator::Address),
-                            operand: box node!(Expression::Identifier(box node!(ref right_id))),
-                        },
-                    span,
-                }) => {
-                    match mutability {
-                        Mutability::ImmRef => Ok(Stmts::from(Stmt::Borrow(
-                            Exp::Id(declarator),
-                            Exp::Id(right_id.name.clone()),
-                        ))),
-                        Mutability::MutRef => Ok(Stmts::from(Stmt::MBorrow(
-                            Exp::Id(declarator),
-                            Exp::Id(right_id.name.clone()),
-                        ))),
-                        _ => Err(TranspilationError::Unsupported(span, "If we reach this code then it should be a problem in Context or storing context".into())), // If we reach this code then it should be a problem in Context or storing context
-                    }
-                }
-                Expression::Identifier(box node!(ref id)) => Ok(Stmts::from(Stmt::Transfer(
-                    Exp::Id(declarator),
-                    Exp::Id(id.name.clone()),
-                ))),
-                Expression::Constant(ref constant) => {
-                    let mut props = Props::new();
-
-                    if let Mutability::MutOwner = mutability {
-                        props.push(Prop::Mut);
-                    }
-
-                    if let Constant::Float(_) | Constant::Integer(_) = constant.node {
-                        props.push(Prop::Copy);
-                    }
-
-                    Ok(Stmts::from(Stmt::Transfer(
-                        Exp::NewResource(props),
-                        Exp::Id(declarator),
-                    )))
-                }
-                ref expression => self.transpile_expression(expression).map(|effstmt| {
-                    effstmt.fmap_stmts(|expression| match expression {
-                        Exp::Statement(box Stmt::Expression(Exp::Call(name, args))) => {
-                            Stmt::Transfer(
-                                Exp::Call(name.clone(), args.clone()),
-                                Exp::Id(declarator.clone()),
-                            )
-                        }
-                        Exp::Statement(box Stmt::Expression(wrapped_expression)) => {
-                            Stmt::Transfer(wrapped_expression, Exp::Id(declarator.clone()))
-                        }
-                        _ => Stmt::Transfer(
-                            Exp::NewResource(
-                                self.context.get_props_of_variable(&declarator).unwrap(),
-                            ),
-                            Exp::Id(declarator.clone()),
-                        ),
-                    })
-                }),
+            Initializer::Expression(expression) => {
+                // reconstruct the assign expression for reusing the transpile_expression method
+                let assign_expression = Expression::BinaryOperator(box Node::new(BinaryOperatorExpression{
+                    operator: Node::new(BinaryOperator::Assign, expression.span),
+                    lhs: box Node::new(Expression::Identifier(box Node::new(Identifier{ name: declarator }, expression.span)), expression.span),
+                    rhs: box Node::new((*expression).node.clone(), expression.span),
+                }, expression.span));
+                self.transpile_expression(&assign_expression).map(Into::into)
             },
             Initializer::List(_) => Ok(Stmts::from(Stmt::Transfer(
                 Exp::NewResource(Props::new()), // FIXME: get props from context
