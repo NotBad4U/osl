@@ -7,7 +7,7 @@ use cfrontend::transpiler::errors::TranspilationError;
 use lang_c::driver::Config;
 use lang_c::driver::Error as LangCError;
 use lang_c::span::Span;
-use regex::Regex;
+use serde::{Deserialize};
 
 use std::error::Error;
 use std::fs::File;
@@ -15,6 +15,24 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct T {
+    pub states: States,
+    pub nstate: i32,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct States {
+    pub state: Vec<State>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct State {
+    pub k: String,
+    pub store: String,
+    pub env: String,
+}
 
 //TODO: Check in $PATH also
 pub fn are_k_bins_installed() -> bool {
@@ -100,9 +118,21 @@ pub fn convert_output(output: &[u8]) -> Result<&str, Box<dyn Error>> {
 
 /// Check if the PGM in output is equal to <k>.<\k>
 pub fn is_valid(k_output: &str) -> bool {
-    Regex::new(r"<k>\n\s*\.\n\s*</k>")
-        .unwrap()
-        .is_match(k_output)
+    let mut de = serde_xml_rs::Deserializer::new_from_reader(k_output.as_bytes())
+        .non_contiguous_seq_elements(true);
+    let k_serialize = T::deserialize(&mut de).expect("Cannot deserialize K output");
+
+    if k_serialize.nstate == 1 {
+        k_serialize.states.state[0].k == "."
+    } else {
+        false
+    }
+}
+
+pub fn serialize_k_output(k_output: &str) -> T {
+    let mut de = serde_xml_rs::Deserializer::new_from_reader(k_output.as_bytes())
+    .non_contiguous_seq_elements(true);
+    T::deserialize(&mut de).expect("Cannot deserialize K output")
 }
 
 pub fn save_in_file(
