@@ -25,6 +25,17 @@ pub fn is_valid(path: &PathBuf) -> bool {
     ));
 
     // Uncomment this line to get the output return by K.
-    //io::stdout().write_all(k_output.as_bytes()).unwrap();
-    osl::is_valid(k_output.as_str())
+    let is_valid = osl::is_valid(k_output.as_str());
+
+    if is_valid == false {
+        let output =  osl::serialize_k_output(k_output.as_str());
+        output.states.state.iter().for_each(|state| {
+            println!("{}", state.k);
+            println!("{}", state.store);
+            println!("{}", state.env);
+            println!("----");
+        })
+    }
+
+    is_valid
 }
