@@ -6,6 +6,7 @@ module CONTROL
 
 import OSL-SYNTAX
 import CONFIGURATION
+import BLOCK
 
 
 rule #branch(B:Block, Bs:Blocks) => #secondBranch(Bs) ~> B
@@ -78,7 +79,7 @@ syntax Separator
 // are still the owner of their resource by comparing the Value.
 //
 // NOTE: If the resource has the prop Copy, then the transfer is possible.
-rule <k> ! B:Block ; ~> Rest:K => #loopSep(NS)  ~> Rest </k>
+rule <k> ! B:Block ; ~> Rest:K => #loopSep(NS) ~> B ~> Rest </k>
      <env> ENV:Map </env>
      <store> STORE:Map </store>
      <stack> STACK:List </stack>
@@ -128,6 +129,10 @@ rule
           ...
      </state>  => .Bag)
      requires (#IsMoveOccurred(STORE, STORE2) ==Bool true) andBool (I ==Int I2)
+
+// Case of return in the loop.
+// TODO: maybe a better way to deal with this problem.
+rule V:Value ~> Rest:Stmts ~> #loopEnd(I) => #loopEnd(I)
 
 // Check if the owner has still the owner of his resource after the evaluation of the loop
 rule #IsMoveOccurred((Key:Int |-> #rs(Props)) M, M2:Map) => #IsMoved(Key, #rs(Props), M2[Key]) andBool #IsMoveOccurred(M,M2)
