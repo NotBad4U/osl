@@ -1,10 +1,5 @@
-use cfrontend::configuration::Configuration;
-use cfrontend::*;
-use lang_c::driver::parse;
-use lang_c::driver::Config;
+
 use osl;
-use std::io::{self, Write};
-use std::path::Path;
 use std::path::PathBuf;
 
 #[allow(dead_code)]
