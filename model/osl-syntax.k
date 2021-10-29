@@ -61,6 +61,10 @@ syntax Prop
 syntax Props
        ::= List{Prop, ","}			[klabel(#props)]
 
+syntax Borrow
+       ::= "&" Exp                        [klabel(#immBorrow)]
+       | "&mut" Exp                       [klabel(#mutBorrow)]
+
 syntax Exp
        ::= Id
          | "newResource" "(" Props ")"
@@ -70,6 +74,7 @@ syntax Exp
 	 | Value
 	 | #lv( Exp )
 	 | "call" Id "(" Exps ")"		[klabel(#FnCall)]
+        | Borrow
 
 syntax Exps
        ::= List{Exp, ","}

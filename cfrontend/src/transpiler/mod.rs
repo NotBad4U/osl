@@ -44,6 +44,7 @@ pub enum Effect {
     Constant(Exp),
     // look at a variable
     Lookup(String),
+    Lookup2(Exp),
 }
 
 impl Into<Stmt> for Effect {
@@ -57,6 +58,7 @@ impl Into<Stmt> for Effect {
             Self::Call(e) => Stmt::Expression(e),
             Self::Constant(e) => Stmt::Val(e),
             Self::Lookup(id) => Stmt::Expression(Exp::Id(id.into())),
+            Self::Lookup2(e) => Stmt::Expression(e),
         }
     }
 }
@@ -72,6 +74,7 @@ impl Into<Exp> for Effect {
             Self::Call(e) => e,
             Self::Constant(e) => e,
             Self::Lookup(id) => Exp::Id(id.into()),
+            Self::Lookup2(e) => e,
         }
     }
 }
@@ -148,8 +151,19 @@ impl Transpiler {
             // Add the Intrinsics function at the top of the transpiled files.
             // If you want to now the list of std functions supported, you can
             // find them in the module: stdfun.
-            self.stdfun
-                .get_std_functions()
+            let std_funs = self.stdfun.get_std_functions();
+
+            for function in std_funs.iter() {
+                match function {
+                    Stmt::Function(id, params, rtype, ..) => {
+                        self.context.insert_in_last_scope(id, MutabilityContextItem::Function(rtype.clone(), params.clone()))
+
+                    },
+                    _ => {}
+                }
+            }
+
+             std_funs
                 .iter()
                 .map(|func| (*func).clone())
                 .fold(Stmts::new(), |mut acc, function| {
@@ -222,10 +236,10 @@ impl Transpiler {
 
         self.context.insert_in_last_scope(
             fn_id.clone(),
-            MutabilityContextItem::Function(return_type.clone()),
+            MutabilityContextItem::Function(return_type.clone(), parameters.clone()),
         );
 
-        self.context.pop_last_scope();
+        //self.context.pop_last_scope();
 
         // Create the AST OSL corresponding node
         Ok(Stmt::Function(fn_id, parameters, return_type, block_stmts))

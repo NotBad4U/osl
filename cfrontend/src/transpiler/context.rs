@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::ast::{Props, Type};
+use crate::ast::{Props, Type, Parameters};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Mutability {
@@ -25,7 +25,7 @@ impl Default for Stats {
 
 #[derive(Debug, Clone)]
 pub enum MutabilityContextItem {
-    Function(Type),
+    Function(Type, Parameters),
     Variable(Mutability, Props, Stats),
 }
 
@@ -95,9 +95,9 @@ impl MutabilityContext {
             .find_map(|scope| {
                 scope
                     .iter()
-                    .find(|(_, v)| matches!(v, MutabilityContextItem::Function(_)))
+                    .find(|(_, v)| matches!(v, MutabilityContextItem::Function(_, _)))
                     .and_then(|(k, v)| match v {
-                        MutabilityContextItem::Function(mut_ret) => Some((k, mut_ret)),
+                        MutabilityContextItem::Function(mut_ret, ..) => Some((k, mut_ret)),
                         _ => unreachable!(),
                     })
             })
@@ -122,6 +122,12 @@ impl MutabilityContext {
             })
         })
     }
+
+    pub fn get_function(&self, function_name: &str) -> Option<&MutabilityContextItem> {
+        self.context.iter().rev().find_map(|scope| {
+                scope.get(function_name)
+        })
+    }
 }
 
 #[cfg(test)]
@@ -136,13 +142,13 @@ mod test_context {
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "fun1",
-            MutabilityContextItem::Function(Type::Own(Props::new())),
+            MutabilityContextItem::Function(Type::Own(Props::new()), Parameters::new()),
         );
 
         ctx.create_new_scope();
         ctx.insert_in_last_scope(
             "fun2",
-            MutabilityContextItem::Function(Type::Own(Props::new())),
+            MutabilityContextItem::Function(Type::Own(Props::new()), Parameters::new()),
         );
         ctx.insert_in_last_scope(
             "x",

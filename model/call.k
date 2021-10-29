@@ -43,12 +43,31 @@ rule <k> #rs(PVal) ~> #own(PType) => #rs(PType) ... </k>
 // which should be use by the transfers rules: Transfer #ref X
 rule <k> #loc(L:Int) ~> #ref(LF:Lifetime, T:Type) => #ref(L) ... </k>
 
-rule #bindParams((P:Id : T:Type, Ps:Parameters), (E:Exp, Es:Exps), SS:Stmts) =>
-     	    decl P; transfer E P ; #bindParams(Ps, Es, SS)
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (#immBorrow(E:Exp), Es:Exps), SS:Stmts) =>
+     decl P; P borrow E; #bindParams(Ps, Es, SS)
+
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (#mutBorrow(E:Exp), Es:Exps), SS:Stmts) =>
+     decl P; P mborrow E; #bindParams(Ps, Es, SS)
+
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (E:Id, Es:Exps), SS:Stmts) =>
+      decl P; transfer E P ; #bindParams(Ps, Es, SS)
+
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (newResource(PROPS:Props), Es:Exps), SS:Stmts) =>
+      decl P; transfer newResource(PROPS) P ; #bindParams(Ps, Es, SS)
+
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (call F:Id (Es2:Exps) , Es:Exps), SS:Stmts) =>
+      decl P; transfer call F (Es2) P ; #bindParams(Ps, Es, SS)
+
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (* E:Exp , Es:Exps), SS:Stmts) =>
+      decl P; transfer * E P ; #bindParams(Ps, Es, SS)
+
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (read(E), Es:Exps), SS:Stmts) =>
+      decl P; transfer read(E) P ; #bindParams(Ps, Es, SS)
+
+//rule #bindParams((P:Id : T:Type, Ps:Parameters), (E:Exp, Es:Exps), SS:Stmts) =>
+//     decl P; transfer E P ; #bindParams(Ps, Es, SS)
 
 rule #bindParams(.Parameters, .Exps, SS:Stmts) => SS
-
-
 
 
 endmodule

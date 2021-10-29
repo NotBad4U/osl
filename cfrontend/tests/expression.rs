@@ -150,7 +150,7 @@ fn it_should_transpile_passing_array_as_args() {
 fn main() -> #voidTy {
     decl a;
     call printf2(newResource(), a);
-    call printf2(newResource(), a);
+    call printf2(newResource(), &a);
 };
 call main();
 "###;

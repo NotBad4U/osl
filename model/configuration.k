@@ -40,4 +40,8 @@ configuration
 </T>
 
 
+// Clear the function definition after the end of the program
+rule   <k> . </k>
+       <nstate> 1 </nstate>
+       <funDefs> ... (<funDef> F </funDef> => .Bag) ... </funDefs> 
 endmodule

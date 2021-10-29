@@ -19,6 +19,7 @@ use super::*;
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 macro_rules! hashmap {
     (@single $($x:tt)*) => (());
@@ -46,7 +47,7 @@ fn uncollision_param(param: &str) -> String {
 /// Functions will be adds throughout the life
 /// cycle of this project.
 #[derive(Debug)]
-pub struct StdlibFunction(HashMap<String, Stmt>);
+pub struct StdlibFunction(HashMap<String, Stmt>, HashSet<String>);
 
 const GENERATED_FUNCTION_COMMENT: &'static str = "transpiler built-in";
 
@@ -116,6 +117,14 @@ macro_rules! scanf {
 
 impl StdlibFunction {
     pub fn new() -> Self {
+        let mut set_functions_need_arity = HashSet::new();
+        set_functions_need_arity.insert("fprintf".into());
+        set_functions_need_arity.insert("scanf".into());
+        set_functions_need_arity.insert("printf".into());
+        set_functions_need_arity.insert("pow".into());
+        set_functions_need_arity.insert("fmod".into());
+
+
         Self(hashmap![
             "printf".into() => printf!(),
             "printf2".into() => printf!("a"),
@@ -189,11 +198,116 @@ impl StdlibFunction {
                 Parameter::new("fmodx", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
                 Parameter::new("fmody", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
             ]), Type::Own(Props::get_all_props()), Stmts::from(Stmt::Val(Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))))),
-        ])
+
+            "memset".into() => Stmt::Function("memset".into(), Parameters(vec![
+                Parameter::new("__s", Type::Ref("a".into(), box Type::Own(Props::from(Prop::Mut)))),
+                Parameter::new("__c", Type::own()),
+                Parameter::new("__n", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+
+            ]), Type::VoidTy, Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__n".into()))),
+                Stmt::Transfer(Exp::Id("__c".into()), Exp::Id("__s".into())),
+            ])),
+
+            "socket".into() => Stmt::Function("socket".into(), Parameters(vec![
+                Parameter::new("__domain", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("__type", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("__protocol", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+
+            ]), Type::Own(Props::get_all_props()), Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__domain".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__type".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__protocol".into()))),
+                Stmt::Val(Exp::NewResource(Props(vec![ Prop::Mut, Prop::Copy])))
+            ])),
+
+            "perror".into() => Stmt::Function("perror".into(), Parameters(vec![
+                Parameter::new("__s", Type::own()),
+
+            ]), Type::VoidTy, Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__s".into()))),
+            ])),
+
+            "exit".into() => Stmt::Function("exit".into(), Parameters(vec![
+                Parameter::new("status", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+
+            ]), Type::VoidTy, Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("status".into()))),
+            ])),
+
+            "htons".into() => Stmt::Function("htons".into(), Parameters(vec![
+                Parameter::new("__hostlong", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+
+            ]), Type::Own(Props::get_all_props()), Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__hostlong".into()))),
+                Stmt::Val(Exp::NewResource(Props(vec![ Prop::Mut, Prop::Copy])))
+            ])),
+
+            "bind".into() => Stmt::Function("bind".into(), Parameters(vec![
+                Parameter::new("__sockfd", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("__addr", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("__addrlen", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+            ]), Type::VoidTy, Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__sockfd".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__addr".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__addrlen".into()))),
+            ])),
+
+            "accept".into() => Stmt::Function("accept".into(), Parameters(vec![
+                Parameter::new("__sockfd", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
+                Parameter::new("__addr", Type::Ref("a".into(), box Type::Own(Props::new()))),
+                Parameter::new("__addrlen", Type::Ref("b".into(), box Type::Own(Props::new()))),
+            ]), Type::own_from(Props::get_all_props()), Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__sockfd".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__addr".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__addrlen".into()))),
+                Stmt::Val(Exp::NewResource(Props::get_all_props()))
+            ])),
+
+            "close".into() => Stmt::Function("close".into(), Parameters(vec![
+                Parameter::new("__fd", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+
+            ]), Type::VoidTy, Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__fd".into()))),
+            ])),
+
+
+            // int listen(int sockfd, int backlog);
+            "listen".into() => Stmt::Function("listen".into(), Parameters(vec![
+                Parameter::new("__sockfd", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+                Parameter::new("__backlog", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+            ]), Type::VoidTy, Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__sockfd".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__backlog".into()))),
+            ])),
+
+            // extern ssize_t write (int __fd, const void *__buf, size_t __n) __wur;
+            "write".into() => Stmt::Function("write".into(), Parameters(vec![
+                Parameter::new("__fd", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+                Parameter::new("__buf", Type::Ref("a".into(), box Type::Own(Props::new()))),
+                Parameter::new("__n", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+            ]), Type::Own(Props::get_all_props()), Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__fd".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__buf".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__n".into()))),
+                Stmt::Val(Exp::NewResource(Props::get_all_props()))
+            ])),
+
+            // size_t strlen(const char *s);
+            "strlen".into() => Stmt::Function("strlen".into(), Parameters(vec![
+                Parameter::new("__s", Type::Own(Props::new())),
+
+            ]), Type::Own(Props::get_all_props()), Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__s".into()))),
+                Stmt::Val(Exp::NewResource(Props(vec![ Prop::Mut, Prop::Copy])))
+            ])),
+        ],
+            set_functions_need_arity,
+        )
     }
 
     pub fn is_std_function(&self, key: &str) -> bool {
-        self.0.get(key).is_some()
+        self.1.contains(key)
     }
 
     pub fn get_std_functions(&self) -> Vec<&Stmt> {

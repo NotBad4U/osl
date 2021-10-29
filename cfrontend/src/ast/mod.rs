@@ -207,6 +207,8 @@ pub enum Exp {
     Unit,
     /// use for borrow and mborrow
     Statement(Box<Stmt>),
+    MutBorrow(Box<Exp>),
+    ImmBorrow(Box<Exp>),
 }
 
 /// Only for function arguments call

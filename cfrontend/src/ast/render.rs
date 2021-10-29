@@ -189,6 +189,8 @@ impl fmt::Display for Exp {
             Exp::Unit => write!(f, ""),
             Exp::Statement(box stmt) => write!(f, "{}", stmt),
             Exp::Write(box exp1, box exp2) => write!(f, "transfer {} {};", exp1, exp2),
+            Exp::ImmBorrow(box e) => write!(f, "& {}", e),
+            Exp::MutBorrow(box e) => write!(f, "&mut {}", e),
         }
     }
 }

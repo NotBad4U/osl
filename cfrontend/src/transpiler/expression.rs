@@ -126,7 +126,7 @@ impl Transpiler {
 
         // Pass the required parameters along with the function name
         // We don't distinguish Call by value or by reference with OSL.
-        let (effects, arguments) = call_exp.arguments.iter().map(|node| &node.node).try_fold(
+        let (effects, mut arguments) = call_exp.arguments.iter().map(|node| &node.node).try_fold(
             (Vec::new(), Vec::new()),
             |mut acc, expression| {
                 self.transpile_expression(expression)
@@ -154,6 +154,32 @@ impl Transpiler {
                     })
             },
         )?;
+
+        //println!("{:#?}", self.context.context);
+
+        // Check if we can downcast the MutBorrow to ImmBorrow by checking the definition of the function.
+        // C syntax doens't allow us to know directly if
+        // TODO: make
+        for (index, arg) in arguments.iter_mut().enumerate() {
+            match arg {
+                Exp::MutBorrow(e) => match self
+                    .context
+                    .get_function(&function_name)
+                    .expect("function not find")
+                {
+                    MutabilityContextItem::Function(_, parameters) => match &parameters[index] {
+                        Parameter(_, Type::Ref(_, box Type::Own(Props(props))))
+                            if props.contains(&Prop::Mut) == false =>
+                        {
+                            *arg = Exp::ImmBorrow(e.clone());
+                        }
+                        _ => {}
+                    },
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
 
         // the call to std function need to be a little modify because they use
         // variadic arguments. So we have to call the corresponding unrolled version.
@@ -263,9 +289,19 @@ impl Transpiler {
                 Exp::Deref(box Exp::Id(name.to_string())),
             )),
             // &T
-            (e, UnaryOperator::Address) => self.transpile_expression(e),
+            (e, UnaryOperator::Address) => self.transpile_expression(e).map(
+                |EffectsExp {
+                     expression,
+                     effects,
+                 }| {
+                    EffectsExp::new(Some(effects), Exp::MutBorrow(box expression))
+                },
+            ),
             // sizeof T
-            (_, UnaryOperator::SizeOf) => Ok(EffectsExp::new(None, Exp::NewResource(Props::get_all_props()))),
+            (_, UnaryOperator::SizeOf) => Ok(EffectsExp::new(
+                None,
+                Exp::NewResource(Props::get_all_props()),
+            )),
             (operand, _) => Err(TranspilationError::Unimplemented(get_span_from_expression(
                 operand,
             ))),
@@ -476,7 +512,11 @@ impl Transpiler {
     pub(super) fn get_effects_of_expression(&self, expression: &Expression) -> Result<Vec<Effect>> {
         match expression {
             Expression::Identifier(box node!(Identifier { name })) => {
-                Ok(vec![Effect::Read(Exp::Id(name.clone()))])
+                if self.context.is_constant_in_enum(name) {
+                    Ok(vec![Effect::Constant(Exp::NewResource(Props::get_all_props()))])
+                } else {
+                    Ok(vec![Effect::Read(Exp::Id(name.clone()))])
+                }
             }
             Expression::Constant(box node!(_)) => Ok(vec![]),
             Expression::StringLiteral(_) => Ok(vec![]),
@@ -490,13 +530,35 @@ impl Transpiler {
                 }),
             ) => arguments
                 .iter()
-                .map(|node!(argument)| {
-                    self.get_effects_of_expression(argument).map(|effects| {
-                        effects.into_iter().map(|effect| match effect {
-                            Effect::Read(Exp::Id(id)) => Effect::Lookup(id),
-                            effect => effect,
-                        })
-                    })
+                .map(|node!(argument)| match argument {
+                    Expression::UnaryOperator(
+                        box node!(UnaryOperatorExpression {
+                            operator: node!(UnaryOperator::Address),
+                            operand: box node!(Expression::Identifier(box node!(Identifier {
+                                name
+                            })))
+                        }),
+                    ) => Ok(vec![Effect::Lookup2(Exp::MutBorrow(box Exp::Id(
+                        name.into(),
+                    )))]),
+                    Expression::UnaryOperator(
+                        box node!(UnaryOperatorExpression {
+                            operator: node!(UnaryOperator::SizeOf),
+                            ..
+                        }),
+                    )
+                    | Expression::Constant(_) => Ok(vec![Effect::Constant(Exp::NewResource(
+                        Props::get_all_props(),
+                    ))]),
+                    _ => self.get_effects_of_expression(argument).map(|effects| {
+                        effects
+                            .into_iter()
+                            .map(|effect| match effect {
+                                Effect::Read(Exp::Id(id)) => Effect::Lookup(id),
+                                effect => effect,
+                            })
+                            .collect::<Vec<_>>()
+                    }),
                 })
                 .collect::<Result<Vec<_>, _>>()
                 .map(|vecs| vecs.into_iter().flatten().collect())
@@ -508,7 +570,7 @@ impl Transpiler {
                 // If its a C indirection (*) and we have only one effect, then wrap it into a Deref expression
                 // We raise an Unsupported if we have more than one effects. The program can be simplify for us.
                 self.get_effects_of_expression(&operand.node)
-                    .and_then(|effects| match operator.node {
+                    .and_then(|mut effects| match operator.node {
                         UnaryOperator::Indirection => {
                             if effects.len() == 1 {
                                 Ok(vec![Effect::Deref(
@@ -528,6 +590,7 @@ impl Transpiler {
                                 ))
                             }
                         }
+                        UnaryOperator::SizeOf => Ok(vec![Effect::Constant(Exp::NewResource(Props::get_all_props()))]),
                         _ => Ok(effects),
                     })
             }
@@ -551,9 +614,11 @@ impl Transpiler {
                 effects.extend(else_expression);
                 Ok(effects)
             }
+            Expression::SizeOf(_) => Ok(vec![Effect::Constant(Exp::NewResource(
+                Props::get_all_props(),
+            ))]),
             Expression::Cast(_)
             | Expression::OffsetOf(_)
-            | Expression::SizeOf(_)
             | Expression::AlignOf(_)
             | Expression::VaArg(_) => Ok(vec![]),
             Expression::GenericSelection(box node) => Err(TranspilationError::Unsupported(

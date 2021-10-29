@@ -1,48 +1,246 @@
+fn abs(x:#own(copy,mut)) -> #own(copy) {
+   val(newResource(copy,mut))
+};
 
+fn atof(ptr:#ref('a,#own())) -> #own(copy) {
+   val(newResource(copy,mut))
+};
 
-/*
-fn sumV(v:&Vec<i32>,i:usize) -> i32 {
-    if (i >= v.len()) { 0 }
-    else {v[i] + sumV(v,i+1)}
-}
-*/
+fn atoi(ptr:#ref('a,#own())) -> #own(copy) {
+   val(newResource(copy,mut))
+};
 
-fn sumV(v: #ref('a, #own()), i:#own(copy)) -> #own(copy) {
+fn atol(ptr:#ref('a,#own())) -> #own(copy) {
+   val(newResource(copy,mut))
+};
 
-   //The condition i >= v.len()
-   //needs to read both v and i
-   read(i);
-   read(v);
-   @ {
-      val(newResource(copy))  //This returns the value 0
-   }, {
-      read(v) ; //corresponds to read v[i];
-      //the recursive call to sumV(v,i+1)
-      //vt and it are two variables for inputing to the recursive call
-      decl vt ;
-      transfer v vt;
-      read(i);
-      decl it;
-      read(i);
-      transfer newResource(copy) it;
-      //Finishing passing arguments, But we do not call sumV again.
-      //The reason why we do not need to
-      //call sumV again because sumV has no effect to
-      //v and i after calling it, with respect to ownership.
-      val(newResource(copy))  //return a copyable resource
-   } ;
+fn bind(__sockfd:#own(copy,mut),__addr:#ref('a,#own())) -> #voidTy {
+   read(__sockfd);
+   read(__addr);
+};
+
+fn accept(__sockfd:#own(copy,mut),__addr:#ref('a,#own()),__addrlen:#ref('b,#own())) -> #own(copy,mut)  {
+   read(__sockfd);
+   read(__addr);
+   read(__addrlen);
+   val(newResource(copy,mut))
+};
+
+fn exit(status:#own(copy,mut)) -> #voidTy {
+   read(status);
+};
+
+//FIXME
+fn close(__fd:#own(copy,mut)) -> #voidTy {
+   read(__fd);
+};
+
+fn fmod(fmodx:#own(copy,mut),fmody:#own(copy,mut)) -> #own(copy,mut) {
+   val(newResource(copy,mut))
+};
+
+fn fprintf1(stream:#ref('s,#own(copy,mut)),format:#own()) -> #voidTy {
+   // transpiler built-in
+};
+
+fn fprintf2(stream:#ref('s,#own(copy,mut)),format:#own(),_a:#ref('a,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+};
+
+fn fprintf3(stream:#ref('s,#own(copy,mut)),format:#own(),_a:#ref('a,#own()),_b:#ref('b,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+   read(_b);
+};
+
+fn fprintf4(stream:#ref('s,#own(copy,mut)),format:#own(),_a:#ref('a,#own()),_b:#ref('b,#own()),_c:#ref('c,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+   read(_b);
+   read(_c);
+};
+
+fn fprintf5(stream:#ref('s,#own(copy,mut)),format:#own(),_a:#ref('a,#own()),_b:#ref('b,#own()),_c:#ref('c,#own()),_d:#ref('d,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+   read(_b);
+   read(_c);
+   read(_d);
+};
+
+fn htons(__hostlong:#own(copy,mut)) -> #own(copy,mut) {
+   read(__hostlong);
+   val(newResource(copy,mut))
 };
 
 
-decl vi;
-transfer newResource() vi;
+fn memset(__s:#ref('a,#own(mut)),__c:#own(),__n:#own(copy,mut)) -> #voidTy {
+   read(__n);
+   transfer __c __s;
+};
 
-decl ii;
-transfer newResource(copy) ii;
+fn perror(__msg:#own()) -> #voidTy {
+   read(__msg);
+};
 
-decl vii;
+fn pow(powx:#own(copy,mut),powy:#own(copy,mut)) -> #own(copy,mut) {
+   val(newResource(copy,mut))
+};
 
-vii borrow vi;
+fn printf1(format:#own()) -> #voidTy {
+   // transpiler built-in
+};
 
-call sumV(vii, ii);
+fn printf2(format:#own(),_a:#ref('a,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+};
 
+fn printf3(format:#own(),_a:#ref('a,#own()),_b:#ref('b,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+   read(_b);
+};
+
+fn printf4(format:#own(),_a:#ref('a,#own()),_b:#ref('b,#own()),_c:#ref('c,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+   read(_b);
+   read(_c);
+};
+
+fn printf5(format:#own(),_a:#ref('a,#own()),_b:#ref('b,#own()),_c:#ref('c,#own()),_d:#ref('d,#own())) -> #voidTy {
+   // transpiler built-in
+   read(_a);
+   read(_b);
+   read(_c);
+   read(_d);
+};
+
+fn rand() -> #own(copy) {
+   val(newResource(copy,mut))
+};
+
+fn scanf1(format:#own()) -> #voidTy {
+   // transpiler built-in
+};
+
+fn scanf2(format:#own(),_a:#ref('a,#own(mut))) -> #voidTy {
+   // transpiler built-in
+};
+
+fn scanf3(format:#own(),_a:#ref('a,#own(mut)),_b:#ref('b,#own(mut))) -> #voidTy {
+   // transpiler built-in
+};
+
+fn scanf4(format:#own(),_a:#ref('a,#own(mut)),_b:#ref('b,#own(mut)),_c:#ref('c,#own(mut))) -> #voidTy {
+   // transpiler built-in
+};
+
+fn scanf5(format:#own(),_a:#ref('a,#own(mut)),_b:#ref('b,#own(mut)),_c:#ref('c,#own(mut)),_d:#ref('d,#own(mut))) -> #voidTy {
+   // transpiler built-in
+};
+
+fn socket(__type:#own(copy,mut)) -> #own(copy,mut) {
+   read(__type);
+   val(newResource(copy,mut))
+};
+
+decl stdin;
+decl stdout;
+decl stderr;
+decl sys_nerr;
+decl sys_errlist;
+fn __bswap_16(__bsx:#own(mut)) -> #own(copy,mut) {
+   val(call __builtin_bswap16(__bsx))
+};
+
+fn __bswap_32(__bsx:#own(mut)) -> #own(copy,mut) {
+   val(call __builtin_bswap32(__bsx))
+};
+
+fn __bswap_64(__bsx:#own(mut)) -> #own(copy,mut) {
+   val(call __builtin_bswap64(__bsx))
+};
+
+fn __uint16_identity(__x:#own(mut)) -> #own(copy,mut) {
+   val(__x)
+};
+
+fn __uint32_identity(__x:#own(mut)) -> #own(copy,mut) {
+   val(__x)
+};
+
+fn __uint64_identity(__x:#own(mut)) -> #own(copy,mut) {
+   val(__x)
+};
+
+decl __environ;
+decl optarg;
+decl optind;
+decl opterr;
+decl optopt;
+decl in6addr_any;
+decl in6addr_loopback;
+fn main() -> #own(copy,mut) {
+   decl server_fd;
+   decl new_socket;
+   decl value_read;
+   decl address;
+   decl addrlen;
+   //FIXME
+   transfer newResource(copy,mut) addrlen;
+   decl hello;
+   transfer newResource() hello;
+   transfer call socket(newResource(copy, mut)) server_fd;
+   read(server_fd);
+   
+   @
+   {
+       call perror(newResource());
+       call exit(newResource(copy,mut));
+   };
+   transfer newResource(copy,mut) address;
+   transfer newResource(copy,mut) address;
+   transfer call htons(newResource(copy,mut)) address;
+   call memset(&mut address,newResource(),newResource(copy,mut));
+   call bind(server_fd, &address);
+   
+   @
+   {
+       call perror(newResource());
+       call exit(newResource(copy,mut));
+   };
+   //call listen(server_fd);
+   
+   @
+   {
+       call perror(newResource());
+       call exit(newResource(copy,mut));
+   };
+   
+   !{
+      //FIXME:
+       transfer call accept(server_fd, &address, &addrlen) new_socket;
+       call printf1(newResource());
+       read(new_socket);
+       
+       @
+       {
+           call perror(newResource());
+           call exit(newResource(copy,mut));
+       };
+       decl buffer;
+       transfer newResource(mut) buffer;
+       //transfer call read(new_socket,buffer) value_read;
+       call printf2(newResource(),&buffer);
+       //call write(new_socket,hello,call strlen(hello));
+       call printf1(newResource());
+       call close(new_socket);
+       
+   };
+   val(newResource(copy,mut))
+};
+
+call main();
