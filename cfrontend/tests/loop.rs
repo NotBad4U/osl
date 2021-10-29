@@ -19,11 +19,11 @@ fn it_should_transpile_while_loop() {
 fn main() -> #voidTy {
     decl a;
     transfer newResource(copy,mut) a;
-    read(a);
+    rd(a);
     !{
         call printf2(newResource(),a);
         transfer newResource(copy,mut) a;
-        read(a);
+        rd(a);
     };
 };
 
@@ -53,7 +53,7 @@ fn main() -> #voidTy {
     !{
         call printf2(newResource(),a);
         transfer newResource(copy,mut) a;
-        read(a);
+        rd(a);
     };
 };
 
@@ -77,11 +77,11 @@ fn it_should_transpile_for_loop() {
 fn main() -> #voidTy {
     decl i;
     transfer newResource(copy,mut) i;
-    read(i);
+    rd(i);
     !{
         call printf2(newResource(), i);
         transfer newResource(copy,mut) i;
-        read(i);
+        rd(i);
     };
 };
 
@@ -108,11 +108,11 @@ fn main() -> #voidTy {
     decl j;
     transfer newResource(copy,mut) i;
     transfer newResource(copy,mut) j;
-    read(i);
+    rd(i);
     !{
         transfer newResource(copy,mut) i;
         transfer newResource(copy,mut) j;
-        read(i);
+        rd(i);
     };
 };
 

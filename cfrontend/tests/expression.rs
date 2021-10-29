@@ -105,9 +105,9 @@ fn main() -> #voidTy {
     decl a;
     decl b;
     decl c;
-    read(a);
-    read(b);
-    read(c);
+    rd(a);
+    rd(b);
+    rd(c);
     transfer newResource(copy,mut) a;
 };
 call main();
@@ -139,18 +139,33 @@ call main();
 #[test]
 fn it_should_transpile_passing_array_as_args() {
     let c_program = r###"
+    void foo(void res, int * a) {
+
+    }
+
+    void foo2(void res, const int * a) {
+
+    }
+
+
     void main() {
         int a[10];
-        printf("%d", a[0]);
-        printf("%d", &a[0]);
+        foo("%d", a[0]);
+        foo2("%d", &a[0]);
     }
     "###;
 
     let expected_osl_program = r###"
+fn foo(res:#own(mut),a:#ref('b,#own(mut))) -> #voidTy {
+};
+
+fn foo2(res:#own(mut),a:#ref('b,#own())) -> #voidTy {
+};
+        
 fn main() -> #voidTy {
     decl a;
-    call printf2(newResource(), a);
-    call printf2(newResource(), &a);
+    call foo(newResource(),a);
+    call foo2(newResource(),& a);
 };
 call main();
 "###;
@@ -219,8 +234,8 @@ fn main() -> #voidTy {
     decl a;
     decl b;
     decl c;
-    read(b);
-    read(c);
+    rd(b);
+    rd(c);
     transfer newResource(mut) a;
 }; 
 call main();

@@ -148,11 +148,11 @@ syntax Exp
          | #TransferMB(K,K)		[strict(1)]
 	 | #uninitialize(Exp)
 
-rule <k> #TransferV(#loc(F), #loc(L)) => #TransferIB(read(#loc(F)), #loc(L)) ... </k>
+rule <k> #TransferV(#loc(F), #loc(L)) => #TransferIB(rd(#loc(F)), #loc(L)) ... </k>
      <store> ... F |-> #br(BEG,END,#immRef(L1)) ... </store>
 
 rule <k> #TransferV(#loc(F), #loc(L)) =>
-     	 		     	#TransferMB(read(#loc(F)), #loc(L)) ~>
+     	 		     	#TransferMB(rd(#loc(F)), #loc(L)) ~>
 				#uninitialize(#loc(F)) ... </k>
      <store> ... F |-> #br(BEG,END,#mutRef(L1)) ... </store>
 
@@ -168,26 +168,26 @@ rule <k> #TransferMB(#loc(F), #loc(L)) => . ... </k>
 rule <k> #uninitialize(#loc(F:Int)) => . ... </k>
      <store> ... F |-> (_ => #uninit) ... </store>
 
-rule X:Id => read(X)
+rule X:Id => rd(X)
 
 
-rule <k> read(X:Id) => read(#loc(L)) ... </k>
+rule <k> rd(X:Id) => rd(#loc(L)) ... </k>
      <env> ... X |-> L:Int ...  </env>
 
-rule <k> read(#loc(L:Int)) => #rs(N) ...  </k>
+rule <k> rd(#loc(L:Int)) => #rs(N) ...  </k>
      <store> ... L |-> #rs(N:Props) ... </store>
 
-rule <k> read(#loc(L:Int)) => #Read(#borrowImmCK(L,BEG,END,L1)) ~> #loc(L1) ...  </k>
+rule <k> rd(#loc(L:Int)) => #Read(#borrowImmCK(L,BEG,END,L1)) ~> #loc(L1) ...  </k>
      <store> ... L |-> #br(BEG:Int, END:Int, #immRef(L1:Int)) ... </store>
 
 syntax OItem
        ::= #Read(K)		[strict]
 
-rule #Read(#loc(L:Int)) => #Read(read(#loc(L)))
+rule #Read(#loc(L:Int)) => #Read(rd(#loc(L)))
 
 rule #Read(#rs(R:Props)) => .
 
-rule <k> read(#loc(L:Int)) => #Read(#borrowMutCK(L,BEG,END,L1)) ~> #loc(L1) ...  </k>
+rule <k> rd(#loc(L:Int)) => #Read(#borrowMutCK(L,BEG,END,L1)) ~> #loc(L1) ...  </k>
      <store> ... L |-> #br(BEG:Int, END:Int, #mutRef(L1:Int)) ... </store>
 
 syntax Bool

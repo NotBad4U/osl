@@ -14,7 +14,7 @@ int main()
     int addrlen = sizeof address;
 
     // Only this line has been changed. Everything is same.
-    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+    char hello[73] = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     // Creating socket file descriptor
     if (server_fd == 0)
@@ -55,7 +55,7 @@ int main()
         char buffer[30000] = {0};
         value_read = read( new_socket , & buffer, 30000);
         printf("%s\n",buffer);
-        write(new_socket , hello , strlen(hello));
+        write(new_socket , & hello , strlen(& hello));
         printf("------------------Hello message sent-------------------");
         close(new_socket);
     }

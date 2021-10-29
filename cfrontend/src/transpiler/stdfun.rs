@@ -284,7 +284,9 @@ impl StdlibFunction {
             // extern ssize_t write (int __fd, const void *__buf, size_t __n) __wur;
             "write".into() => Stmt::Function("write".into(), Parameters(vec![
                 Parameter::new("__fd", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+                //FIXME: should be a ref
                 Parameter::new("__buf", Type::Ref("a".into(), box Type::Own(Props::new()))),
+                //Parameter::new("__buf", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
                 Parameter::new("__n", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
             ]), Type::Own(Props::get_all_props()), Stmts(vec![
                 Stmt::Expression(Exp::Read(box Exp::Id("__fd".into()))),
@@ -295,11 +297,22 @@ impl StdlibFunction {
 
             // size_t strlen(const char *s);
             "strlen".into() => Stmt::Function("strlen".into(), Parameters(vec![
-                Parameter::new("__s", Type::Own(Props::new())),
-
+                Parameter::new("__s", Type::Ref("a".into(), box Type::Own(Props::new()))),
             ]), Type::Own(Props::get_all_props()), Stmts(vec![
                 Stmt::Expression(Exp::Read(box Exp::Id("__s".into()))),
                 Stmt::Val(Exp::NewResource(Props(vec![ Prop::Mut, Prop::Copy])))
+            ])),
+
+            // ssize_t read(int fd, void *buf, size_t count);
+            "read".into() => Stmt::Function("read".into(), Parameters(vec![
+                Parameter::new("__fd", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+                Parameter::new("__buf", Type::Ref("a".into(), box Type::Own(Props::new()))),
+                Parameter::new("__count", Type::Own(Props(vec![ Prop::Mut, Prop::Copy]))),
+            ]), Type::Own(Props::get_all_props()), Stmts(vec![
+                Stmt::Expression(Exp::Read(box Exp::Id("__fd".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__buf".into()))),
+                Stmt::Expression(Exp::Read(box Exp::Id("__count".into()))),
+                Stmt::Val(Exp::NewResource(Props::get_all_props()))
             ])),
         ],
             set_functions_need_arity,

@@ -114,7 +114,7 @@ fn foo(a:#ref('a,#own(mut)),b:#own(mut)) -> #voidTy {
 fn main() -> #voidTy {
     decl a;
     decl b;
-    call foo(a,b);
+    call foo(&mut a,b);
 };
 call main();
 "###;

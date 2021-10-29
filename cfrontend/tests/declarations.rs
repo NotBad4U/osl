@@ -342,8 +342,8 @@ fn main() -> #voidTy {
     decl q;
     transfer newResource(copy,mut) q;
     decl n;
-    read(p);
-    read(q);
+    rd(p);
+    rd(q);
     transfer newResource(copy,mut) n;
 };
 

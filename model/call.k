@@ -61,8 +61,8 @@ rule #bindParams((P:Id : T:Type, Ps:Parameters), (call F:Id (Es2:Exps) , Es:Exps
 rule #bindParams((P:Id : T:Type, Ps:Parameters), (* E:Exp , Es:Exps), SS:Stmts) =>
       decl P; transfer * E P ; #bindParams(Ps, Es, SS)
 
-rule #bindParams((P:Id : T:Type, Ps:Parameters), (read(E), Es:Exps), SS:Stmts) =>
-      decl P; transfer read(E) P ; #bindParams(Ps, Es, SS)
+rule #bindParams((P:Id : T:Type, Ps:Parameters), (rd(E), Es:Exps), SS:Stmts) =>
+      decl P; transfer rd(E) P ; #bindParams(Ps, Es, SS)
 
 //rule #bindParams((P:Id : T:Type, Ps:Parameters), (E:Exp, Es:Exps), SS:Stmts) =>
 //     decl P; transfer E P ; #bindParams(Ps, Es, SS)

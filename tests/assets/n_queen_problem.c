@@ -51,11 +51,11 @@ bool isSafe(int board[N][N], int row, int col)
 
 /* A recursive utility function to solve N
    Queen problem */
-bool solveNQUtil(int board[N][N], int col)
+bool solveNQUtil(int __board[N][N], int __col)
 {
     /* base case: If all queens are placed
       then return true */
-    if (col >= N)
+    if (__col >= N)
         return true;
 
     /* Consider this column and try placing
@@ -63,20 +63,21 @@ bool solveNQUtil(int board[N][N], int col)
     for (int i = 0; i < N; i++)
     {
         /* Check if the queen can be placed on
-          board[i][col] */
-        if (isSafe(board, i, col))
+          __board[i][__col] */
+        if (isSafe(__board, i, __col))
         {
-            /* Place this queen in board[i][col] */
-            board[i][col] = 1;
+            /* Place this queen in __board[i][__col] */
+            __board[i][__col] = 1;
 
             /* recur to place rest of the queens */
-            if (solveNQUtil(board, col + 1))
+            __col++;
+            if (solveNQUtil(__board, __col))
                 return true;
 
-            /* If placing queen in board[i][col]
+            /* If placing queen in __board[i][col]
                doesn't lead to a solution, then
-               remove queen from board[i][col] */
-            board[i][col] = 0; // BACKTRACK
+               remove queen from __board[i][col] */
+            __board[i][__col] = 0; // BACKTRACK
         }
     }
 

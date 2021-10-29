@@ -70,7 +70,7 @@ syntax Exp
          | "newResource" "(" Props ")"
 	 | "*" Exp
 	 | Exp "." Int
-	 | "read" "(" Exp ")"			[klabel(#read)]
+	 | "rd" "(" Exp ")"			[klabel(#read)]
 	 | Value
 	 | #lv( Exp )
 	 | "call" Id "(" Exps ")"		[klabel(#FnCall)]

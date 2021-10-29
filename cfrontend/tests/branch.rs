@@ -25,8 +25,8 @@ fn it_should_transpile_if_else_statement() {
             decl limit;
             transfer newResource(copy,mut) limit;
             decl ok;
-            read(age);
-            read(limit);
+            rd(age);
+            rd(limit);
             @
             {
                 transfer newResource(copy,mut) ok;
@@ -62,7 +62,7 @@ fn it_should_transpile_if_statement_and_ignore_constant() {
             decl age;
             transfer newResource(copy,mut) age;
             decl ok;
-            read(age);
+            rd(age);
             @
             {
                 transfer newResource(copy,mut) ok;
@@ -96,13 +96,13 @@ fn it_should_transpile_nested_if_else_statements() {
     let expected_osl_program = r###"
     fn main() -> #voidTy {
         decl x;
-        read(x);
+        rd(x);
         @{
-            read(x);
+            rd(x);
             @{
             };
         },{
-            read(x);
+            rd(x);
             @{
             };
         };
@@ -148,7 +148,7 @@ fn it_should_transpile_switch_statement() {
 fn main() -> #voidTy {
     decl grade;
     transfer newResource(mut) grade;
-    read(grade);
+    rd(grade);
     @
     {
         call printf();
