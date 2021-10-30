@@ -98,7 +98,7 @@ rule #existRef(R:K, SetItem(#uninit) S:Set, C:Int) => #existRef(R, S, C)
 rule #existRef(R:K, SetItem(#br(_,C1:Int,R)) S:Set, C:Int) => (C1 >=Int C) andBool true
 rule #existRef(R:K, SetItem(#br(_,C1:Int,R1)) S:Set, C:Int) => #existRef(R,S,C)
      requires R =/=K R1
-     
+
 rule #existRef(_, .Set, _) => false
 
 
@@ -228,7 +228,7 @@ rule <k> #borrowMutCK(L:Int,BEG:Int, END:Int,L1:Int) => #loc(L1) ... </k>
                orBool
                ((#borrowmutck(L, Rho, BEG, TIMER , L1) ==Bool false) andBool
      	      (#writeCK(L1, BEG, TIMER,WRITE)))
-     	           
+
 
 syntax Bool
        ::= #lc(Int,Int,Int,Int)				[function]
@@ -356,14 +356,25 @@ rule <k> X:Id borrow Y:Id ; => . ... </k>
      <indexes> #indexes((C:Int => C +Int 1),_) </indexes>
      requires #checkInit(Y,ENV,ST)
 
-     
+// Only a variable declared with the Prop mut could be mutable borrowed.
+syntax Bool
+       ::= #isOwnerHasMutProp(K)	[function]
 
+rule #isOwnerHasMutProp(#rs(PS:Props)) => true
+     requires #inProps(mut, PS)
+// Cannot mborrow a voidTy and a reference.
+rule #isOwnerHasMutProp(#ref(_, _)) => false
+rule #isOwnerHasMutProp(#voidTy) => false
+
+// Only mutable initialized variable can be "mutably" borrow (mborrow).
+// We check in another rules, if two mutable borrows
+// of the same variable, lives in lifetimes that intersects.
 rule <k> X:Id mborrow Y:Id ; => . ... </k>
      <env>  ENV:Map  </env>
      <store> ST:Map => ST[#unwrapInt(ENV[X]) <- #br(C, C, #mutRef(#unwrapInt(ENV[Y])))] </store>
      <indexes> #indexes((C:Int => C +Int 1),_) </indexes>
      <timer> TIMER:Int => TIMER +Int 1 </timer>
-     requires #checkInit(Y,ENV,ST)
+     requires #checkInit(Y,ENV,ST) andBool #isOwnerHasMutProp(ST[#unwrapInt(ENV[Y])])
 
 
 syntax Int
@@ -376,13 +387,13 @@ rule val(V:Value) => V
 
 syntax DItem
        ::= #Deallocate(Exp)		[strict]
-     
+
 rule deallocate E:Exp ; => #Deallocate(#lv(E))
 
 rule #Deallocate(#rs(Ps:Props)) => .
 
 // Only an owner of a resource has the  authority to deallocate the resource.
-// With this rules, you can still use the deref on a borrow to get the owner. 
+// With this rules, you can still use the deref on a borrow to get the owner.
 // This should not be a problem  because if we use the borrow later,
 // then the semantic will not be valid.
 rule <k> #Deallocate(#loc(I:Int)) => . ... </k>
