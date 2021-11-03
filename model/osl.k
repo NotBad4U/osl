@@ -44,6 +44,8 @@ rule #lv( call F:Id (Es:Exps) ) => call F:Id (Es:Exps)
 rule <k> #lv(X:Id) => #loc(I) ...  </k>
      <env> ... X |-> I:Int ...  </env>
 
+rule #lv(rd(X)) => #lv(X)
+
 rule <k> transfer EF:Exp TX:Exp ; => #Transfer(#lv(EF),#lv(TX))
      	 	  	 	~> #increaseIndex ~> #increaseTimer ... </k>
      <timer> TR:Int  </timer>

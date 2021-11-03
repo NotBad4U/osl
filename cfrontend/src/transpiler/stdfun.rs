@@ -201,7 +201,7 @@ impl StdlibFunction {
 
             "memset".into() => Stmt::Function("memset".into(), Parameters(vec![
                 Parameter::new("__s", Type::Ref("a".into(), box Type::Own(Props::from(Prop::Mut)))),
-                Parameter::new("__c", Type::own()),
+                Parameter::new("__c", Type::Own(Props::from(Prop::Mut))),
                 Parameter::new("__n", Type::Own(Props(vec![Prop::Copy, Prop::Mut]))),
 
             ]), Type::VoidTy, Stmts(vec![

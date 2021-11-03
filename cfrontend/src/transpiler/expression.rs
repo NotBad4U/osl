@@ -88,7 +88,7 @@ impl Transpiler {
             Constant::Float(_) | Constant::Integer(_) => {
                 Exp::NewResource(Props(vec![Prop::Copy, Prop::Mut]))
             }
-            Constant::Character(_) => Exp::NewResource(Props::new()),
+            Constant::Character(_) => Exp::NewResource(Props::get_all_props()),
         }
     }
 
