@@ -4,71 +4,54 @@ OSL: An Operational Semantics for Rust Language
 
 ## Introduction
 
-OSL semantics is an operational semantics implemented in K-Framework,
+The Ownership System Language (OSL) aims to detect memory usage vulnerability such as _data-race_, _double-free_ and _use-after-free_ in C programs, through ownership system. The _Ownership_ is a set of rules that governs how a program must manages memory.
 
-which is a rewrite logic based formal modeling tool.
 
-## Dependencies
+Currently, our system does not require manual notations on the C program analyzed. Ownership type systems could require considerable annotation overhead, which is a significant burden for users. The core of the tool is develop with the K-Framework, a rewrite-based executable semantic framework.
 
-In order to run the semantics, K-framework should be installed.
+## Run OSL
 
-The project already contain a version of K-framework that you can use.
+You can find the build instructions in the document [INSTALL.md](Documentation/INSTALL.md).
 
-But if you want to use your own version, We suggest to install a release compatible with this one, which has been used for the development of OSL:
+You can run the OSL CLI by running the command:
 
-https://github.com/kframework/k/releases/tag/nightly-f5ea5c7
+```bash
+cargo run -- <program.c> 
+```
 
-Other versions nmay arise some problems when compile and run OSL programs.
+The optios available are:
+
+```bash
+USAGE:
+    osl [FLAGS] [OPTIONS] <input>
+
+FLAGS:
+    -h, --help         Prints help information
+    -k, --keep         Save temporary transpiled file
+    -t, --transpile    Only run the transpiler
+    -V, --version      Prints version information
+    -v, --verbose      Use verbose output
+
+OPTIONS:
+    -o, --output <output>    Output C transpiled file
+
+ARGS:
+    <input>    Input C file
+```
 
 ## Project structure
 
-* `model`: source files of OSL semantic
-* `document`: documentation
-* `report`: Latex source of the OSL report
-* `k`: The K release `nightly-f5ea5c7`
-
-*Please ignore cfrontend folder for now*
-
-## Run OSL semantic
-
-**1. Setup Ocaml**
-
-Run the configure script provide by K-framework `3.5` by running this command at the root folder of the project: 
-
-```sh
-./k/bin/k-configure-opam
-eval $(opam config env)
-```
-
-**2. Compile the semantic**
-
-The project provide a `Makefile`, so just run the following commands:
-```sh
-cd model
-make
-```
-
-Or if you want to provide your own argument run the commands:
-```sh
-cd model
-../k/bin/kompile osl.k --backend ocaml [ARGS]
-```
-
-**3. Run the example**
-
-The project provide some demos.
-You can try OSL by running this command in the `model` folder:
-
-```sh
-../k/bin/krun t4.rs
-```
-or
-
-```sh
-../k/bin/krun demo/demo.c
-```
+* `model`, which contains all the source code of OSLos
+* `cfrontend`, which contains all the source code of OSLτ 
+* `src`, which provides the source code of the CLI of OSL binary. It pipe OSLτ and OSLos.  
+* `tests`, which contains a stack of tests that can be run automaticaly.
+* `Documentation`,  which is used to store doc files and draft publication.
 
 ### Development
 
-You can find tests programs in the folder: `model/tests`.
+You can find tests of the semantics in the folder: `model/tests`.
 Use them to control breaking changes and help in the development.
+
+The integration tests can be find in the folder `tests`.
+
+The unit tests for OSLτ can be find in the folder `cfrontend/tests`.
