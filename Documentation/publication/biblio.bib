@@ -1,0 +1,532 @@
+@inproceedings{10.1145/286936.286947,
+author = {Clarke, David G. and Potter, John M. and Noble, James},
+title = {Ownership Types for Flexible Alias Protection},
+year = {1998},
+isbn = {1581130058},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/286936.286947},
+doi = {10.1145/286936.286947},
+abstract = {Object-oriented programming languages allow inter-object aliasing. Although necessary
+to construct linked data structures and networks of interacting objects, aliasing
+is problematic in that an aggregate object's state can change via an alias to one
+of its components, without the aggregate being aware of any aliasing.Ownership types
+form a static type system that indicates object ownership. This provides a flexible
+mechanism to limit the visibility of object references and restrict access paths to
+objects, thus controlling a system's dynamic topology. The type system is shown to
+be sound, and the specific aliasing properties that a system's object graph satisfies
+are formulated and proven invariant for well-typed programs.},
+booktitle = {Proceedings of the 13th ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications},
+pages = {48–64},
+numpages = {17},
+keywords = {representation exposure, programming language design, ownership, containment, alias protection, sharing},
+location = {Vancouver, British Columbia, Canada},
+series = {OOPSLA '98}
+}
+
+@article{10.1145/286942.286947,
+author = {Clarke, David G. and Potter, John M. and Noble, James},
+title = {Ownership Types for Flexible Alias Protection},
+year = {1998},
+issue_date = {Oct. 1998},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {33},
+number = {10},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/286942.286947},
+doi = {10.1145/286942.286947},
+abstract = {Object-oriented programming languages allow inter-object aliasing. Although necessary
+to construct linked data structures and networks of interacting objects, aliasing
+is problematic in that an aggregate object's state can change via an alias to one
+of its components, without the aggregate being aware of any aliasing.Ownership types
+form a static type system that indicates object ownership. This provides a flexible
+mechanism to limit the visibility of object references and restrict access paths to
+objects, thus controlling a system's dynamic topology. The type system is shown to
+be sound, and the specific aliasing properties that a system's object graph satisfies
+are formulated and proven invariant for well-typed programs.},
+journal = {SIGPLAN Not.},
+month = oct,
+pages = {48–64},
+numpages = {17},
+keywords = {sharing, ownership, programming language design, alias protection, containment, representation exposure}
+}
+
+@article{rosu-serbanuta-2010-jlap,
+  title={An Overview of the {K} Semantic Framework},
+  author={Grigore Ro{\c s}u and Traian Florin {\c S}erb{\u a}nu{\c t}{\u a} },
+  journal={Journal of Logic and Algebraic Programming},
+  volume={79},
+  number={6},
+  pages={397--434},
+  year={2010},
+  ee={http://dx.doi.org/10.1016/j.jlap.2010.03.012},
+  doi={10.1016/j.jlap.2010.03.012},
+}
+
+@inproceedings{bogdanas-rosu-2015-popl,
+    author = "Bogd\u{a}na\c{s}, Denis and Ro\c{s}u, Grigore",
+    publisher = "ACM",
+    doi = "http://dx.doi.org/10.1145/2676726.2676982",
+    title = "{K-Java: A Complete Semantics of Java}",
+    booktitle = "Proceedings of the 42nd Symposium on Principles of Programming Languages (POPL'15)",
+    month = "January",
+    year = "2015",
+    pages = "445-456"
+}
+
+@inproceedings{hathhorn-ellison-rosu-2015-pldi,
+    author = "Hathhorn, Chris and Ellison, Chucky and Ro\c{s}u, Grigore",
+    publisher = "ACM",
+    doi = "http://dx.doi.org/10.1145/2813885.2737979",
+    title = "Defining the Undefinedness of C",
+    booktitle = "Proceedings of the 36th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI'15)",
+    month = "June",
+    year = "2015",
+    pages = "336-345"
+}
+
+@article{10.1145/3158154,
+author = {Jung, Ralf and Jourdan, Jacques-Henri and Krebbers, Robbert and Dreyer, Derek},
+title = {RustBelt: Securing the Foundations of the Rust Programming Language},
+year = {2017},
+issue_date = {January 2018},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {2},
+number = {POPL},
+url = {https://doi.org/10.1145/3158154},
+doi = {10.1145/3158154},
+abstract = {Rust is a new systems programming language that promises to overcome the seemingly
+fundamental tradeoff between high-level safety guarantees and low-level control over
+resource management. Unfortunately, none of Rust's safety claims have been formally
+proven, and there is good reason to question whether they actually hold. Specifically,
+Rust employs a strong, ownership-based type system, but then extends the expressive
+power of this core type system through libraries that internally use unsafe features.
+In this paper, we give the first formal (and machine-checked) safety proof for a language
+representing a realistic subset of Rust. Our proof is extensible in the sense that,
+for each new Rust library that uses unsafe features, we can say what verification
+condition it must satisfy in order for it to be deemed a safe extension to the language.
+We have carried out this verification for some of the most important libraries that
+are used throughout the Rust ecosystem.},
+journal = {Proc. ACM Program. Lang.},
+month = dec,
+articleno = {66},
+numpages = {34},
+keywords = {concurrency, separation logic, logical relations, Rust, type systems}
+}
+
+@misc{weiss2021oxide,
+      title={Oxide: The Essence of Rust}, 
+      author={Aaron Weiss and Olek Gierczak and Daniel Patterson and Amal Ahmed},
+      year={2021},
+      eprint={1903.00982},
+      archivePrefix={arXiv},
+      primaryClass={cs.PL}
+}
+
+@article{10.1145/3133896,
+author = {Clebsch, Sylvan and Franco, Juliana and Drossopoulou, Sophia and Yang, Albert Mingkun and Wrigstad, Tobias and Vitek, Jan},
+title = {Orca: GC and Type System Co-Design for Actor Languages},
+year = {2017},
+issue_date = {October 2017},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {1},
+number = {OOPSLA},
+url = {https://doi.org/10.1145/3133896},
+doi = {10.1145/3133896},
+abstract = { ORCA is a concurrent and parallel garbage collector for actor programs, which does
+not require any STW steps, or synchronization mechanisms, and that has been designed
+to support zero-copy message passing and sharing of mutable data. ORCA is part of
+a runtime for actor-based languages, which was co-designed with the Pony programming
+language, and in particular, with its data race free type system. By co-designing
+an actor language with its runtime, it was possible to exploit certain language properties
+in order to optimize performance of garbage collection. Namely, ORCA relies on the
+guarantees of absence of race conditions in order to avoid read/write barriers, and
+it leverages the actor message passing, for synchronization among actors.  In this
+paper we briefly describe Pony and its type system. We use pseudo-code in order to
+introduce how ORCA allocates and deallocates objects, how it shares mutable data without
+requiring barriers upon data mutation, and how can immutability be used to further
+optimize garbage collection. Moreover, we discuss the advantages of co-designing an
+actor language with its runtime, and we demonstrate that ORCA can be implemented in
+a performant and scalable way through a set of micro-benchmarks, including a comparison
+with other well-known collectors. },
+journal = {Proc. ACM Program. Lang.},
+month = oct,
+articleno = {72},
+numpages = {28},
+keywords = {actors, messages}
+}
+
+@inproceedings{10.1007/978-3-319-89722-6_4,
+    author="Azevedo de Amorim, Arthur
+    and Hri{\c{T}}cu, C{\u{a}}t{\u{a}}lin
+    and Pierce, Benjamin C.",
+    editor="Bauer, Lujo
+    and K{\"u}sters, Ralf",
+    title="The Meaning of Memory Safety",
+    booktitle="Principles of Security and Trust",
+    year="2018",
+    publisher="Springer International Publishing",
+    address="Cham",
+    pages="79--105",
+    abstract="We give a rigorous characterization of what it means for a programming language to be memory safe, capturing the intuition that memory safety supports local reasoning about state. We formalize this principle in two ways. First, we show how a small memory-safe language validates a noninterference property: a program can neither affect nor be affected by unreachable parts of the state. Second, we extend separation logic, a proof system for heap-manipulating programs, with a ``memory-safe variant'' of its frame rule. The new rule is stronger because it applies even when parts of the program are buggy or malicious, but also weaker because it demands a stricter form of separation between parts of the program state. We also consider a number of pragmatically motivated variations on memory safety and the reasoning principles they support. As an application of our characterization, we evaluate the security of a previously proposed dynamic monitor for memory safety of heap-allocated data.",
+    isbn="978-3-319-89722-6"
+}
+
+
+@inproceedings {217626,
+    author = {Wei Wu and Yueqi Chen and Jun Xu and Xinyu Xing and Xiaorui Gong and Wei Zou},
+    title = {{FUZE}: Towards Facilitating Exploit Generation for Kernel {Use-After-Free} Vulnerabilities},
+    booktitle = {27th USENIX Security Symposium (USENIX Security 18)},
+    year = {2018},
+    isbn = {978-1-939133-04-5},
+    address = {Baltimore, MD},
+    pages = {781--797},
+    url = {https://www.usenix.org/conference/usenixsecurity18/presentation/wu-wei},
+    publisher = {USENIX Association},
+    month = aug,
+}
+
+ @misc{
+    cwe,
+    url={https://cwe.mitre.org/top25},
+    journal={CWE},
+    title={2021 CWE Top 25 Most Dangerous Software Weaknesses},
+    year={2021},
+    author={CWE}
+} 
+ 
+ @inproceedings{matsakis2014rust,
+  title={The rust language},
+  author={Matsakis, Nicholas D and Klock II, Felix S},
+  booktitle={ACM SIGAda Ada Letters},
+  volume={34},
+  number={3},
+  pages={103--104},
+  year={2014},
+  organization={ACM}
+}
+ 
+@article{van2020strengthening,
+  title={Strengthening Pony’s capabilities logic for verification},
+  author={van Bakel, Isaac and Drossopoulou, Sophia},
+  year={2020}
+}
+
+@inbook{10.1145/3453483.3454036,
+    author = {Sammler, Michael and Lepigre, Rodolphe and Krebbers, Robbert and Memarian, Kayvan and Dreyer, Derek and Garg, Deepak},
+    title = {RefinedC: Automating the Foundational Verification of C Code with Refined Ownership Types},
+    year = {2021},
+    isbn = {9781450383912},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/3453483.3454036},
+    abstract = {Given the central role that C continues to play in systems software, and the difficulty of writing safe and correct C code, it remains a grand challenge to develop effective formal methods for verifying C programs. In this paper, we propose a new approach to this problem: a type system we call RefinedC, which combines ownership types (for modular reasoning about shared state and concurrency) with refinement types (for encoding precise invariants on C data types and Hoare-style specifications for C functions). RefinedC is both automated (requiring minimal user intervention) and foundational (producing a proof of program correctness in Coq), while at the same time handling a range of low-level programming idioms such as pointer arithmetic. In particular, following the approach of RustBelt, the soundness of the RefinedC type system is justified semantically by interpretation into the Coq-based Iris framework for higher-order concurrent separation logic. However, the typing rules of RefinedC are also designed to be encodable in a new “separation logic programming” language we call Lithium. By restricting to a carefully chosen (yet expressive) fragment of separation logic, Lithium supports predictable, automatic, goal-directed proof search without backtracking. We demonstrate the effectiveness of RefinedC on a range of representative examples of C code.},
+    booktitle = {Proceedings of the 42nd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
+    pages = {158–174},
+    numpages = {17}
+}
+
+ @misc{
+    c2rust,
+    url={https://immunant.com/blog/2019/08/introduction-to-c2rust/},
+    title={Introduction to C2Rust},
+    year={2021},
+    author={Galois Inc., Immunant Inc.}
+} 
+
+@inproceedings{10.1007/978-3-642-36946-9_3,
+    author = {Clarke, Dave and Östlund, Johan and Sergey, Ilya and Wrigstad, Tobias},
+    year = {2013},
+    month = {01},
+    pages = {15-58},
+    title = {Ownership Types: A Survey},
+    isbn = {978-3-642-36945-2},
+    doi = {10.1007/978-3-642-36946-9_3}
+}
+
+@InProceedings{10.1007/978-3-642-22655-7_16,
+    author="Dietl, Werner
+    and Ernst, Michael D.
+    and M{\"u}ller, Peter",
+    editor="Mezini, Mira",
+    title="Tunable Static Inference for Generic Universe Types",
+    booktitle="ECOOP 2011 -- Object-Oriented Programming",
+    year="2011",
+    publisher="Spri-nger Berlin Heidelberg",
+    address="Berlin, Heidelberg",
+    pages="333--357",
+    abstract="Object ownership is useful for many applications, including program verification, thread synchronization, and memory management. However, the annotation overhead of ownership type systems hampers their widespread application. This paper addresses this issue by presenting a tunable static type inference for Generic Universe Types. In contrast to classical type systems, ownership types have no single most general typing. Our inference chooses among the legal typings via heuristics. Our inference is tunable: users can indicate a preference for certain typings by adjusting the heuristics or by supplying partial annotations for the program. We present how the constraints of Generic Universe Types can be encoded as a boolean satisfiability (SAT) problem and how a weighted Max-SAT solver finds a correct Universe typing that optimizes the weights. We implemented the static inference tool, applied our inference tool to four real-world applications, and inferred interesting ownership structures.",
+    isbn="978-3-642-22655-7"
+}
+
+@InProceedings{10.1007/978-3-642-31057-7_9,
+    author="Huang, Wei
+    and Dietl, Werner
+    and Milanova, Ana
+    and Ernst, Michael D.",
+    editor="Noble, James",
+    title="Inference and Checking of Object Ownership",
+    booktitle="ECOOP 2012 -- Object-Oriented Programming",
+    year="2012",
+    publisher="Springer Berlin Heidelberg",
+    address="Berlin, Heidelberg",
+    pages="181--206",
+    abstract="Ownership type systems describe a heap topology and enforce an encapsulation discipline; they aid in various program correctness and understanding tasks. However, the annotation overhead of ownership type systems has hindered their widespread use. We present a unified framework for specification, type inference and type checking of ownership type systems, and instantiate the framework for two such systems: Universe Types and Ownership Types. We present an objective metric defining a ``best typing'' for these type systems, and develop an inference approach that maximizes the metric. The programmer can influence the inference by adding partial annotations to the program. We implemented the approach on top of the Checker Framework and present the results of an experimental evaluation.",
+    isbn="978-3-642-31057-7"
+}
+
+@article{10.1145/1297105.1297059,
+author = {Ma, Kin-Keung and Foster, Jeffrey S.},
+title = {Inferring Aliasing and Encapsulation Properties for Java},
+year = {2007},
+issue_date = {October 2007},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {42},
+number = {10},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/1297105.1297059},
+doi = {10.1145/1297105.1297059},
+abstract = {There are many proposals for language techniques to control aliasing and encapsulation in object oriented programs, typically based on notions of object ownership and pointer uniqueness. Most of these systems require extensive manual annotations, and thus there is little experience with these properties in large, existing Java code bases. To remedy this situation, we present Uno, a novel static analysis for automatically inferring ownership, uniqueness, and other aliasing and encapsulation properties in Java. Our analysis requires no annotations, and combines an intraprocedural points-to analysis with an interprocedural, demand-driven predicate resolution algorithm. We have applied Uno to a variety of Java applications and found that some aliasing properties, such as temporarily lending a reference to a method, are common, while others, in particular field and argument ownership, are relatively uncommon. As a result, we believe that Uno can be a valuable tool for discovering and understanding aliasing and encapsulation in Java programs.},
+journal = {SIGPLAN Not.},
+month = {oct},
+pages = {423–440},
+numpages = {18},
+keywords = {uno, ownership, ownership inference, aliasing, encapsulation, java, lending, uniqueness, uniqueness inference}
+}
+
+@inproceedings{10.1145/1297027.1297059,
+author = {Ma, Kin-Keung and Foster, Jeffrey S.},
+title = {Inferring Aliasing and Encapsulation Properties for Java},
+year = {2007},
+isbn = {9781595937865},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1297027.1297059},
+doi = {10.1145/1297027.1297059},
+abstract = {There are many proposals for language techniques to control aliasing and encapsulation in object oriented programs, typically based on notions of object ownership and pointer uniqueness. Most of these systems require extensive manual annotations, and thus there is little experience with these properties in large, existing Java code bases. To remedy this situation, we present Uno, a novel static analysis for automatically inferring ownership, uniqueness, and other aliasing and encapsulation properties in Java. Our analysis requires no annotations, and combines an intraprocedural points-to analysis with an interprocedural, demand-driven predicate resolution algorithm. We have applied Uno to a variety of Java applications and found that some aliasing properties, such as temporarily lending a reference to a method, are common, while others, in particular field and argument ownership, are relatively uncommon. As a result, we believe that Uno can be a valuable tool for discovering and understanding aliasing and encapsulation in Java programs.},
+booktitle = {Proceedings of the 22nd Annual ACM SIGPLAN Conference on Object-Oriented Programming Systems, Languages and Applications},
+pages = {423–440},
+numpages = {18},
+keywords = {uniqueness inference, lending, uniqueness, aliasing, java, uno, encapsulation, ownership inference, ownership},
+location = {Montreal, Quebec, Canada},
+series = {OOPSLA '07}
+}
+
+
+
+@article{article,
+    author = {Welsch, Yannick and Poetzsch-Heffter, Arnd},
+    year = {2012},
+    month = {06},
+    pages = {},
+    title = {Verifying backwards compatibility of object-oriented libraries using Boogie},
+    doi = {10.1145/2318202.2318209}
+}
+
+@inproceedings{lucanu-rosu-serbanuta-2012-wrla,
+  author    = {Dorel Lucanu and Traian Florin \c{S}erb\u{a}nu\c{t}\u{a} and Grigore Ro\c{s}u},
+  title     = {{K} {Framework} Distilled},
+  abstract  = {
+K is a rewrite-based executable semantic framework in which programming languages, type systems, and formal analysis tools can be defined using configurations, computations and rules. Configurations organize the state in units called cells, which are labeled and can be nested. Computations are special nested list structures sequentializing computational tasks, such as fragments of program. K (rewrite) rules make it explicit which parts of the term they read-only, write-only, read-write, or do not care about. This makes K suitable for defining truly concurrent languages even in the presence of sharing. Computations are like any other terms in a rewriting environment: they can be matched, moved from one place to another, modified, or deleted. This makes K suitable for defining control-intensive features such as abrupt termination, exceptions or call/cc. This paper presents an overview of K Framework and the K tool, focusing on the interaction between the K tool and Maude. 
+  },
+  booktitle     = {Proceedings of 9th International Workshop 
+                   on Rewriting Logic and its Applications (WRLA'12)}, 
+  series        = {LNCS}, 
+  pages         = {31-53},
+  month         = {March},
+  year          = {2012}, 
+  volume        = {7571}, 
+  publisher     = {Springer},
+  author_id     = {Dorel Lucanu and Traian Florin Serbanuta and Grigore Rosu},
+  category      = {fsl, K},
+  project_url   = {http://www.kframework.org},
+  project_name  = {K},
+  booktitle_acronym = {WRLA'12},
+  booktitle_url = {http://wrla2012.lcc.uma.es/},
+  doi           = {http://dx.doi.org/10.1007/978-3-642-34005-5_3},
+  note          = {Invited talk.}, 
+}
+
+@inproceedings{lucanu-rosu-serbanuta-2012-wrla,
+  author    = {Dorel Lucanu and Traian Florin \c{S}erb\u{a}nu\c{t}\u{a} and Grigore Ro\c{s}u},
+  title     = {{K} {Framework} Distilled},
+  abstract  = {
+K is a rewrite-based executable semantic framework in which programming languages, type systems, and formal analysis tools can be defined using configurations, computations and rules. Configurations organize the state in units called cells, which are labeled and can be nested. Computations are special nested list structures sequentializing computational tasks, such as fragments of program. K (rewrite) rules make it explicit which parts of the term they read-only, write-only, read-write, or do not care about. This makes K suitable for defining truly concurrent languages even in the presence of sharing. Computations are like any other terms in a rewriting environment: they can be matched, moved from one place to another, modified, or deleted. This makes K suitable for defining control-intensive features such as abrupt termination, exceptions or call/cc. This paper presents an overview of K Framework and the K tool, focusing on the interaction between the K tool and Maude. 
+  },
+  booktitle     = {Proceedings of 9th International Workshop 
+                   on Rewriting Logic and its Applications (WRLA'12)}, 
+  series        = {LNCS}, 
+  pages         = {31-53},
+  month         = {March},
+  year          = {2012}, 
+  volume        = {7571}, 
+  publisher     = {Springer},
+  author_id     = {Dorel Lucanu and Traian Florin Serbanuta and Grigore Rosu},
+  category      = {fsl, K},
+  project_url   = {http://www.kframework.org},
+  project_name  = {K},
+  booktitle_acronym = {WRLA'12},
+  booktitle_url = {http://wrla2012.lcc.uma.es/},
+  doi           = {http://dx.doi.org/10.1007/978-3-642-34005-5_3},
+  note          = {Invited talk.}, 
+}
+
+
+@techreport{ISOC11,
+     author = {ISO},
+     Institution = {International Organization for Standardization},
+     url={http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf},
+     title = {INTERNATIONAL STANDARD ©ISO/IEC ISO/IEC 9899:2\\01x Programming languages — C},
+     Type = {ISO},
+     Year = {2010}
+ }
+
+@inproceedings{10.1145/1542476.1542504,
+author = {Nagarakatte, Santosh and Zhao, Jianzhou and Martin, Milo M.K. and Zdancewic, Steve},
+title = {SoftBound: Highly Compatible and Complete Spatial Memory Safety for c},
+year = {2009},
+isbn = {9781605583921},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1542476.1542504},
+doi = {10.1145/1542476.1542504},
+abstract = {The serious bugs and security vulnerabilities facilitated by C/C++'s lack of bounds checking are well known, yet C and C++ remain in widespread use. Unfortunately, C's arbitrary pointer arithmetic, conflation of pointers and arrays, and programmer-visible memory layout make retrofitting C/C++ with spatial safety guarantees extremely challenging. Existing approaches suffer from incompleteness, have high runtime overhead, or require non-trivial changes to the C source code. Thus far, these deficiencies have prevented widespread adoption of such techniques.This paper proposes SoftBound, a compile-time transformation for enforcing spatial safety of C. Inspired by HardBound, a previously proposed hardware-assisted approach, SoftBound similarly records base and bound information for every pointer as disjoint metadata. This decoupling enables SoftBound to provide spatial safety without requiring changes to C source code. Unlike HardBound, SoftBound is a software-only approach and performs metadata manipulation only when loading or storing pointer values. A formal proof shows that this is sufficient to provide spatial safety even in the presence of arbitrary casts. SoftBound's full checking mode provides complete spatial violation detection with 67\% runtime overhead on average. To further reduce overheads, SoftBound has a store-only checking mode that successfully detects all the security vulnerabilities in a test suite at the cost of only 22\% runtime overhead on average.},
+booktitle = {Proceedings of the 30th ACM SIGPLAN Conference on Programming Language Design and Implementation},
+pages = {245–258},
+numpages = {14},
+keywords = {buffer overflows, spatial memory safety, c},
+location = {Dublin, Ireland},
+series = {PLDI '09}
+}
+
+@article{10.1145/1543135.1542504,
+author = {Nagarakatte, Santosh and Zhao, Jianzhou and Martin, Milo M.K. and Zdancewic, Steve},
+title = {SoftBound: Highly Compatible and Complete Spatial Memory Safety for c},
+year = {2009},
+issue_date = {June 2009},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {44},
+number = {6},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/1543135.1542504},
+doi = {10.1145/1543135.1542504},
+abstract = {The serious bugs and security vulnerabilities facilitated by C/C++'s lack of bounds checking are well known, yet C and C++ remain in widespread use. Unfortunately, C's arbitrary pointer arithmetic, conflation of pointers and arrays, and programmer-visible memory layout make retrofitting C/C++ with spatial safety guarantees extremely challenging. Existing approaches suffer from incompleteness, have high runtime overhead, or require non-trivial changes to the C source code. Thus far, these deficiencies have prevented widespread adoption of such techniques.This paper proposes SoftBound, a compile-time transformation for enforcing spatial safety of C. Inspired by HardBound, a previously proposed hardware-assisted approach, SoftBound similarly records base and bound information for every pointer as disjoint metadata. This decoupling enables SoftBound to provide spatial safety without requiring changes to C source code. Unlike HardBound, SoftBound is a software-only approach and performs metadata manipulation only when loading or storing pointer values. A formal proof shows that this is sufficient to provide spatial safety even in the presence of arbitrary casts. SoftBound's full checking mode provides complete spatial violation detection with 67\% runtime overhead on average. To further reduce overheads, SoftBound has a store-only checking mode that successfully detects all the security vulnerabilities in a test suite at the cost of only 22\% runtime overhead on average.},
+journal = {SIGPLAN Not.},
+month = {jun},
+pages = {245–258},
+numpages = {14},
+keywords = {spatial memory safety, buffer overflows, c}
+}
+
+@inproceedings{10.1145/1806651.1806657,
+author = {Nagarakatte, Santosh and Zhao, Jianzhou and Martin, Milo M.K. and Zdancewic, Steve},
+title = {CETS: Compiler Enforced Temporal Safety for C},
+year = {2010},
+isbn = {978145030\\0544},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1806651.1806657},
+doi = {10.1145/1806651.1806657},
+abstract = {Temporal memory safety errors, such as dangling pointer dereferences and double frees, are a prevalent source of software bugs in unmanaged languages such as C. Existing schemes that attempt to retrofit temporal safety for such languages have high runtime overheads and/or are incomplete, thereby limiting their effectiveness as debugging aids. This paper presents CETS, a compile-time transformation for detecting all violations of temporal safety in C programs. Inspired by existing approaches, CETS maintains a unique identifier with each object, associates this metadata with the pointers in a disjoint metadata space to retain memory layout compatibility, and checks that the object is still allocated on pointer dereferences. A formal proof shows that this is sufficient to provide temporal safety even in the presence of arbitrary casts if the program contains no spatial safety violations. Our CETS prototype employs both temporal check removal optimizations and traditional compiler optimizations to achieve a runtime overhead of just 48\% on average. When combined with a spatial-checking system, the average overall overhead is 116\% for complete memory safety},
+booktitle = {Proceedings of the 2010 International Symposium on Memory Management},
+pages = {31–40},
+numpages = {10},
+keywords = {c, dangling pointers, memory safety, temporal errors},
+location = {Toronto, Ontario, Canada},
+series = {ISMM '10}
+}
+
+@article{10.1145/1837855.1806657,
+author = {Nagarakatte, Santosh and Zhao, Jianzhou and Martin, Milo M.K. and Zdancewic, Steve},
+title = {CETS: Compiler Enforced Temporal Safety for C},
+year = {2010},
+issue_date = {August 2010},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {45},
+number = {8},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/1837855.1806657},
+doi = {10.1145/1837855.1806657},
+abstract = {Temporal memory safety errors, such as dangling pointer dereferences and double frees, are a prevalent source of software bugs in unmanaged languages such as C. Existing schemes that attempt to retrofit temporal safety for such languages have high runtime overheads and/or are incomplete, thereby limiting their effectiveness as debugging aids. This paper presents CETS, a compile-time transformation for detecting all violations of temporal safety in C programs. Inspired by existing approaches, CETS maintains a unique identifier with each object, associates this metadata with the pointers in a disjoint metadata space to retain memory layout compatibility, and checks that the object is still allocated on pointer dereferences. A formal proof shows that this is sufficient to provide temporal safety even in the presence of arbitrary casts if the program contains no spatial safety violations. Our CETS prototype employs both temporal check removal optimizations and traditional compiler optimizations to achieve a runtime overhead of just 48\% on average. When combined with a spatial-checking system, the average overall overhead is 116\% for complete memory safety},
+journal = {SIGPLAN Not.},
+month = {jun},
+pages = {31–40},
+numpages = {10},
+keywords = {c, dangling pointers, memory safety, temporal errors}
+}
+
+@article{10.1145/2049706.2049709,
+author = {Dietl, Werner and Drossopoulou, Sophia and M\"{u}ller, Peter},
+title = {Separating Ownership Topology and Encapsulation with Generic Universe Types},
+year = {2012},
+issue_date = {December 2011},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {33},
+number = {6},
+issn = {0164-0925},
+url = {https://doi.org/10.1145/2049706.2049709},
+doi = {10.1145/2049706.2049709},
+abstract = {Ownership is a powerful concept to structure the object store and to control aliasing and modifications of objects. This article presents an ownership type system for a Java-like programming language with generic types.Like our earlier Universe type system, Generic Universe Types structure the heap hierarchically. In contrast to earlier work, we separate the enforcement of an ownership topology from an encapsulation system. The topological system uses an existential modifier to express that no ownership information is available statically. On top of the topological system, we build an encapsulation system that enforces the owner-as-modifier discipline. This discipline does not restrict aliasing, but requires modifications of an object to be initiated by its owner. This allows owner objects to control state changes of owned objects—for instance, to maintain invariants. Separating the topological system from the encapsulation system allows for a cleaner formalization, separation of concerns, and simpler reuse of the individual systems in different contexts.},
+journal = {ACM Trans. Program. Lang. Syst.},
+month = {jan},
+articleno = {20},
+numpages = {62},
+keywords = {topology, ownership types, owner-as-modifier, generic, universe types, Encapsulation}
+}
+
+
+@article{10.1016/j.scico.2006.03.001,
+author = {M\"{u}ller, Peter and Poetzsch-Heffter, Arnd and Leavens, Gary T.},
+title = {Modular Invariants for Layered Object Structures},
+year = {2006},
+issue_date = {15 October 2006},
+publisher = {Elsevier North-Holland, Inc.},
+address = {USA},
+volume = {62},
+number = {3},
+issn = {0167-6423},
+url = {https://doi.org/10.1016/j.scico.2006.03.001},
+doi = {10.1016/j.scico.2006.03.001},
+abstract = {Classical specification and verification techniques support invariants for individual objects whose fields are primitive values, but do not allow sound modular reasoning about invariants involving more complex object structures. Such non-trivial object structures are common, and occur in lists, hash tables, and whenever systems are built in layers. A sound and modular verification technique for layered object structures has to deal with the well-known problem of representation exposure and the problem that invariants of higher layers are potentially violated by methods in lower layers; such methods cannot be modularly shown to preserve these invariants.We generalize classical techniques to cover layered object structures using a refined semantics for invariants based on an ownership model for alias control. This semantics enables sound and modular reasoning. We further extend this ownership technique to even more expressive invariants that gain their modularity by imposing certain visibility requirements.},
+journal = {Sci. Comput. Program.},
+month = {oct},
+pages = {253–286},
+numpages = {34},
+keywords = {JML, modular verification, visibility, ownership, invariant, object-oriented programming}
+}
+
+ @misc{
+    OSL,
+    title={OSL public repository},
+    year={2022},
+    url= {https://github.com/NotBad4U/osl},
+      urldate={21 January 2022},
+    author={Coltellacci Alessio}
+} 
+
+@inproceedings {270632,
+	author = {Trevor Jim and Greg Morrisett and Dan Grossman and Michael Hicks and James Cheney and Yanling Wang},
+	title = {Cyclone: A Safe Dialect of C},
+	booktitle = {2002 USENIX Annual Technical Conference (USENIX ATC 02)},
+	year = {2002},
+	address = {Monterey, CA},
+	url = {https://www.usenix.org/conference/2002-usenix-annual-technical-conference/cyclone-safe-dialect-c},
+	publisher = {USENIX Association},
+	month = jun,
+}
+
+@MISC{CVE-mem-access,
+  author = {MITRE},
+  title = {{CVE}-C memory access.},
+  howpublished = "Available from MITRE",
+  year = {2022},
+  url={https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=c+memory+access},
+  urldate={21 January 2022}
+}

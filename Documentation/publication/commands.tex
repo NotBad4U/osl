@@ -1,0 +1,91 @@
+
+\newcommand*{\Comment}[1]{\hfill\makebox[5.0cm][l]{#1}}%
+
+\newcommand{\den}[2][]{\llbracket \text{#2} \rrbracket^{#1}}
+
+\newcommand{\autour}[1]{\tikz[baseline]{%
+\node[rectangle,rounded corners=0.5mm,text=white,fill=blued!65,inner sep=2pt,anchor=base] (A) {\scriptsize{}#1};}}
+
+% From https://math.berkeley.edu/~gbergman/misc/hacks/langl_rangl.pdf
+\newcommand{\langl}{\begin{picture}(4.5,7)
+\put(1.1,2.5){\rotatebox{60}{\line(1,0){5.5}}}
+\put(1.1,2.5){\rotatebox{300}{\line(1,0){5.5}}}
+\end{picture}}
+\newcommand{\rangl}{\begin{picture}(4.5,7)
+\put(.9,2.5){\rotatebox{120}{\line(1,0){5.5}}}
+\put(.9,2.5){\rotatebox{240}{\line(1,0){5.5}}}
+\end{picture}}
+
+\newcommand{\lang}{\begin{picture}(5,7)
+\put(1.1,2.5){\rotatebox{45}{\line(1,0){6.0}}}
+\put(1.1,2.5){\rotatebox{315}{\line(1,0){6.0}}}
+\end{picture}}
+\newcommand{\rang}{\begin{picture}(5,7)
+\put(.1,2.5){\rotatebox{135}{\line(1,0){6.0}}}
+\put(.1,2.5){\rotatebox{225}{\line(1,0){6.0}}}
+\end{picture}}
+
+\newcommand{\cfg}[1]{\lang #1\rang}
+
+\newcommand{\var}[1]{ \textcolor{purplel}{\textbf{#1}}}
+\newcommand{\term}[1]{ \textcolor{blued}{\textbf{#1}}}
+\newcommand{\modif}[1]{\textcolor{purplel}{\textbf{#1}}}
+\newcommand{\modiff}[1]{\textcolor{bluell}{\textbf{#1}}}
+\newcommand{\tagg}[1]{\textcolor{greend}{\textbf{#1}}}
+\newcommand{\tagr}[1]{\textcolor{redl}{\textbf{#1}}}
+\newcommand{\tago}[1]{\textcolor{orangel}{\textbf{#1}}}
+
+\newcommand{\confosl}{\mathbb{C}}
+
+
+\newcommand{\letin}[1]{ \textcolor{bluel}{ \textbf{let } } #1 \textcolor{bluel}{ \textbf{ in } } }
+
+% Didactic Semantic =================
+\newcommand{\confosld}{(\env,\store)}
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\osld}{OSL$_{\mathcal{D}}$}
+
+\def\refrule#1{\hyperref[#1]{\autour{#1}}}
+
+% Operational Semantic =================
+\newcommand{\oslt}{OSL$_{\Tau}$}
+\newcommand{\osltc}{OSL$_{\Tau C}$}
+\newcommand{\oslos}{OSL$_{\mathcal{OS}}$}
+
+
+\definecolor{purpleTag}{HTML}{8837c9}
+\definecolor{blueTag}{HTML}{3778c9}
+
+\newcommand{\tagp}[1]{\textcolor{purpleTag}{\textbf{#1}}}
+\newcommand{\tagb}[1]{\textcolor{blueTag}{\textbf{#1}}}
+\newcommand{\tagy}[1]{\textcolor{yellowTag}{\textbf{#1}}}
+\newcommand{\tagpl}[1]{\textcolor{purplel}{\textbf{#1}}}
+
+
+\newcommand{\config}{\mathbb{C}}
+\newcommand{\env}{\mathcal{E}}
+\newcommand{\store}{\mathcal{S}}
+\newcommand{\writes}{\mathcal{W}}
+\newcommand{\unsafe}{\mathcal{U}}
+\newcommand{\envfun}{\mathcal{F}}
+\newcommand{\confoslunfold}{(\env,\store,\writes, \unsafe, \envfun)}
+\newcommand{\confoslunfoldp}{(\env',\store',\writes', \unsafe', \envfun')}
+\newcommand{\confoslunfoldpp}{(\env'',\store'',\writes'', \unsafe'', \envfun'')}
+
+
+\newcommand{\Tau}{\mathcal{T}}
+
+\captionsetup[sub]{font={bf,small}, name={}, skip=1pt, singlelinecheck=false, labelformat=empty}
+
+
+% Transpiler =================
+
+\newcommand{\map}{\Gamma}
+\newcommand{\out}{\mathcal{O}}
+\newcommand{\props}[1]{\pi_{props}(#1)}
+\newcommand{\evals}{\xRightarrow[]{\mathcal{S}}}
+\newcommand{\evale}{\xRightarrow[]{\mathcal{E}}}
+
+\newcommand{\append}{
+  \mathbin{{+}\mspace{-8mu}{+}}%
+}

@@ -1,0 +1,33 @@
+\section{Introduction}
+
+Memory aliasing is one of the major challenges that must be addressed when using declarative or imperative language. The term aliasing refers to a situation in which a resource can be accessed through different symbolic names in the program. When aliases access that resource in different ways—such as both reads and writes, there are consequences for the order in which these mixed accesses can happen. In many instances, aliasing is harmless: it is common, safe, and generally efficient to use two aliases to read and even to write to the same resources. But in some cases, using aliasing symbols for mixed accesses is less benign and can adversely affect the correctness of the program by leading to common memory problems such as \textit{data-race},  \textit{double-free} and  \textit{use-after-free}.
+
+To address aliasing pitfalls, Clarke, Potter and Noble have proposed a new design principle called\textit{ Ownership types for flexible alias protection} \cite{10.1145/286942.286947}, which has been continued to be studied \cite{10.1007/978-3-642-36946-9_3}. This technique is a  conceptual model of inter-object relationships. Rather than banning aliasing altogether, the key idea was to limit the visibility of changes to objects via aliases. This was done either by limiting where an alias could propagate or by limiting the changes that could be observed through an alias. Modern languages like Rust \cite{matsakis2014rust}, Cyclone \cite{270632}  and Pony \cite{van2020strengthening} took up this idea, improved it, and can carry out memory safety checking at compile time, while avoiding garbage collection for Rust.
+However, these works view the ownership system as a type system \cite{weiss2021oxide}, and their implementation is language-dependent, which makes it hard to reuse it for other languages.
+Several solutions have been proposed to add ownership type to languages that do not support this facet \cite{10.1016/j.scico.2006.03.001, 10.1145/3453483.3454036}. These solutions can be classified into two groups: the first one asks the user to annotate the code, the second try to infer Ownership by performing static analysis. Ownership type systems could require considerable annotation overhead, which is a signiﬁcant burden for users. In the second case,
+the resulting effectiveness of the static analysis method depends on the targeted language expressiveness. In our view, helping users transition from unannotated programs to code that uses an Ownership type system is crucial to facilitate the adoption of ownership type systems.\\
+
+In this paper, we propose the Framework: {\em Ownership System Language} (OSL), composed of \oslos~ an independent intermediate language, formalized by an operational semantics instead of a type system; and a translator \oslt, a static analysis tool to infer ownership properties in C programs. The operational semantics characterizes the ownership checking inspired by Rust. Moreover, by having a language-independent, it becomes possible to check ownership properties of programs written in a non-native ownership type like C, Javascript, or Golang. We decided to develop first \oslt~given that numerous of memory safety vulnerabilities are correlated to memory access patterns \cite{CVE-mem-access}.
+
+The semantics of \oslos~has been implemented with $\mathbb{K}$-Framework \cite{rosu-serbanuta-2010-jlap, lucanu-rosu-serbanuta-2012-wrla}, a rewriting logic based formal modeling tool. 
+$\mathbb{K}$ has been successfully used to model the semantics of Java \cite{bogdanas-rosu-2015-popl} and C \cite{hathhorn-ellison-rosu-2015-pldi}.
+The output of $\mathbb{K}$ is an executable semantics of \oslos, called \textit{K-OSL}. 
+Translated C programs by \oslt~ can be executed in \textit{K-OSL} to detect memory usage bugs.
+The ownership checking of \oslos~shows that the OSL framework is capable of detecting unsafe memory risks in C programs and being extendable to other declarative programming languages.\newline
+
+\subsubsection{Contributions and Outline.} Our contributions are as follows:
+\begin{itemize}
+	\item We develop the intermediate language \oslos, which guarantees the properties of an Ownership System.
+	An operational semantics is defined for \oslos, characterizing ownership checking.
+	\item The  operational semantics of \oslos~is implemented in K-framework, which produces an executable formal semantics.
+	The executable can be viewed as an independent formal ownership checker.
+    \item We develop a translation tool of C to OSL program called \oslt, in order to check the memory safety guarantee by the Ownership system of \oslos. 
+    \item We guarantee that programs validated by OSL are free of dangling pointers, data races, and double free bugs.
+\end{itemize} 
+
+The rest of the paper is structured as follows: In \autoref{sec:ownership}, we define our Ownership System principles.
+ In \autoref{sec:osl-syntaxandsemantics}, we will first use examples to present how \oslos~prevent memory safety with
+ his semantic, followed by an explanation on how \oslt~translate C programs into \oslos~program.
+ In \autoref{sec:properties}, we specify the soundness of \oslos w.r.t. dangling pointers, double free, and data races.
+ In \autoref{sec:imp-eval}, we describe how we evaluate our semantics and its current limitations.
+ We discuss related work in \autoref{sec:relatedwork} and conclude in \autoref{sec:conclusion}.

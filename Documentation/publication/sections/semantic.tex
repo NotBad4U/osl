@@ -1,0 +1,439 @@
+\section{Overview of OSL}
+\label{sec:osl-syntaxandsemantics}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+
+\begin{wrapfigure}{l}{0.4\linewidth}
+\centering
+\begin{tikzpicture}[node distance=4mm, >=latex',
+             block/.style = {draw, rectangle, minimum height=10mm, minimum width=28mm,align=center},
+            rblock/.style = {draw, rectangle, rounded corners=0.5em},
+]
+\node [rblock]                      (src)     {Source program};
+\node [block, below=of src]       (oslt)   {Transpilation:\\OSL$_{\Tau}$};
+\node [block, below=of oslt]     (osls)  {OSL Operational semantic:\\OSL$_{\mathcal{OS}}$};
+\node [block, below=of osls]     (kf)  {${\mathbb{K}}$-Framework};
+\node [below=of kf]     (result)  {Satisfy Ownership ? Yes/No};
+%% paths (borowed from Harish Kumar)
+\path[draw,->] (src)      edge (oslt)
+               (oslt)    edge (osls)
+               (osls)    edge (kf)
+               (kf)    edge (result)
+                ;
+\end{tikzpicture}
+\caption{An overview of the OSL pipeline}
+\label{fig:my_label}
+\end{wrapfigure}
+
+
+We present the OSL semantics and syntax. The OSL analyzer is parametric and may be instantiated for a multitude of declarative and imperative programming languages. The OSL pipeline analysis is divided into two parts. The frontend \oslt, take a C program and translates it into an OSL program. We will present \oslt~in  \autoref{ssec:overview-oslt}. The core \oslos~relies on the rewrite-based executable semantics: ${\mathbb{K}}$-Framework, and encodes our ownership semantics of \autoref{sec:ownership}, and verify the soundness of the program translated by \oslt. The composition of  \oslos~and \oslt~allow us to verify the ownership soundness of many C programs. A new programming language can be supported by extending the translator. \\
+In the following sections, we first present the \oslos. How this operational semantic allows us to detect memory bugs, and after will we introduce \oslt. 
+
+\subsection{Overview of \oslos }
+
+\subsubsection{Syntax.}
+
+We built OSL$_{\mathcal{OS}}$ on a simple syntax comprising standard composite commands and parametrized by a set of atomic commands. This allows us to instantiate OSL for several use cases without changing the underlying meta-theory. Our syntax  is given by the \autoref{lst:syntax-osl} below, and includes the didactic syntax \autoref{lst:didactic-syntax} presented in \autoref{ssec:Formalisation of core concepts}; with the exception that \term{read} belongs to expression here. \\ 
+
+\input{grammar-osl.tex}
+
+Similarly, resources are allocated by \term{newResource}($props$) operator, but a new resource can have properties: $props$. We now only consider the property \tagpl{copyable} and \tagpl{mutable}.
+The set of properties is extensible to enable OSL to study a larger class of memory properties in the future.
+The \term{transfer}, \term{borrow} and \term{mborrow} statements deal mainly in the same way that the corresponding in \osld.
+They only vary on the precondition assertions because of the complete configuration of \oslos~change.  
+The property \tagpl{copyable} matters here. When a \tagpl{copyable} resource  is transferred  from $e_1$ to $e_2$, a new resource with the same properties is created and its ownership is transferred to $e_2$.
+If a resource is not \tagpl{copyable}, then we proceed to a semantic move.
+The expressions \term{\& x} and \term{\&mut x} create a reference for $x$.
+The opposite of referencing by using \term{\&}  is dereferencing, which is accomplished with the dereference operator \term{$\star$}.
+The symbol \term{@} and \term{!} are respectively the branch and loop operators.
+A block of code can be prefixed with the \term{unsafe} keyword to permit unsafe operations like creating multiples mutable alias within a safe block.
+\subsubsection{\oslos~Model}
+
+\begin{definition}[A \oslos~configuration]
+    A \oslos~\textbf{configuration} is defined as a Set of \textbf{state} triple $\cfg{ (\confosl, P, t), CS }$, where $\confosl$ is called an \textbf{environment} tuple $\confoslunfold$, $P$ is program to be executed under environment $\confosl$ and time counter $t$, and we note $CS$ the tail of the Set. A \textbf{configuration} Set his always initialize as a unit-set with triple $\cfg{ \cfg{(\emptyset,\emptyset,\emptyset, \emptyset, \bot), P, 0}}$, where $P$ is the program and the time counter is set at 0.
+\end{definition}
+
+
+Compared with \osld, we use a set of triple state in \oslos~because it supports conditional statement \term{@}. Therefore, to cover all possible execution paths, \oslos will analyze all of them in different states; more details is provided in \autoref{ssec:flow-control}.  The \textbf{environment} tuple  $\confoslunfold$ is composed by the same $\env$ and $\store$ of \osld~ in \autoref{ssec:Formalisation of core concepts}, but we add : \\
+
+\begin{itemize}
+    \item[] $\writes: \{ (L, T)  \mid L \in Loc \land T \in \mathbb{N} \}$, is a set recording the writing for locations together with the 
+    time instants at which the writings are carried out. $\term{write}(l,t)\in \writes$ denotes a writing operation on $l$ at the time instant $t$.\\
+
+    \item[] $\unsafe:\mathbb{B}$, is a boolean flag that indicate if we enter in unsafe mode. In this mode, some precondition assertions are no longer required. \\
+  
+    \item[] $\envfun: Id \mapsto (\text{annotations}, \text{parameters}, \text{type}, \text{block})$, a map from $Id$ to a function definition.   
+\end{itemize}
+
+Adding $\writes$ will allow us to satisfy the \autoref{def:freeze-owner} and \autoref{def:imm-ref}. For $\unsafe$, to avoid that \oslos~ reject some program because it does not have enough information to be confident. The user can use \term{unsafe} keyword to tell \oslos: \textit{"Trust me, I know what I’m doing."}. The downside is that bugs such as \textit{null pointer dereferencing} can occur in an incorrect code put inside an \term{unsafe} block. Intuitively the map $\envfun$ stores the definition of the function declared and jumps to them when the keyword \term{call} is used.
+
+\subsubsection{Domain.}
+
+The domain of values stored in $\mathcal{S}$ is defined as follows:
+
+\begin{equation*}
+    \begin{aligned}
+    Value ::&= \#\textbf{rs}(\tagp{props}) \mid  (\mathbb{N}, \mathbb{N}, \textbf{mutRef}(Loc)) \\
+    & \mid (\mathbb{N}, \mathbb{N}, \textbf{immRef}(Loc)) \mid \bot \\
+    \end{aligned}
+\end{equation*}
+
+Compared to \osld~, here resources can be parametrized to indicate if there are \tagp{mutable} or \tagp{copyable}.
+
+\subsection{\oslos~for Detecting memory usage bugs}
+\label{ssec:detecting-mem-bugs}
+
+\oslos~has an operational semantic design to detect misuse memory. Violations include use after free, null pointer dereference, using uninitialized memory and double free.
+Memory violations like these can cause programs to crash unexpectedly and be exploited to alter intended behavior. Potential consequences of a memory-related bug include information leakage, arbitrary code execution, and remote code execution. According to the statistical report of MITRE \cite{cwe}, these memory-safety bugs are enumerated among the top dangerous software vulnerabilities.
+In this section, we will show how the operational semantic of \oslos~ aims to prevent this error. The complete semantic can be found in Appendix \ref{app:complete-oslos}.
+
+\subsubsection{Use after free.}
+
+\begin{wrapfigure}{R}{0.4\linewidth}
+\begin{lstlisting}[style=deno]
+decl x;
+transfer newResource(mut) x;
+decl y;
+y borrow x;
+
+free(x);
+transfer newResource(mut) y;
+* y;
+\end{lstlisting}
+\caption{use after free}
+\label{lst:use-after-free}
+\end{wrapfigure}
+
+After freeing a pointer, the buffer pointed by the pointer would be deallocated or recycled. However, the pointer still points to the deallocated memory address. These pointers are named dangling pointers. Dereferencing a dangling pointer causes use-after-free issues. Such bugs are dangerous because the freed memory may have already been reallocated for other
+purposes, or it may allow users to control the linked list of free memory blocks maintained by the system and achieve arbitrary write \cite{217626}. In the example \autoref{lst:use-after-free}, \term{y} borrow mutably \term{x} at line 5, and then deallocate the resource owned by \term{x}. Consequently, \term{y} become a dangling pointer, and writing to it or dereferencing causes a use-after-free issue. But the semantic rule \autour{Transfer-mutRef} and \autour{Dereference} prevent this violation. The predicate $ write(\term{wv}(e',E''),t_c)$ will not be validated because we can transfer the resource to \term{y} when the lifetime of \term{y} does not intersect with the owner \term{x}. If we omit the \term{transfer}, the predicate $\cfg{ \confosl', \term{read}(l) } \Rightarrow \cfg{ \confosl'', v }$ in \autour{Dereference} will not be validated because \term{x} it is mapping to $\bot$ after the frees.
+
+\begin{figure}
+\begin{subfigure}{\textwidth}
+    \subcaption{\autour{TrMutRef}}
+    \begin{prooftree}
+        \label{TrMutRef}
+        \hypo{
+            \begin{matrix}
+                \cfg{ (\confosl,\term{lv}(\tagp{e1}), t) } \Rightarrow \cfg{ (\confosl',l , t)} \\
+                l\mapsto_{lf(\_,\_)} \term{mutRef}(l_1)\in S \\
+                \confosl''= \confoslunfoldpp \\
+                \nexists l_n\mapsto_{lf(t_b,t_e)}\term{anyRef}(l),t_e\geq t_+
+            \end{matrix}
+        }
+        \hypo{
+            \begin{matrix}
+                t_+ = t + 1 \\
+                \cfg{(\confosl',  \term{lv}(\tagb{e2}), t)} \Rightarrow \cfg{(\confosl'',l', t)} \\
+                \store'''=\store'' \oplus (l' \mapsto_{lf(t_+,t_+)} \term{mutRef}(l_1)) \oplus (l \mapsto \bot) \\
+                \writes'''= \writes''\cup\{write(\term{wv}(\tagb{e2}, \env''),t_+)\}
+            \end{matrix}
+        }
+        \infer2[]{ \cfg{(\confosl, \term{transfer } \tagp{e1}~\tagb{e2};, t), CS} \Rightarrow \cfg{((\env'',\store''',\writes''', \unsafe, \envfun), \emptyset , t_+) , CS} }
+    \end{prooftree}
+\label{fig:Transfer-mutRef}
+
+\vspace*{0.5cm}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \begin{prooftree}
+         \hypo{\cfg{ (\confosl,\term{lv}(*e), t)} \Rightarrow \cfg{(\confosl', \tagp{l}, t)} }
+         \hypo{\cfg{ (\confosl',\term{read}(\tagp{l}),t)} \Rightarrow \cfg{(\confosl'',\tagp{v},t)} }
+        \infer2[\autour{Dereference}]{ \cfg{ (\confosl, * e, t), CS } \Rightarrow  \cfg{ (\confosl'' , \tagp{v}, t), CS } }
+    \end{prooftree}
+    \label{fig:deref-rule}
+\end{subfigure}
+\end{figure}
+
+
+\subsubsection{Double free.}
+
+
+
+\begin{wrapfigure}{r}{0.4\linewidth}
+\begin{lstlisting}[style=deno]
+decl x;
+transfer newResource(mut) x;
+free(x);
+free(x);
+\end{lstlisting}
+\caption{Double free}
+\label{lst:double-free}
+\vspace{-70pt}
+\end{wrapfigure}
+
+Freeing a pointer twice causes double free issues. It leaves room for attackers to manipulate the free memory
+blocks. Consequently, attackers may overwrite any memory cell of the process leveraging memory allocation system calls.\\\\
+In the example \autoref{lst:double-free}, the \term{free} at line 4 will not be validated because \term{x} maps to $\bot$ after the previous \term{free}. So the predicate $\nexists~l \mapsto \bot \in \store$ in \autour{Free} is not valid and \oslos~will return that the program is unsound.
+
+\vspace{0.2cm}
+\begin{prooftree}
+    \vspace{\baselineskip}
+    \hypo{
+        \begin{matrix}
+            \confosl = \confoslunfold \\
+            \cfg{ (\confosl, \term{lv}(x),t) } \Rightarrow \cfg{ (\confosl, l, t) } 
+        \end{matrix}
+    }
+    \hypo{ \tagp{$\store'$} = \store \oplus (l \mapsto \bot ) }
+    \hypo{ \nexists~l \mapsto \bot \in \store }
+    \infer3[\autour{Free}]{ \cfg{ (\confosl, \term{free}(x), t), CS } \Rightarrow { \cfg{ ((\env, \tagp{$\store'$},\writes, \unsafe, \envfun), \emptyset,t+1), CS } } }
+\end{prooftree}
+
+
+\subsubsection{Uninitialized memory access.}
+
+\begin{wrapfigure}{r}{0.4\linewidth}
+    \begin{lstlisting}[style=deno]
+    decl x;
+    decl y;
+    decl z;
+    read(x);
+    y borrow x;
+    z mborrow x;
+    read(y);
+    read(z);
+    \end{lstlisting}
+\caption{Uninitialized access}
+\label{lst:uninit-mem}
+\end{wrapfigure}
+
+It means the memory is used without proper initialization.
+Intuitively, it may leak the old content. If the memory contains values of pointer types, falsely accessing or free the pointer would cause invalid memory access. In the rules \autour{Read-Rs}, \autour{Read-immRef} and \autour{Read-mutRef}, all are protected by a predicate from uninitialized memory access. If we try to apply \autour{Read-Rs} at line 2, then the predicate $l \mapsto \#rs(ps) \in S$ will not be satisfy with \term{x}. The variable \term{x} is still mapping to $\bot$, because we did not \term{transfer} a resource. 
+Let's analyze another case  when we try to apply \autour{Read-Rs} or \autour{Read-Rs}. The common predicate $\cfg{(\env,\store', \dots),\term{read}(l')} \Rightarrow^+ \cfg{(\env,\store'', \dots),\#rs(\_)}$ where \term{x} is $l'$,  will not be validated. Indeed 
+both \term{y} and \term{z} borrow the owner \term{x}, but \term{x} is uninitialized which violate the previous common predicate that requires an initialized owner.
+
+\begin{figure}[H]
+    % READ RS ==============
+    \begin{subfigure}{\textwidth}
+        \centering
+        \subcaption{\autour{Read-Rs}}
+        \begin{prooftree}
+            \hypo{\tagp{l} \mapsto \tagb{\#rs(ps)} \in \store}
+            \infer1[]{ \cfg{ (\confoslunfold, \term{read}(\tagp{l}), t), CS} \Rightarrow  \cfg{ (\confoslunfold, \tagb{\#rs(ps)},t), CS }}
+        \end{prooftree}
+        \label{fig:read-rs}
+        \vspace{0.5cm}
+    \end{subfigure}
+    % READ SHR REF ============
+    \begin{subfigure}{\textwidth}
+        \centering
+        \subcaption{\autour{Read-immRef}}
+        \begin{prooftree}
+         \hypo{\begin{matrix}
+            l \mapsto_{lf(t_b,t_e)} \term{immRef}(l')\in \store \\
+            \store' = \store \oplus [l \mapsto_{lf(t_b,t_+)}\term{immRef}(l')] \\
+            \cfg{ ((\env, \store', \writes,\unsafe,\envfun), \term{read}(l'), t)} \Rightarrow^+ \cfg{(\confosl'' ,\#rs(\_), t)} \\
+            \nexists l_1\mapsto_{lf(t_b',t_e')} \term{mutRef}(l')\in S, l\neq\l_1 \\
+         \end{matrix}}
+         \hypo{\begin{matrix}
+            \neg\term{wl}(l',t_b,t_+,\writes) \\
+            \term{lc}(t_b,t_+,t_b',t_e') \\
+            t_+= t + 1 \\
+         \end{matrix}}
+        \infer2[]{ \cfg{ ( \confoslunfold , \term{read}(l), t),CS } \Rightarrow  \cfg{ (\confosl'', l', t_+), CS } }
+        \end{prooftree}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{align*}
+            & \textbf{lc}(t_1,t_2,t_3,t_4)\triangleq (t_1< t_3\leq t_2)\lor (t_1\leq t_4\leq t_2) \\
+            & \textbf{wl}(l,t,t',W)\triangleq \exists write(l,t'')\in W \land t \leq t'' \leq t'
+        \end{align*}        
+    \label{fig:read-rs}
+    \end{subfigure}
+
+    \label{fig:Read-immRef}
+\end{figure}
+
+\subsection{Overview of \oslt}
+\label{ssec:overview-oslt}
+
+We next present the operational semantics of \oslt. It automatically translates C programs into the mid-level intermediate representation (MIR) OSL syntax.
+Currently, we support the complete  C11  standard version syntax and programs that do not include \textbf{goto} statement. However, we aim to support the translation of any C program.
+
+
+\subsubsection{\oslt~States.} A \oslt~\textit{state} is a Triple $\cfg{P , \map, \out }$, where $P$ is a list of C tokens,
+$\map$ is a map between \textit{Identifier} (variable, function name) to \oslos~\term{Type}, and $\out$ is a Monoid ($O$, $\append$) where $O$ is a \oslos~ program, the associative binary operation $\append$ is the \textit{append} function and the \textit{zero} element $\epsilon$ represent the empty list.
+The \textit{triple} $(P, \emptyset, \epsilon)$ is the initial \textit{triple} of \oslt.
+
+
+\subsubsection{Transpilation of C program.}  The transition between Triple is denoted by $\Rightarrow$. For C expression, the final value is the corresponding translated expression; for C Statement, it is the translated statement with the $\map$ enriched with new variables and functions declared in $P$.
+
+\begin{align*}
+&\evale ~::  ( Exp \times Env ) \rightarrow Output \\
+&\evals ~::  ( Stmt \times Env \times Output ) \rightarrow Env \times Output \\
+\end{align*}
+\noindent\textbf{Notation.} We use $DS$ as \textit{Declaration-Specifier} from C11 \cite{ISOC11} standard, which contains the \textit{Type-Specifier} (e.g.: \term{int}, \term{float}) and \textit{Type-Qualifier} (e.g.: \term{const}, \term{atomic}) information. We write $DD$ as \textit{Derived-Declarator} which tell us if the declarator is a pointer, array or a function. We continue to use the notation $\oplus$ as modification operation on a Map.\\
+
+\noindent We infer the properties (\textit{props}) of a variable by looking at his type signature composed by a tuple ($DS$, $DD$). 
+The function $\Tau$ take a $DS$ and a $DD$ and return the corresponding \oslos \textit{Type}.  
+
+\begin{align*}
+    \Tau (DS, DD) & \rightharpoonup \text{Type}  \\
+    \Tau(T, \emptyset) & \rightarrow  \#own(\#rs(\tagpl{mutable}, copyable)) \\
+    & \textbf{ with } T \in \{ int,.., float \} \\
+    \Tau(const~T, \emptyset) & \rightarrow  \#own(\props{T} \setminus \tagpl{mutable})) \\
+    \Tau(T, \star) & \rightarrow  \#ref(\textit{nl}, \Tau(T)) \\
+    \Tau(const~T, \star) | \Tau(const~T, const~\star)  & \rightarrow  \#ref(\textit{nl}, \Tau(T)) \\
+    & \textbf{ with }   \tagpl{mutable} \notin \props{\Tau(T)}  \\
+    \Tau(void, \emptyset) & \rightarrow  \#own(\#rs()) \\
+    \Tau(void, \star) & \rightarrow  \#ref(\textit{nl},\#rs()) \\
+    \Tau(\term{enum}, \star) & \rightarrow  \#ref(\textit{nl},\#own(\#rs(copyable, \tagpl{mutable}))) \\
+    \Tau(const~\term{enum}, \star) & \rightarrow  \#ref(\textit{nl},\#own(\#rs())) \\
+    \Tau(\term{struct} \{ m_1\dots m_n \}, \emptyset) & \rightarrow  \#own(\#rs(ps)) \\
+                                                      & \textbf{ with } ps = \bigcap\limits_{i=1}^{n} \pi_{props}(\Tau(m_i)) \\
+\end{align*}
+
+\begin{equation*}
+    \begin{aligned}[c]
+        \mathcal{R} (\text{DS, DC}) & \rightharpoonup \text{Type}  \\
+        \mathcal{R}(void) & \rightarrow \#voidTy \\
+        \mathcal{R}(T) & \rightarrow \Tau(T) \\
+    \end{aligned}
+\qquad\qquad
+    \begin{aligned}[c]
+        \pi_{props}(Type) & \rightharpoonup Props \\
+        \pi_{props}(\#rs(ps)) & \rightarrow ps \\
+        \pi_{props}(\#ref(l, T)) & \rightarrow \pi(T)
+    \end{aligned}
+\end{equation*}
+
+\oslos~ does not support yet \textbf{partial borrowing} that allow borrowing disjoint fields of a composite structure simultaneously. All access to a member is reduced to access the root.
+The properties of a composite struct inferred by $\Tau$ are the intersection of all the members' properties. The function R infers the return type of a C function drawing on $\Tau$.
+The function $\pi_{props}$ is a projection function that returns the properties of a \oslos~\textit{Type}.
+
+\subsubsection{\oslt~semantic at a glance.} We provide an overview of the \oslt~semantic rules. The rest of the semantics can be found in Appendix \ref{app:complete-oslt}. In \refrule{Decl}, we translate a C declaration statement.
+We first evaluate the properties of \textit{type specifiers} to store them in $\map$ and then append the statement $\term{decl } x$ to $\out$. In \refrule{Ift}, first, we translate the condition and the two endowed statements and then append them to $\out$ respecting the order. We insert a copy of the condition translated at the statement to simulate the looping verification condition. Finally, the rule \refrule{Brw} present the semantics of translating an immutable borrow. We have an immutable borrow when the address $\&y$ assigned to $x$ points to a variable $y$ that does not have the property \tagpl{mutable}.
+
+
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+        \centering
+        \label{Decl}
+        \begin{prooftree}
+        \infer0[\autour{Decl}]{
+            \cfg{\{\term{T}~x ; \}, \map, \out  }
+            \evals
+            \cfg{ \map \append [x \mapsto \Tau(\term{T})], \out \append  \term{decl}~x; } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \label{Ift}
+        \begin{prooftree}
+        \hypo{ \cfg{c, \map } \evale \out_c }
+        \hypo{ \cfg{b_1, \map, \out} \evals \cfg{ \map_1, \out_1  } }
+        \hypo{ \cfg{b_2, \map, \out} \evals \cfg{ \map_2, \out_2 } }
+        \infer3[\autour{IfT}]{
+            \cfg{\text{\term{if} (c) $b_1$ \term{else} $b_2$}, \map, \out }
+            \evals
+            \cfg{\map, \out \append \out_c \append \term{@ \{}  \out_1 \term{\}} \append \term{\{} \out_2 \term{\}}  }
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    % Borrow  
+    \begin{subfigure}{\textwidth}
+        \centering
+        \label{Brw}
+        \begin{prooftree}
+        \hypo{\map[y] = \#rs(ps) }
+        \hypo{ \tagpl{mutable} \notin ps }
+        \infer2[\autour{Brw}]{
+            \cfg{\text{x = \&y}, \map}
+            \evale
+            x~\term{borrow}~y 
+        }
+    \end{prooftree}
+    %  Borrow Mut
+    \end{subfigure}
+\end{figure}
+
+\subsubsection{Transpilation example.} \autoref{lst:chttp} and \autoref{lst:chttptranspiled} shows an example of \oslt~in action.
+\autoref{lst:chttp} is a fragment of a tiny C HTTP server program.\\
+ 
+\begin{lstlisting}[style=clang,caption={C Tiny-HTTP Server},label=lst:chttp]
+#define PORT 8080
+int main() {
+    int server_fd, new_socket; long value_read;
+    struct sockaddr_in address; int addrlen = sizeof address;
+    char hello[73] = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
+
+    memset(&address.sin_zero, '\0', sizeof address.sin_zero);    
+    bind(server_fd, &address, sizeof address);
+    listen(server_fd, 10);
+
+    while(1)
+    {
+        new_socket = accept(server_fd, &address, &addrlen);
+        char buffer[30000] = {0};
+        value_read = read( new_socket , &buffer, 30000);
+        write(new_socket , &hello , strlen(&hello));
+        close(new_socket);
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\autoref{lst:chttptranspiled} is the corresponding \oslt~translation output for \autoref{lst:chttp} main function.\\
+
+\begin{lstlisting}[style=osl,caption={OSL Corresponding transpilation},label=lst:chttptranspiled]
+fn main() -> #own(copyable,mutable) {
+    decl server_fd; decl new_socket;
+    decl value_read; decl address;
+    decl addrlen;  decl hello;
+    transfer newResource(copyable,mutable) addrlen;
+    transfer newResource(mutable) hello;
+    transfer call socket(newResource(copyable,mutable),newResource(copyable,mutable),newResource(copyable,mutable)) server_fd;
+    rd(server_fd);
+    transfer newResource(copyable,mutable) address;
+    transfer newResource(copyable,mutable) address;
+    transfer call htons(newResource(copyable,mutable)) address;
+    call memset(&mut address,newResource(copyable,mutable),newResource(copyable,mutable));
+
+    call bind(server_fd, &mut address, newResource(copyable,mutable));
+    call listen(server_fd, newResource(copyable,mutable));
+    !{
+        transfer call accept(server_fd, &mut address, &mut addrlen) new_socket;
+        rd(new_socket);
+
+        decl buffer;
+        transfer newResource(mutable) buffer;
+        transfer call read(new_socket, &mut buffer, newResource(copyable,mutable)) value_read;
+        call write(new_socket, &hello, call strlen(&hello));
+        call close(new_socket);
+        
+    };
+    val(newResource(copy,mutable))
+};
+call main();
+\end{lstlisting}
+
+As we do not support \textbf{partial borrowing} yet, the assignments to \term{adress} members (sin\_family, sin\_family, sin\_port) between lines 8-10  in \autoref{lst:chttp} are treated as assignment to the parent: \term{address}. Therefore, in \autoref{lst:chttptranspiled}, we \term{transfer} a new resource to \term{address} three times at the lines 11-13.

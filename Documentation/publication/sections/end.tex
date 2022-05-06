@@ -1,0 +1,23 @@
+\section{Related Work}
+\label{sec:relatedwork}
+
+\subsubsection{RefinedC.} The RefinedC project \cite{10.1145/3453483.3454036} verify C programs by using the combination of refinement and ownership
+types. However, unlike our static analysis approach, RefinedC uses pre-and post-condition annotations on the source code.
+This annotations can encode \textit{invariants} on C data types and \textit{Hoare triple} for C functions. RefinedC produce a proof of program correctness in Coq.
+
+\subsubsection{Static Inference for Generic Universe Types.} 
+
+Dietl et al. \cite{10.1007/978-3-642-22655-7_16, 10.1145/2049706.2049709} presented a static analysis to infer Universe Types. The Universe Type system is a lightweight ownership type system that can be used to control aliasing statically. They encode the Generic Universe Types constraints as a boolean satisfiability (SAT) problem and use a SAT solver to find a correct Universe typing. 
+
+\subsubsection{UNO.}
+Similar to our work, Ma and Foster \cite{10.1145/1297105.1297059} presented UNO, a points-to analysis-based algorithm to infer ownership and uniqueness for Java programs without requiring annotations.
+The information inferred about encapsulation properties is also not mapped to a type system.
+
+\subsubsection{Ensuring memory safety by a type system.} SoftBound \cite{10.1145/1542476.1542504} is a compile time transformation for enforcing complete spatial safety of C, including the detection of bounds violations within an object. CES \cite{10.1145/1806651.1806657} a compiler pass for preventing temporal safety violations in C programs, including accessing dangling pointers into freed heap regions and stale stack frames.
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+We have presented the framework OSL composed by the translator \oslt~which infers Ownership in C program by a static analysis, and \oslos~which verifies the ownership properties in order to guarantee the memory usage of the translated program. Our system does not require extensive manual notations. We believe that this method facilitates the adoption of ownership type systems by software engineers. Helping them to transit from unannotated programs to code that uses an ownership type system. Furthermore, we are convinced that the \oslos~mid-level IR could be expanded to other declarative and imperative languages without changing the underlying meta-theory. However, OSL is still in its infancy and has a number of limitations that we plan to address in future work. In ongoing and future work, we plan to support partial borrowing and evaluate larger programs. Partial borrowing will enable us to have a finer borrowing for arrays, record. In a long-term perspective, we project to support multithreading mutual exclusion borrowing and locking discipline through ownership.
+
+% \section{Acknowledgments}
+% I thank Didier Plaindoux for his careful reading of and comments on the manuscript. I thank Valentin Robert for his useful suggestions.

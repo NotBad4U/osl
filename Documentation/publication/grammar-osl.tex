@@ -1,0 +1,18 @@
+\begin{lstlisting}[float=ht,caption=OSL$_{\mathcal{OS}}$ syntax, style=osl,label=lst:syntax-osl]
+exp   ::= Id | newResource(props) | (*$\star$*) exp
+        | call exp (exps) | read(exp) | & exp | &mut exp
+exps ::= exp, ..., exp
+prop ::= copyable | mutable
+props ::= prop, ..., prop
+type ::= own(props) | ref(lifetime, type) | #voidTy
+lifeftime ::= (*$'Id$*)
+stmt ::= exp ; | decl Id ; | exp borrow exp | exp mborrow exp;
+        | transfer exp exp ; | free exp; | @ block, ..., block ;
+        | ! block ; | val(exp) ; | stmt stmt | block | unsafe block
+block ::= { stmt }
+function ::= fn Id < annotations > ( parameters ) (*$\rightarrow$*) type block
+annotations ::= lifeftime : annotations  | lifetime
+            | annotations \/ annotations | annotations /\ annotations
+parameters ::= id: type, ..., id: type
+PGM ::= stmt
+\end{lstlisting}

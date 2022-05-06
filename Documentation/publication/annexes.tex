@@ -1,0 +1,984 @@
+\appendix
+
+\section{Complete \oslos~semantics}
+\label{app:complete-oslos}
+
+\subsection{Set of configurations.} We remind that a \oslos~\textbf{configuration} is defined as a set of \textbf{state} triple $\cfg{ (\confosl, P, t), CS }$, where $\confosl$ is called an \textbf{environment} tuple $\confoslunfold$, $P$ is program to be executed under environment $\confosl$ and time counter $t$, and we note $CS$ the tail of the Set. An evaluated program is denoted by $P = \emptyset$. We remove an evaluated State triple from the configuration by using \refrule{StateElim}. You can notice that the states CS have yet to be evaluated.
+
+\begin{figure}[H]
+    \centering
+    \label{StateElim}
+    \begin{prooftree}
+        \infer0[\autour{StateElim}]{\cfg{ (\confosl, \emptyset, t), CS} \Rightarrow \cfg{CS}}
+    \end{prooftree}
+\end{figure}
+
+
+Moreover, states triple cannot share the memory locations that its parent had access to at creation time. Any variable can be shared, and no memory sharing mechanism is available. All state triple will evolve regardless of the other. Thus they can change their \textbf{environment} by declaring new variables or shadowing existing ones, can create other blocks, and so on.
+
+\subsection{Sequence.}
+
+Rule \refrule{Seq} defines the semantics for sequential composition for a triple state in a configuration.
+
+\begin{figure}[H]
+    \centering
+    \begin{prooftree}
+        \hypo{\cfg{ (\confosl, s1, t) } \Rightarrow \cfg{ (\confosl', \emptyset, t') } }
+        \hypo{\cfg{ (\confosl', s2, t') } \Rightarrow \cfg{ (\confosl'', P'', t_+) } }
+        \infer2[\autour{Seq}]{ \cfg{ (\confosl, \text{s1 s2}, t), CS } \Rightarrow \cfg{(\confosl'', P'', t_+), CS} }
+    \end{prooftree}
+    \label{Seq}
+ \end{figure}
+
+\subsection{Declaration.} A variable declaration \refrule{Decl} creates a new location for the variable in the environment, setting the value of the location with $\bot$ to denote an uninitialized memory.
+
+\begin{figure}[H]
+    % Declaration =========================
+    \label{Decl}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+            \hypo{l = new\_loc}
+            \hypo{
+              \tagb{$\env'$} = \env \oplus [x \mapsto l]
+            }
+            \hypo{\begin{matrix}
+              \tagp{$\store'$} = \store \oplus [l \mapsto \bot]
+            \end{matrix}}
+            \infer3[\autour{Decl}]{ \cfg{(\confoslunfold, \term{decl}~x;, t), CS} \Rightarrow  \cfg{((\tagb{E'}, \tagp{S'}, \writes, \unsafe, \envfun), \emptyset, t+1), CS}}
+        \end{prooftree}
+        \vspace*{0.5cm}
+    \end{subfigure}
+\end{figure}
+
+\subsection{Transfers.} We have $5$ semantics rules for transferring resources, owners, and references. Rule \refrule{TrMove} do a semantic move of $e1$ to $e2$.
+To apply this rule, we require no other references to the location pointed by $e1$. The term \term{lv} represents the fact that we look up the location mapped by $e_n$.
+We describe the semantics of \term{lv} in Appendix \autoref{ssec:lvalue}. Intuitively, \refrule{TrRes} transfer a new resource to an owner $x$.
+The premise $\writes'''=W''\cup\{ writes(\term{wv}(e',E''),t_c) \}$ records the writing operation for the written location (denoted as \term{wv}$(e',E'')$) at the current time. 
+The calculation for \term{wv} is as follows:
+
+\[
+    \term{wv}(x,\env)= \env(x) \quad\quad \term{wv}(*x,\env) = \term{wv}(x, \env)
+\]
+
+% Transfer-mutRef =========================
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+    \label{TrMove}
+    \subcaption{\autour{TrMove}}
+        \begin{prooftree}
+         \hypo{
+            \begin{matrix}
+                 \cfg{ (\confosl,\term{lv}(\tagp{e1}), t) } \Rightarrow^+ \cfg{(\confosl',l,t)} \\
+                 \confosl' = \confoslunfoldp \\ 
+                 \cfg{ (\confosl', \term{lv}(\tagb{e2}), t) } \Rightarrow \cfg{ (\confosl'',l', t)} \\
+                 \confosl'' = \confoslunfoldpp  \\
+                 \nexists l_n\mapsto_{lf(t_b,t_e)}\term{anyRef}(l),t_e\geq t_+
+            \end{matrix}
+         }
+        \hypo{
+            \begin{matrix}
+                 t_+ = t + 1 \\
+                l \mapsto \term{rs}(ps)\in S' \text{ with } \tagp{copyable} \notin ps \\
+                \store''' = \store'' \oplus [l'\mapsto \term{\#rs}(ps), l \mapsto \bot] \\
+                \writes''' = \writes'' \cup\{write(\term{wv}(\tagb{e2}, \env''),t_+)\}
+            \end{matrix}
+         }
+            \infer2[]{ \cfg{ (\confosl, \term{ transfer } \tagp{e1}~\tagb{e2};,t), CS} \Rightarrow  \cfg{ ((\env'', \store''', \writes''', \unsafe, \envfun), \emptyset, t_+), OS } }
+        \end{prooftree}
+        \vspace*{0.5cm}
+    \end{subfigure}
+    % TRANFER RESOURCE =========================
+    \begin{subfigure}{\textwidth}
+        \label{TrRes}
+        \subcaption{\autour{TrRes}}
+        \begin{prooftree}
+         \hypo{
+                x \mapsto l \in \env
+         }
+        \hypo{
+            \store' = \store \oplus [l \mapsto \#rs(ps)]
+         }
+        \infer2[]{ \cfg{ (\confoslunfold, \term{ transfer } \#rs(ps)~x, t), CS } \Rightarrow  \cfg{ ((\env, \store', \writes, \unsafe, \envfun), \emptyset, t+1),CS }}
+    \end{prooftree}
+    \end{subfigure}
+\end{figure}
+
+Rule \refrule{TrCopy} is similar to \refrule{TrMove} except that the location of  $e$ points to a resource that has the property: \tagp{copyable}.
+Rule \refrule{TrImmRef} transfers a shared reference to a variable. Rule \refrule{TrMutRef} is similar to \refrule{TrImmRef} except that we also need to 
+move the mutable reference from the location $l$ to $l'$ and check whether $l$ has been borrowed or not, i.e. whether there are some references to it.
+
+\begin{figure}[H]
+    \centering
+    % TRANSFER COPY ==================
+    \subcaption{\autour{TrCopy}}
+    \label{TrCopy}
+    \begin{prooftree}
+     \hypo{
+        \begin{matrix}
+             \cfg{ (\confosl,\term{lv}(\tagp{e1}), t) } \Rightarrow^+ \cfg{(\confosl',l,t)} \\
+             \confosl' = \confoslunfoldp \\ 
+             \cfg{ (\confosl', \term{lv}(\tagb{e2}), t) } \Rightarrow \cfg{ (\confosl'',l', t)} \\
+             \confosl'' = \confoslunfoldpp  \\
+             \nexists l_n\mapsto_{lf(t_b,t_e)}\term{anyRef}(l),t_e\geq t_+
+        \end{matrix}
+     }
+    \hypo{
+        \begin{matrix}
+             t_+ = t + 1 \\
+            l \mapsto \term{\#rs}(ps)\in S' \text{ with } \tagp{copyable} \in ps \\
+            \store''' = \store''\oplus [l'\mapsto \term{\#rs}(ps)] \\
+            \writes''' = \writes'' \cup \{write(\term{wv}(\tagb{e2}, \env''),t_+)\}
+        \end{matrix}
+     }
+        \infer2[]{ \cfg{ (\confosl, \term{ transfer } \tagp{e1}~\tagb{e2};,t), CS} \Rightarrow  \cfg{ ((\env'', \store''', \writes''', \unsafe, \envfun), \emptyset, t_+), OS } }
+    \end{prooftree}
+\end{figure}
+
+\begin{figure}[t]
+    % Transfer-immRef =========================
+    \begin{subfigure}{\textwidth}
+        \label{TrImmRef}
+        \begin{prooftree}
+            \hypo{
+                \begin{matrix}
+                    \cfg{ (\confosl,\term{lv}(\tagp{e1}), t) } \Rightarrow \cfg{ (\confosl',l, t)} \\
+                    l \mapsto_{lf(\_,\_)} \term{immRef}(l_1)\in S \\
+                    \cfg{(\confosl', \term{lv}(\tagb{e2}), t)} \Rightarrow \cfg{(\confosl'',l', t)} \\
+                    \confosl''= \confoslunfoldpp \\
+                \end{matrix}
+            }
+            \hypo{
+            \begin{matrix}
+                t_+ = t + 1  \\
+                \store''' = \store'' \oplus [l'\mapsto_{lf(t_+,t_+)} \term{immRef}(l_1)] \\
+                \writes''' = \writes'' \cup \{ write(\term{wv}(\tagb{e2},\env''),t_+)\}
+            \end{matrix}
+            }
+            \infer2[\autour{TrImmRef}]{ \cfg{ (\confosl, \term{transfer } \tagp{e1}~\tagb{e2};, t), CS }\Rightarrow \cfg{((\env'',\store''',\writes''', \unsafe, \envfun), \emptyset , t_+) , CS}  }
+        \end{prooftree}
+        \vspace*{0.5cm}
+    \end{subfigure}
+    \subcaption{\autour{TrMutRef}}
+    \begin{prooftree}
+        \label{TrMutRef}
+        \hypo{
+            \begin{matrix}
+                \cfg{ (\confosl,\term{lv}(\tagp{e1}), t) } \Rightarrow \cfg{ (\confosl',l , t)} \\
+                l\mapsto_{lf(\_,\_)} \term{mutRef}(l_1)\in S \\
+                \confosl''= \confoslunfoldpp \\
+                \nexists l_n\mapsto_{lf(t_b,t_e)}\term{anyRef}(l),t_e\geq t_+
+            \end{matrix}
+        }
+        \hypo{
+            \begin{matrix}
+                t_+ = t + 1 \\
+                \cfg{(\confosl',  \term{lv}(\tagb{e2}), t)} \Rightarrow \cfg{(\confosl'',l', t)} \\
+                \store'''=\store'' \oplus (l' \mapsto_{lf(t_+,t_+)} \term{mutRef}(l_1)) \oplus (l \mapsto \bot) \\
+                \writes'''= \writes''\cup\{write(\term{wv}(\tagb{e2}, \env''),t_+)\}
+            \end{matrix}
+        }
+        \infer2[]{ \cfg{(\confosl, \term{transfer } \tagp{e1}~\tagb{e2};, t), CS} \Rightarrow \cfg{((\env'',\store''',\writes''', \unsafe, \envfun), \emptyset , t_+) , CS} }
+    \end{prooftree}
+\end{figure}
+
+\subsection{Borrowing.} Rule \refrule{BrMut} and \refrule{BrImm} are the
+semantics for building the borrowing relations between two variables. They are similar to the one in \osld.
+The rule \refrule{BrImm} create an immutable reference between variables $x$ and $y$. Respectively, \refrule{BrMut} creates a mutable reference.
+\label{ssec:borrowing}
+
+
+
+\begin{figure}[H]
+    \label{BrImm}
+    \begin{prooftree}
+        \hypo{\begin{matrix}
+            y \mapsto l_{1} \in \env \\
+            l_{1} \mapsto v \in \store \mbox{ with } v \neq \bot  \\
+            \store' = \store \oplus [l_{2} \mapsto_{lf(t_+,t_+)}\term{immRef}(l_1)]
+        \end{matrix}}
+     \hypo{
+         \begin{matrix}
+              t_+ = t + 1 \\
+              x \mapsto l_2 \in \env
+        \end{matrix}
+    }
+    \infer2[\autour{BrImm}]{ \cfg{ (\confoslunfold , x\ \term{borrow}\ y;, t), CS } \Rightarrow \cfg{ (\env, \store', \writes, \unsafe, \envfun), \emptyset, t_+), CS } }
+    \end{prooftree}
+    \vspace*{0.5cm}
+\end{figure}
+
+\begin{figure}[H]
+    \label{BrMut}
+    \begin{prooftree}
+        \hypo{
+            \begin{matrix}
+                y \mapsto l_{1} \in \env \\
+                l_{1} \mapsto v \in \store \mbox{ with } v \neq \bot  \\
+                \store' = \store \oplus [l_{2} \mapsto_{lf(t_+,t_+)}\term{nutRef}(l_1)]
+            \end{matrix}
+        }
+        \hypo{
+            \begin{matrix}
+                t_+ = t + 1 \\
+                x \mapsto l_2 \in \env
+            \end{matrix}
+        }
+        \infer2[\autour{BrMut}]{ \cfg{ (\confoslunfold , x\ \term{mborrow}\ y;, t), CS } \Rightarrow \cfg{ (\env, \store', \writes, \unsafe, \envfun), \emptyset, t_+), CS } }
+    \end{prooftree}
+\end{figure}
+
+\subsection{Expressions.} Rule \refrule{NewR} defines the semantics for the construct \term{newResource}$(ps)$. The semantics creates a new
+resource with the properties $ps$, and it is evaluated to the value \term{\#rs(ps)}.
+
+% NewResource =========================
+\begin{figure}
+    \label{NewR}
+    \centering
+    \begin{prooftree}
+        \infer0[\autour{NewR}]{\cfg{(\confosl, \term{newResource(\textbf{ps})}, t)} \Rightarrow \cfg{ (\confosl, \term{\#rs(ps)}, t)}  }
+    \end{prooftree}
+\end{figure}
+
+\subsubsection{Reads.}
+\label{ssec:read}
+
+Reading operations defines the semantics of getting the value at a location.  Rules \autour{Read-Rs}, \autour{Read-immRef}, and \autour{Read-mutRef} are the semantics for reading a resource, an immutable and mutable reference, respectively. Rule \refrule{Read-Rs} returns the resource value that the location $l$ points to.
+To guarantee that  \autoref{def:imm-ref} holds when we read through reference, we have to check that no other active references interleave with it. To ensure that, we use the predicate \textbf{lc} that check if two lifetimes intersect. Furthermore, to ensure that \autoref{def:mult-ref} holds, we verify that any writing occurs since the borrowed by using the predicate: \textbf{wc}.
+
+\begin{figure}[H]
+    % READ RS ==============
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+            \hypo{l \mapsto \#rs(ps) \in \confosl.S}
+            \infer1[\autour{Read-Rs}]{ \cfg{ (\confosl, \term{read}(l), t ), CS } \Rightarrow  \cfg{ (\confosl, \term{\#rs(ps), t), CS}}}
+        \end{prooftree}
+        \label{fig:read-rs}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{align*}
+            \textbf{lc}(t_1,t_2,t_3,t_4)\triangleq (t_1< t_3\leq t_2)\lor (t_1\leq t_4\leq t_2) \\
+            \textbf{wl}(l,t,t',W)\triangleq \exists write(l,t_+)\in W\land t \leq t_+ \leq t'
+        \end{align*}        
+    \label{fig:read-rs}
+    \end{subfigure}
+    \vspace{1cm}
+    % READ SHR REF ============
+    \begin{subfigure}{\textwidth}
+        \subcaption{\autour{Read-immRef}}
+        \begin{prooftree}
+         \hypo{\begin{matrix}
+            l \mapsto_{lf(t_b,t_e)} \term{immRef}(l')\in \store \\
+            \store' = \store \oplus [l \mapsto_{lf(t_b,t_+)}\term{immRef}(l')] \\
+            \cfg{ ((\env, \store', \writes,\unsafe,\envfun), \term{read}(l'), t)} \Rightarrow^+ \cfg{(\confosl'' ,\#rs(\_), t)} \\
+            \nexists l_1\mapsto_{lf(t_b',t_e')} \term{mutRef}(l')\in S, l\neq\l_1 \\
+         \end{matrix}}
+         \hypo{\begin{matrix}
+            \neg\term{wl}(l',t_b,t_+,\writes) \\
+            \term{lc}(t_b,t_+,t_b',t_e') \\
+            t_+= t + 1 \\
+         \end{matrix}}
+        \infer2[]{ \cfg{ ( \confoslunfold , \term{read}(l), t),CS } \Rightarrow  \cfg{ (\confosl'', l', t_+), CS } }
+        \end{prooftree}
+        \vspace*{1cm}
+    \end{subfigure}
+    \label{Read-immRef}
+
+    %   READ MUT REF =====================
+    \begin{subfigure}{\textwidth}
+        \subcaption{\autour{Read-mutRef}}
+        \begin{prooftree}
+         \hypo{\begin{matrix}
+            l\mapsto_{lf(t_b,t_e)} \term{mutRef}(l')\in S \\
+            S' = S \oplus [ l \mapsto_{lf(t_b,t_+)}\term{mutRef}(l')] \\
+            \cfg{(\env, \store', \writes,\unsafe,\envfun), \term{read}(l')}\Rightarrow^+\cfg{(\confosl'',\#rs(\_),t_+)} \\
+            \nexists l_1\mapsto_{lf(t_b',t_e')} \term{mutRef}(l')\in S, l \neq l_1 \\
+            \nexists l_1\mapsto_{lf(t_b'',t_e'')} \term{immRef}(l')\in S, l \neq l_1 \\
+         \end{matrix}}
+         \hypo{\begin{matrix}
+            t_+= t + 1 \\
+            \term{lc}(t_b,t_+,t_b',t_e') \\
+            \term{lc}(t_b,t_+,t_b'',t_e'') \\
+            \neg\term{wl}(l',t_b,t_+,\writes)
+         \end{matrix}}
+        \infer2[]{ \cfg{ (\confoslunfold, \term{read}(l),t), CS } \Rightarrow  \cfg{(\confosl'', l', t_+}, CS }
+        \end{prooftree}
+        \label{Read-mutRef}
+    \end{subfigure}
+\end{figure}
+
+\subsubsection{Dereference.}  Rule \refrule{Dereference} defines the semantics of the dereferencing of an expression. The dereference operator is represented by: $*$.
+When we dereference a reference, the value of the variable pointed by this reference will be returned.
+The semantics of $*~e$ is defined in terms of \term{lv} (more info \autoref{ssec:lvalue}) and \term{read}.
+It first gets the value pointed by $*~e$, called \textit{lvalue}, which is a location $l$, and then it reads the value mapped by $l$.
+
+\begin{figure}[H]
+    \centering
+    \begin{prooftree}
+         \hypo{\cfg{ (\confosl,\term{lv}(*e), t)} \Rightarrow \cfg{(\confosl', \tagp{l}, t)} }
+         \hypo{\cfg{ (\confosl',\term{read}(\tagp{l}),t)} \Rightarrow \cfg{(\confosl'',\tagp{v},t)} }
+        \infer2[\autour{Dereference}]{ \cfg{ (\confosl, * e, t), CS } \Rightarrow  \cfg{ (\confosl'' , \tagp{v}, t), CS } }
+    \end{prooftree}
+    \label{Dereference}
+\end{figure}
+
+\subsubsection{LValues.}
+\label{ssec:lvalue}
+The \textit{lvalue} of an expression is the location where the expression refers to.
+Rule \refrule{LValue-Var} shows the semantics for computing the \textit{lvalue} of a variable $x$, which is the location of $x$ in $\env$.
+Rule \refrule{LValue-Location} shows computing of the \textit{lvalue} of a location, which is the location itself.
+Rule \refrule{LValue-immDref} defines the semantics for computing the \textit{lvalue} of $* e$, where the \textit{lvalue} of $e$ is a pointer to a shared reference $l$.
+Firstly, this rule computes the \textit{lvalue} of $e$, which has to be a location; otherwise, the program is incorrect.
+The ownership checking is also carried out for the location $l$, i.e., the premise: $\nexists l_1\mapsto_{lf(t_b',t_e')} \term{mutRef}(l')\in S,l\neq l_1\land\term{lc}(t_b,t_+,t_b',t_e')$.
+Rule \refrule{LValue-mutDref} defines the semantics for the \textit{lvalue} of $* e$, where the \textit{lvalue} of $e$ is a location $l$ that points to a mutable reference. Its semantics is similar to rule \refrule{LValue-immDref} except adding lifetime checking to both other shared and mutable references to $l'$.
+
+\begin{figure}[H]
+    \subcaption{\autour{LValue-immDref}}
+    \label{LValue-immDref}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+            \hypo{\begin{matrix}
+                l \Rightarrow_{lf(t_b,t_e)} \term{immRef}(l')\in S' \\
+                \cfg{ (\confosl, \term{lv}(e), t) } \Rightarrow \cfg{ (\confosl', l, t) } \\
+                \confosl' = \confoslunfoldp \\
+                \nexists l_1 \mapsto_{lf(t_b',t_e')} \term{mutRef}(l')\in \store, l\neq l_1\\
+            \end{matrix}}
+            \hypo{\begin{matrix}
+                 t_+= t + 1 \\
+                 \term{lc}(t_b,t_+,t_b',t_e') \\
+                 \neg \term{wl}(l',t_b,t_+,\writes') \\
+                \store'' = \store' \oplus [l\mapsto_{lf(t_b,t_+)} \term{immRef}(l')] \\
+            \end{matrix}}
+            \infer2[]{ \cfg{ (\confosl, \term{lv}(*e), t ), CS } \Rightarrow  \cfg{ ((\env', \store'', \writes', \unsafe, \envfun), l', t_ c), CS } }
+        \end{prooftree}
+        \vspace{0.5cm}
+    \end{subfigure}
+    \subcaption{\autour{LValue-mutDref}}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \label{LValue-mutDref}
+         \begin{prooftree}
+             \hypo{\begin{matrix}
+                 \cfg{ (\confosl, \term{lv}(e), t) } \Rightarrow \cfg{ (\confosl', l, t) } \\
+                 \confosl' = \confoslunfoldp \\
+                 l \rightarrow_{lf(t_b,t_e)} \term{mutRef}(l')\in S' \\
+                \nexists l_1\mapsto_{lf(t_b',t_e')} \term{mutRef}(l')\in \store, l \neq l_1 \\
+                \nexists l_1\mapsto_{lf(t_b'',t_e'')} \term{immRef}(l')\in \store, l \neq l_1 \\
+             \end{matrix}}
+              \hypo{\begin{matrix}
+                t_+ = t + 1 \\
+                \term{lc}(t_b,t_+,t_b',t_e') \\
+                \term{lc}(t_b,t_+,t_b'',t_e'') \\
+                \neg\term{wl}(l',t_b,t_+, \writes') \\
+                \store'' = \store'\oplus [l\mapsto_{lf(t_b,t_+)} \term{mutRef}(l')] \\
+             \end{matrix}}
+            \infer2[]{ \cfg{ (\confosl, \term{lv}(*e), t), CS } \Rightarrow  \cfg{ ((\env', \store'', \writes', \unsafe, \envfun), l', t_+), CS} }
+        \end{prooftree}
+    \vspace{0.5cm}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+            \infer0[\autour{LValue-Location}]{ \cfg{ (\confosl, \term{lv}(l), t), CS } \Rightarrow  \cfg{(\confosl, l, t), CS} }
+        \end{prooftree}
+        \vspace{0.5cm}
+    \end{subfigure}
+      \begin{subfigure}{\textwidth} 
+        \centering
+        \begin{prooftree}
+            \hypo{\confosl = \confoslunfold}
+            \hypo{x \mapsto l \in \env}
+            \infer2[\autour{LValue-Var}]{ \cfg{ (\confosl, \term{lv}(x),t), CS } \Rightarrow  \cfg{ (\confosl, l, t), CS } }
+        \end{prooftree}
+    \end{subfigure}
+\end{figure}
+
+\subsection{Free.}
+Rule \refrule{Free} allows to release or deallocate the resource which is previously allocated by \term{newResource()} and transferred to an owner.
+
+\begin{figure}[H]
+    \centering
+    \label{Free}
+    \begin{prooftree}
+    \hypo{
+        x \mapsto l \in \env
+    }
+    \hypo{
+        l \mapsto v \in \store
+    }
+    \hypo{
+        \store' = \store [ l \mapsto \bot ]
+    }
+    \infer3[\autour{Free}]{
+        \cfg{ (\confoslunfold, \term{free } x;, t), CS } \Rightarrow \cfg{ ((\env, \store', \writes, \unsafe, \envfun), \emptyset, t'), CS}
+    }
+    \end{prooftree}
+\end{figure}
+
+
+
+\subsection{Block.}
+
+Rule \autour{Block} defines the semantics for a \emph{block}.
+The domain for a map $M$ is defined as  $domain(M)\triangleq\{x\mid \exists v,x\mapsto v\in M \}$.
+The semantics of blocks is more similar than the one provided in \autoref{ssec:Formalisation of core concepts}. First, we execute the body of the block, and then we restore the $\env$ and $\store$ to ensure \autoref{def:free-owner}.
+
+\begin{figure}[H]
+    \subcaption{\autour{Block}}
+    \begin{prooftree}
+    \hypo{
+        \begin{matrix}
+            \cfg{ (\confosl, stmts, t) } \Rightarrow \cfg{ \confoslunfoldp, \emptyset, t' } \\
+            D = dom(\store') \backslash dom(\store) = \{ l_1 \dots l_n \} \\
+            \forall l_n \in D, \cfg{ (\confoslunfoldp, \term{free}(l_1); \dots \term{free}(l_n);, t')} \Rightarrow \cfg{ \confosl'', P'', t_+} \\
+        \end{matrix}
+     }
+    \infer1[]{
+    \cfg{ (\confoslunfold, \{ stmts \}, t), CS } \Rightarrow \cfg{ (\confosl'', P'', t'), CS }
+    }
+    \end{prooftree}
+\end{figure}
+
+
+\subsection{Flow Control.}
+\label{ssec:flow-control}
+
+\subsubsection{Branching.} In the rule \autour{Branch}, we will create a new state in the configuration for each Block $B_n$.
+
+\begin{figure}[H]
+    \label{Branch}
+    \centering
+    \begin{prooftree}
+        \infer0[\autour{Branch}]{ \cfg{ (\confosl, @ B_1, \ldots, B_n, t), CS} \Rightarrow \cfg{ (\confosl, B_1, t), \dots, (\confosl, B_n, t), CS }}
+    \end{prooftree}
+\end{figure}
+
+\subsubsection{Loop.} In \autour{Loop}, we verify that no semantic move has been made inside the block. Because if a value was moving in the previous iteration of the loop, then transferring the ownership again violates the \autoref{def:transfer}. To achieve this, we verify that all the owners keep ownership of their resource after evaluating the loop block.
+
+\begin{figure}[H]
+    \subcaption{\autour{Loop}}
+    \centering
+    \begin{prooftree}
+        \hypo{ \cfg{(\confosl, B, t} \Rightarrow \cfg{(\confoslunfoldp, \emptyset , t')}}
+        \hypo{
+            \forall l \in \store, l \mapsto \#rs(ps) \rightarrow l \mapsto \#rs(ps) \in \store' 
+        }
+        \infer2[]{ \cfg{(\confosl, ! B, t), CS} \Rightarrow \cfg{ (\confosl, B, t), CS } }
+    \end{prooftree}
+    \label{Loop}
+\end{figure}
+
+
+\subsection{Function}
+
+In \refrule{FuncDef}, we add a function definition to $\envfun$.  
+
+\begin{figure}[H]
+    \centering
+    \subcaption{\autour{FuncDef}}
+    \begin{prooftree}
+        \hypo{ \envfun' = \envfun \oplus [fname \mapsto (fname, cs, ps, rt, B) ] }
+        \infer1{ \cfg{ (\confoslunfold, \term{fn}~fname \langle cs \rangle (ps) \rightarrow rt~B;, t),CS } \Rightarrow \cfg{ (\env,\store, \writes,\unsafe,\envfun', \emptyset, t), CS}}
+    \end{prooftree}
+    \label{FuncDef}
+\end{figure}
+
+The rule \autour{Call} defines the semantics of calling a function. The steps of this procedure are shown as follows. 
+First, we verify that the arguments respect the lifetime constraints specified in the function definition.
+For that, we instantiate a set $VR$ containing only the arguments that are referenced. Then we construct a temporary map structure $M$ between the lifetime tag of the arguments and their lifetime interval. The map $M$ has the signature: $Id \mapsto [\mathbb{N}, \mathbb{N}]$. As an example:\\
+Consider an environment $E$, with 3 variables declared, such that  $\env = \{ x \mapsto 0, y \mapsto 1, z \mapsto 2 \}$ and $\store = \{ 0 \mapsto \\ immRef(1, 3, 1), 1 \mapsto \#rs(mut), 2 \mapsto immRef(1, 5, 1)\}$, and the following program:
+
+\begin{figure}
+\centering
+\begin{lstlisting}[style=deno2]
+fn foo<'a:'b>(p1: #ref('a, #own()), p2: #own(mut), p3: ref('b, #own(mut))) -> #voidTy {
+    ...
+};
+
+call foo(x, y, z);
+\end{lstlisting}
+\end{figure}
+
+For the calling of function $foo$, the map $M$ will contains: $\{  'a \mapsto [1, 3], 'b \mapsto [1, 5] \}$, where $'a$ maps the lifetime interval of $x$, and $'b$ maps the interval of $z$. Finally, we can use this map $M$ to verify the lifetimes constrains by using the predicate $vlf$.
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}{\textwidth}
+    \subcaption{\autour{Call}}
+    \begin{prooftree}
+        \hypo{
+            \begin{matrix}
+                F = (f, cs, ps, rt, B ) \in \envfun \\
+                V = \{  \tagp{v}~|~\forall \tagb{$e_i$}, \cfg{\confosl, \tagb{$e_i$}, t} \Rightarrow  \cfg{\confosl', \tagp{v}, t'} \} \\
+                bps = \{  bp(v, p, t);~|~\forall i \in I, v_i \in V \land (p_i, t_i) \in ps \} \\
+                \cfg{(\confosl, \{ bps~B \} , t)} \Rightarrow \cfg{(\confosl', rv, t')} \\
+            \end{matrix}
+        }
+        \hypo{
+            \begin{matrix}
+                VR = \{ v | v \in V \land v = anyRef(\_) \} \\
+                M = map(ps, VR) \\
+                \#vlf(cs, M) = \top \\
+                \#equivType(rv, rt) \\
+            \end{matrix}
+        }
+        \infer2{ \cfg{\confosl, \term{call}\,f\,(\tagb{$e_1$},.., \tagb{$e_n$})}\Rightarrow\cfg{\confosl',v} }
+    \end{prooftree}
+    \end{subfigure}
+\end{figure}
+
+If lifetimes constrain holds, then we translate a function call to a block $\{\term{bp}(e_1,p_1)\ldots\term{; } \term{bp}(e_n,p_n)~B \}$. The body $B$ is executed after assigning arguments to parameters. We use the \autour{bind-} rules below to bind the argument to his corresponding argument.\\
+Overall, these rules translate a $\term{bp}(e_1,p_1)$ into $\term{decl} ~!p_1;\term{transfer}~e_i~!p_i;$. The notation \textit{(!)} denotes the creation of a unique identifier to prevent naming collision.
+
+\begin{figure}[t]
+    \centering
+     \begin{subfigure}{\textwidth}
+        \begin{align*}
+            \#vlf((a : c, cs), M) &=  M[a] \equiv \#vc(c, M) \land \#vlf(cs, M) \\
+            \#vlf(\emptyset, M) &=  True \\
+            \\
+            \#vc(a_1 \cup a_2, M) &= \#vc(a_1, M) \cup \#vc(a_2, M) \\
+            \#vc(a_1 \cap a_2, M) &= \#vc(a_1, M) \cap \#vc(a_2, M) \\
+            \#vc(a, M) &= M[a] \\
+        \end{align*}
+    \end{subfigure}
+
+    \begin{subfigure}{\textwidth}
+        \begin{align*}
+            & \#equivType(\#rs(ps1), \#own(ps2)) = True \textbf{ if } ps2 \subseteq ps1 \\
+            & \#equivType(\#mutRef(\_, \_, T1), \#ref(\_, T2)) = \#equivType(T1, T2) \\
+            & \#equivType(\#immRef(\_, \_, T1), \#ref(\_, T2)) = \#equivType(T1, T2) \\
+            & \#equivType(\_, \_) = False \\
+        \end{align*}
+    \end{subfigure}
+    \label{fig:vlf}
+\end{figure}
+    
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+        \centering
+        \subcaption{\autour{bindOwn}}
+        \begin{prooftree}
+            \infer0{ \cfg{ (\confosl, \term{bp}(e, p, ty);, t),CS } \Rightarrow \cfg{ (\confosl, \term{decl !p;}~\term{transfer e !p;}, t), CS}}
+        \end{prooftree}
+        \vspace{0.5cm}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \subcaption{\autour{bindRefImm}}
+        \begin{prooftree}
+            \infer0{ \cfg{ (\confosl, \term{bp}(\term{\&~e}, p, ty);, t),CS } \Rightarrow \cfg{ (\confosl, \term{decl !p;}~\term{!p borrow e;}, t), CS}}
+        \end{prooftree}
+        \vspace{0.5cm}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}   
+        \centering
+        \subcaption{\autour{bindRefMut}}
+        \begin{prooftree}
+            \infer0{ \cfg{ (\confosl, \term{bp}(\term{\&mut~e}, p, ty);, t),CS } \Rightarrow \cfg{ (\confosl, \term{decl !p;}~\term{!p mborrow e;}, t), CS}}
+        \end{prooftree}
+    \end{subfigure}
+\end{figure}
+
+OSL only supports non-recursive functions. Function calls need to consider the stack, making it hard to compute the fixed set of states since the stack keeps increasing. A user has to transform his  
+recursive functions into non-recursive functions to be analyzed.
+
+\subsection{Return value.}
+\label{ssec:val}
+
+The \term{val(e)} statement returns the flow of the execution to the function from where it is called. The return statement may or may not return anything for a \term{\#voidty} function, but for a non-\term{\#voidty} function, a return value is must be returned. We skip the statements located between \term{val(e)} and the end of the current block. 
+
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+            \infer0[\autour{ValBlk}]{ \cfg{ (\confosl, \textbf{\{} \term{val(e)}; Ss \textbf{\}}, t), CS} \Rightarrow  \cfg{ (\confosl, \term{val(e)}, t+1), CS } }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+            \infer0[\autour{ValUnpack}]{ \cfg{ (\confosl, \term{val(e)};, t), CS} \Rightarrow  \cfg{ (\confosl, \term{e}, t), CS } }
+        \end{prooftree}
+    \end{subfigure}
+\end{figure}
+
+\subsection{Unsafe.}
+
+Sometime, we need to relax the ownership restrictions a bit. For this, OSL allow the user to use: \term{unsafe}.
+
+\begin{figure}[H]
+    \centering
+    % \begin{subfigure}{\textwidth}
+        \begin{prooftree}
+            \hypo{ \cfg{( (\env, \store, \writes, True, \envfun), B, t)} \Rightarrow \cfg{ (\confoslunfoldp, P', t')} }
+            \infer1[\autour{UnsafeBlk}]{
+                \cfg{(\confoslunfold, \term{unsafe}~B, t), CS} \Rightarrow \cfg{ (\env', \store', \writes', False,  \envfun'), P', t'), CS}
+            }
+        \end{prooftree}
+    % \end{subfigure}
+\end{figure}
+
+We can now, inside \term{unsafe} block, apply rules like \refrule{LValue-mutDerefUnsafe}  that do not verify ownership guards.
+For example, rule \refrule{Read-immRefUnsafe} allow us to read the value $e$ even if \autoref{def:mult-ref} does not hold in the current state.
+
+
+\begin{figure}[H]
+    \subcaption{\autour{LValue-mutDerefUnsafe}}
+    \begin{subfigure}{\textwidth}
+            \centering
+
+        \label{LValue-mutDerefUnsafe}
+         \begin{prooftree}
+             \hypo{\begin{matrix}
+                \unsafe = True \\ 
+                \cfg{ (\confosl, \term{lv}(e), t) } \Rightarrow \cfg{ (\confosl', l, t) } \\
+                t_+ = t + 1
+             \end{matrix}}
+              \hypo{\begin{matrix}
+              l \rightarrow_{lf(t_b,t_e)} \term{mutRef}(l')\in S' \\
+                \confosl' = \confoslunfoldp \\
+                \store'' = \store'\oplus (l\mapsto_{lf(t_b,t_+)} \term{mutRef}(l')) \\
+             \end{matrix}}
+            \infer2[]{ \cfg{ (\confoslunfold, \term{lv}(*e), t), CS } \Rightarrow  \cfg{ ((\env', \store'', \writes', \unsafe, \envfun), l', t_+), CS} }
+        \end{prooftree}
+    \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \subcaption{\autour{Read-immRefUnsafe}}
+        \label{Read-immRefUnsafe}
+        \begin{prooftree}
+         \hypo{\begin{matrix}
+            l \mapsto_{lf(t_b,t_e)} \term{immRef}(l')\in \store \\
+            \store' = \store \oplus [l \mapsto_{lf(t_b,t_+)}\term{immRef}(l')] \\
+            \cfg{ ((\env, \store', \writes,True,\envfun), \term{read}(l'), t)} \Rightarrow^+ \cfg{(\confosl'' ,\#rs(\_), t)} \\
+         \end{matrix}}
+         \hypo{\begin{matrix}
+            t_+= t + 1 \\
+            \unsafe = True \\
+         \end{matrix}}
+        \infer2[]{ \cfg{ ( \confoslunfold , \term{read}(l), t),CS } \Rightarrow  \cfg{ (\confosl'', l', t_+), CS } }
+        \end{prooftree}
+        \vspace*{1cm}
+    \end{subfigure}
+\end{figure}
+
+\section{Complete \oslt~semantics}
+\label{app:complete-oslt}
+
+ In rules \refrule{WhileT}, \refrule{DoWhileT}, first we translate the condition expression, and then we append the condition translated $\out_c$ to $\out$, followed by the translated block $\out_b$. The block $\out_b$ is composed of the inside statements translated $\out_s$ to which we append $\out_c$ to simulate the looping.
+
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+        \hypo{ (e, \map, \out) \evale \out'  }
+        \infer1[\autour{Decl}]{
+            \begin{matrix}
+                \cfg{\text{\term{T} x  = e;}~, \map, \out }
+                \evals
+                \cfg{\map \append (x \mapsto \Tau(\term{T})) ,\\
+                \out \append \term{decl}~x \append \out' \append  \term{transfer}~\term{newResource}(\pi(T))~x} 
+            \end{matrix}
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+        \hypo{ \cfg{c, \map } \evale \out_c }
+        \hypo{ \cfg{b_1, \map, \out} \evals \cfg{ \map_1, \out_1  } }
+        \hypo{ \cfg{b_2, \map, \out} \evals \cfg{ \map_2, \out_2 } }
+        \infer3[\autour{IfT}]{
+            \cfg{\text{\term{if} (c) $b_1$ \term{else} $b_2$}, \map, \out }
+            \evals
+            \cfg{\map, \out \append \out_c \append \term{@ \{}  \out_1 \term{\}}  \append \term{\{} \out_2 \term{\}}  } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \label{WhileT}
+        \centering
+        \begin{prooftree}
+        \hypo{\begin{matrix}
+            \cfg{c, \map} \evale \out_c \\
+            \cfg{s, \map, \out} \evals \map_s, \out_s
+        \end{matrix}}
+        \hypo{ \out_b = \out_s \append \out_c }
+        \infer2[\autour{WhileT}]{
+            \cfg{\text{\term{while} (c) \{ s \} }, \map, \out }
+            \evals
+            \cfg{\map, \out \append \out_c \append \term{! \{} \out_b \term{\}}  } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+\end{figure}
+
+As for the rule \refrule{ForT}, it differs slightly from the two previous. The block $\out_b$ compound also the translated update statement, and we append the translated declaration statement $\out_i$ before the translated conditional statement $\out_c$.
+
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+        \label{DoWhileT}
+        \centering
+        \begin{prooftree}
+        \hypo{\begin{matrix}
+            \cfg{c, \map} \evale \out_c \\
+            \cfg{s, \map, \out} \evals \map_s, \out_s
+        \end{matrix}}
+        \hypo{ \out_b = \out_s \append \out_c    }
+        \infer2[\autour{DoWhileT}]{
+            \cfg{\term{do} \{ s \} \text{\term{while} (c) }, \map, \out }
+            \evals
+            \cfg{\map, \out \append \term{! \{} \out_b \term{\}};  } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \label{ForT}
+        \centering
+        \begin{prooftree}
+        \hypo{\begin{matrix} 
+            \cfg{i, \map} \evals \map_i, \out_i \\
+            \cfg{c, \map, \out} \evale \out_c \\
+            \cfg{u, \map, \out} \evale \out_u
+        \end{matrix}}
+        \hypo{
+            \begin{matrix}
+                \out_b = \out_s \append \out_c \append \out_i \append \out_u \\
+                \cfg{s, \map, \out} \evals \map_s, \out_s \\
+            \end{matrix} 
+        }
+        \infer2[\autour{ForT}]{
+            \cfg{\text{\term{for}(i; c; u)\{ s \}}, \map, \out }
+            \evals
+            \cfg{\map, \out \append \out_c \append \term{! \{} \out_b \term{\}};  } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+\end{figure}
+
+The following rules are intuitive to understand because they perform a direct translation. The rule \refrule{DerefT} present the semantics for translating the \textit{dereference} an expression. The rule \refrule{FreeT} translates the C method free to the corresponding one of \oslos directly. In \refrule{Mv}, we translate the semantic of a semantic move, which corresponds to the \term{transfer} between two variables in \oslos. Finally, \refrule{Rt} presents the semantics of the translation of a \term{return} statement.
+
+\begin{figure}[H]
+    \begin{subfigure}{0.5\textwidth}
+        \label{DerefT}
+        \begin{prooftree}
+        \hypo{\cfg{  Exp, \map} \evale \out}
+        \infer1[\autour{DerefT}]{
+            \cfg{* \text{Exp}~, \map }
+            \evale
+            \term{*} \append \out
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \label{FreeT}
+        \begin{prooftree}
+        \hypo{\cfg{Exp, \map } \evale \out}
+        \infer1[\autour{FreeT}]{
+            \cfg{\term{free}(Exp)~, \map  }
+            \evale
+            \term{free}(\out) 
+        }
+        \end{prooftree}
+    \end{subfigure}
+    \begin{subfigure}{0.40\textwidth}
+        \label{Mv}
+        \begin{prooftree}
+        \hypo{\map[y] = \#rs(ps) }
+        \infer1[\autour{Mv}]{
+            \cfg{\text{x = y}, \map }
+            \evale
+            \term{transfer}~y~x;
+        }
+        \end{prooftree}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \label{Rt}
+        \begin{prooftree}
+        \hypo{\cfg{  Exp, \map} \evale \out'}
+        \infer1[\autour{Rt}]{
+            \cfg{\term{return } Exp;, \map, \out  }
+            \evals
+            \cfg{\map, \out \append \term{val}(\out'); } 
+        }
+        \end{prooftree}
+    \end{subfigure}
+\end{figure}
+
+In \refrule{PrefixT} and \refrule{SuffixT} we use the notation $\dagger$ to represent the prefix \textit{increment} and \textit{decrement} operators ($++$, $--$), and suffix respectively. We translate this operation by transferring a new value to $x$ and reading the value of $x$. The order depends on whether the operator $\dagger$ is a prefix or suffix $x$.
+
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+    \label{PrefixT}
+        \centering
+        \begin{prooftree}
+        \hypo{\map[x \mapsto T ] }
+        \hypo{\cfg{  Exp, \map  } \evale \out' }
+        \infer2[\autour{PrefixT}]{
+            \cfg{\dagger \text{x}, \map, \out}
+            \evale
+            \cfg{\map, \out' \append \term{transfer newResource}(\pi_{props}(T))~x; \append \term{read}(x);  } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+
+    \begin{subfigure}{\textwidth}
+        \label{SuffixT}
+        \centering
+        \begin{prooftree}
+        \hypo{\map[x \mapsto T ] }
+        \hypo{\cfg{  Exp, \map  } \evale \out' }
+        \infer2[\autour{SuffixT}]{
+            \cfg{\text{x}\dagger, \map, \out}
+            \evale
+            \cfg{\map, \out' \append \term{read}(x); \append \term{transfer newResource}(\pi_{props}(T))~x; } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+\end{figure}
+
+The rule \refrule{Block} correspond to the direct translation of a C block as \oslos~support it natively. 
+In \refrule{AssignT}, we capture the translation of assignment expression. Firstly, we translate the right expression and get the output $\out'$. Secondly, we find the properties of $x$ registered in $\map$. Finally, we append $\out'$ to current output $\out$, and the \term{transfer} of a new resource to $x$ with the corresponding properties. The first part will correspond to the side effect of the expression (e.g., reading the value of another variable) and the assignment in the second part. The rule \refrule{Seq} presents the semantics of the translation of a sequence.\\
+The combination of \refrule{CallT} and \refrule{SeqE} will allow us to translate C method call.  
+The translation of expressions $e$ in $f(e)$ will be translated with \refrule{SeqE}. 
+
+\begin{figure}[H]
+    \begin{subfigure}{0.5\textwidth}
+    \label{CallT}
+    \begin{prooftree}
+        \hypo{\cfg{  e, \map  } \evale \out}
+        \infer1[\autour{CallT}]{
+            \cfg{\term{f}(e)~, \map}
+            \evale
+            \term{call}~f(\out);
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \label{Block}
+        \begin{prooftree}
+        \hypo{\cfg{ Ss, \map, \out  } \evals \cfg{ \map', \out' }}
+        \infer1[\autour{Block}]{
+            \cfg{\term{\{} Ss \term{\}}, \map, \out  }
+            \Rightarrow
+            \cfg{\map,  \term{\{} \append  \out' \append \term{\}}; } 
+        }
+        \end{prooftree}
+    \end{subfigure}
+    
+    \begin{subfigure}{\textwidth}
+        \label{SeqE}
+        \centering
+        \begin{prooftree}
+        \hypo{ \forall i \in I, \cfg{ e_i, \map  } \evale \out_i }
+        \hypo{ \out_u = \out_1, \append \dots \append ,\out_n }
+        \infer2[\autour{SeqE}]{
+            \cfg{\{ e_1,\dots,e_n \}, \map, \out_u  }
+            \evals
+            \cfg{ \map_2, \out_2 } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    
+    
+    \begin{subfigure}{\textwidth}
+        \label{SeqT}
+        \centering
+        \begin{prooftree}
+        \hypo{\cfg{ S_1;, \map, \out  } \evals \cfg{ \map_1, \out_1} }
+        \hypo{\cfg{ S_2;, \map_1, \out_1  } \evals \cfg{ \map_2, \out_2} }
+        \infer2[\autour{SeqT}]{
+            \cfg{\{ S_1~;~S_2 ; \}, \map, \out  }
+            \evals
+            \cfg{ \map_2, \out_2 } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    
+    \begin{subfigure}{\textwidth}
+        \label{AssignT}
+        \centering
+        \begin{prooftree}
+        \hypo{\map[x \mapsto T ] }
+        \hypo{\cfg{  Exp, \map  } \evale \out' }
+        \infer2[\autour{AssignT}]{
+            \cfg{\text{x = Exp}, \map, \out}
+            \evale
+            \cfg{\map, \out' \append \term{transfer newResource}(\pi_{props}(T))~x; } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+\end{figure}
+
+The combination of \refrule{FuncDefT} and \refrule{Params} define the translation of a method. 
+\refrule{Args} presents how we translate the parameters declared in the header. We use the notation $\tagpl{!}-prefixed$ on a variable to decorate the variable for creating a unique name. This allows us to avoid naming collision in $\map$. In \refrule{FuncDefT}, we capture the corresponding \oslos~\textit{type} of the method type $r$ by using $\mathcal{R}$, and then we translate the block statement to finally instantiate the \term{fn} statement of \oslos.   
+
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+    \label{FuncDefT}
+    \centering
+    \begin{prooftree}
+        \hypo{\cfg{ B, \map, \out  } \evals \map', \out'}
+        \hypo{ \cfg{ params, \map } \evale \out' }
+        \hypo{ r = \mathcal{R}(T) }
+        \infer3[\autour{FuncDefT}]{
+            \cfg{\term{T}~f(params)~B, \map, \out }
+            \evals
+            \cfg{\map \oplus [f \mapsto r] , \out \append \term{fn}~f~(\out') \rightarrow r \append \out'';      } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \label{Args}
+        \begin{prooftree}
+        \hypo{\forall~(T_i~a_i),~\cfg{T_i~\textbf{!}a_i, \map  } \evale \out_i }
+        \hypo{1 \leq i \leq n}
+        \infer2[\autour{Args}]{
+            \cfg{\{ T_1~ a_1,.., T_n~a_n \}, \map, \out  }
+            \evale
+            \cfg{\map \oplus [\textbf{!}a_1 \mapsto \Tau(T_n) .. \textbf{!}a_n \mapsto \Tau(T_n) ] , \out_1 \append .. \append \out_n } 
+        }
+        \end{prooftree}
+        \vspace{\baselineskip}
+    \end{subfigure}
+    
+
+    \label{fig:osltc-sem}
+\end{figure}
+
+\section{Proof intuitions}
+\label{app:proof-intuitions}
+
+\paragraph{The proof intuition of Theorem \ref{thm:soundness}.}
+By induction on the state triple in the configuration.
+
+
+\paragraph{The proof of Theorem \ref{thm:no-double-free}.}
+This follows directly from the semantics rules \refrule{Free} and \refrule{Block}.
+
+
+\paragraph{The proof intuition of \autoref{thm:no-dangling-pointers}.}
+In the semantics, only the following 4 rules: \refrule{Read-immRef}, \refrule{Read-mutRef}, \refrule{LValue-immDref}, \refrule{LValue-mutDref}, extend the lifetime of a reference. But all these rules check no writing during the lifetime of the reference by $\term{wl}$. The \term{free} operation will also add writing label to the set $\writes$ in a environment $\confoslunfold$ of a state $(\confosl, P, t)$. Therefore, the $\term{wl}$ checking in these rules always ensure no reachable state has dangling pointers.
+
+\paragraph{The proof intuition of \autoref{thm:no-data-races}.}
+Similarly than the intuition proof of \autoref{thm:no-dangling-pointers}, only the following 4 rules: \refrule{Read-immRef}, \refrule{Read-mutRef}, \refrule{LValue-immDref},
+\refrule{LValue-mutDref}, extend the lifetime of a reference. But all these rules has a premise checking that there no intersection of the lifetime of a reference and the lifetime of a mutable reference by $\term{lc}$. Therefore the semantics ensures no reachable states has data races.

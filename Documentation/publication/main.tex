@@ -1,0 +1,145 @@
+\documentclass{llncs}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{amssymb}
+% \usepackage{amsthm}	
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{minted}
+\usepackage{multicol}
+\usepackage{ebproof}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{stmaryrd}
+\usepackage{adjustbox}
+\usepackage{wrapfig}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{lineno}
+\usepackage{mathtools}
+\usepackage[hidelinks]{hyperref}
+\usepackage{hhline}
+
+\usetikzlibrary{arrows,positioning,shapes}
+
+\allowdisplaybreaks
+
+\usepackage[
+style=alphabetic,
+sorting=ynt
+]{biblatex}
+
+\definecolor{purplell}{HTML}{f72585}
+\definecolor{purplel}{HTML}{b5179e}
+\definecolor{bluel}{HTML}{4895ef}
+\definecolor{bluell}{HTML}{4361ee}
+\definecolor{blued}{HTML}{3f37c9}
+\definecolor{greend}{HTML}{52b69a}
+\definecolor{redl}{HTML}{e63946}
+\definecolor{orangel}{HTML}{fb8500}
+
+\lstdefinestyle{deno}{
+    language=C,
+    captionpos=b,
+    numbers=left,
+    frame=tb,
+    breaklines=true,
+    xleftmargin=3em,
+    keywordstyle=\color{blue},
+    commentstyle=\color{orangel},
+    basicstyle=\ttfamily\scriptsize,
+    morekeywords={newResource, copy, mut, fn, ref, decl, transfer, borrow, mborrow, call, own, read},
+    literate={->}{$\rightarrow$}{2}
+}
+
+\lstdefinestyle{deno2}{
+    language=C,
+    captionpos=b,
+    breaklines=true,
+    keywordstyle=\color{blue},
+    commentstyle=\color{orangel},
+    basicstyle=\ttfamily\scriptsize,
+    morekeywords={newResource, copy, mut, fn, ref, decl, transfer, borrow, mborrow, call, own, read},
+    literate={->}{$\rightarrow$}{2}
+}
+
+
+\lstdefinestyle{osl}{
+    language=C,
+    captionpos=b,
+    numbers=none,
+    frame=tb,
+    xleftmargin=3em,
+    keywordstyle=\color{blue}\upshape,
+    basicstyle=\ttfamily\scriptsize,
+    morekeywords={newResource, fn, ref, decl, transfer, borrow, mborrow, call, own, read, free, deallocate, unsafe, !, @},
+    keywordstyle = [3]{\color{purplel}},
+    morekeywords=[3]{copyable,mutable},
+    escapeinside={(*}{*)},
+    breaklines=true,
+    literate={->}{{$\rightarrow$}}1 
+    {/\\}{{$\cap$}}1
+    {\\/}{{$\cup$}}1
+    {'}{{$\'$}}1
+}
+
+\lstdefinestyle{clang}{
+    language=C,
+    captionpos=b,
+    numbers=none,
+    frame=tb,
+    xleftmargin=3em,
+    escapeinside={(*}{*)},
+    breaklines=true,
+    tabsize=2,
+    numbers=left,
+    basicstyle=\ttfamily\scriptsize,
+    keywordstyle=\color{blue}\upshape,
+    stringstyle=\color{greend}\ttfamily,
+    literate={->}{$\rightarrow$}{2}
+}
+
+
+\include{commands.tex}
+
+\addbibresource{biblio.bib}
+
+\begin{document}
+
+\title{\textbf{OSL}: A Formalized Ownership Language for Checking Memory Safety}
+\author{Anonymous}
+%
+% \authorrunning{S. Kan et al.}
+\titlerunning{OSL: A language for Memory Safety Checking}
+
+% \institute{SCSE,
+% 	Nanyang Technological University, Singapore
+% 	\email{\{name\}@ntu.edu.sg}
+% }
+
+\maketitle
+
+\input{abstract.tex}
+
+\input{sections/introduction.tex}
+
+\input{sections/concepts.tex}
+
+\input{sections/semantic.tex}
+
+\input{sections/properties.tex}
+
+\input{sections/evaluation.tex}
+
+\input{sections/end.tex}
+
+
+\medskip
+
+\printbibliography
+
+\include{annexes.tex}
+
+\end{document}

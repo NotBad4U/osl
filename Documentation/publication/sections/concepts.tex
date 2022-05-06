@@ -1,0 +1,371 @@
+
+\section{Ownership System and Memory Safety}
+\label{sec:ownership}
+
+\subsection{Illustration of core concepts}
+In this section, we introduce our ownership system and how that prevents memory risks: dangling pointers, data races, use-after-free and double free. 
+We begin with a synopsis of our semantic, in which we only introduce the main concept with the aid of a simplified didactic semantic of OSL.
+The complete operational semantics will be covered in the \autoref{sec:osl-syntaxandsemantics}.\\
+
+OSL works by restricting resource graphs underlying the run-time heap.
+That ensures \textit{topological restrictions} on the alias structure of the resource graph.
+The core concept of OSL is resource \textbf{owner}, namely each resource in OSL has a variable that’s called its \textbf{owner}.
+There exists only one \textbf{owner} at a time for a resource. When the \textbf{owner} goes out of \textbf{scope}, the value will be \textbf{free} in memory.\\
+
+\begin{wrapfigure}{l}{0.5\linewidth}
+\centering
+\begin{lstlisting}[style=deno]
+{ // begin of the scope
+    decl x;
+    transfer newResource() y;
+    decl y; 
+    transfer x y;
+    { // begin of sub-scope
+        decl z;
+        z borrow y;                         
+        read(z);                            
+    } // end of sub-scope
+    decl m;                             
+    m mborrow y;                        
+    transfer newResource() m;  
+} // this scope is now over
+\end{lstlisting}
+\caption{OSL Example}
+\label{fig:Didactic-OSL-example}
+\end{wrapfigure}
+
+The example \autoref{fig:Didactic-OSL-example} will guide us with the simplified didactic semantics of OSL and the introduction of the main concepts in \autoref{ssec:Formalisation of core concepts}. In this program, a first \textbf{owner} \var{x} is declared (using \term{decl}) at line 2, and we assigned a new resource by using \term{newResource} and \term{transfer} right after.
+This means that \var{x} exclusively \textbf{owns} this resource, so he can read, write and deallocate it. There can only be one owner at a time for this resource. Hence, when we \term{transfer} the ownership at line 5, \var{y} becomes the new owner of the resource, and \var{x} stops owning the value. This is called the \textit{move semantics}. Any usage of \var{x} becomes invalid after this. As an aside, the move semantics is powerful in preventing the double free error because each value has a single owner, and only the owner can free the value.\\
+
+Sometimes, multiple variables need to access the same value, but the move semantics requires the program to pass the value between these variables. This could become unergonomic, especially when crossing function boundaries. To improve the usability, we allow a variable to borrow a resource without taking ownership. At the lines 5 and 8, we declare a variable \var{z} that \term{borrow} immutably \var{y}, respectively the variable \var{m} borrow mutable (using \term{mborrow}) \var{y}.
+When z borrows the value of \var{y}, \var{y} still owns the resource. A variable can borrow a value for reading only or for both reading and writing. The former is an immutable reference, and the latter is a mutable reference. The mutable reference \var{m} allows mutating the resource owned by \var{y} through \var{m}. This is what happens at line 13, where we \term{transfer} a new resource to \var{y} through \var{m}. We will see in \autoref{sec:osl-syntaxandsemantics} that resources can be defined as immutable, so a variable may mutably borrow a variable only if it is defined as mutable.\\
+
+When \var{z} goes out of the sub-scope at line 9, the borrow ends, and since \var{z} does not own the resource, the resource isn't destroyed. The \textbf{lifetime} of a variable is from where it is bound to where it goes out of scope. Each reference has a lifetime that must be contained in the lifetime of the borrowed content. In our case, the reference \var{z} has a lifetime that begins at lines 7 and ends at 9. Respectively, the reference \var{m} lives between 11-13 and \var{y} lives between 4-13. We can assert that given Lifetime(y) = [4-13], we have $Lifetime(z) \subset Lifetime(y)$, $Lifetime(m) \subset Lifetime(y)$ and $Lifetime(z)  \cap Lifetime(m) = \emptyset$.
+
+
+\subsection{Formalization of  core concepts}
+\label{ssec:Formalisation of core concepts}
+
+To formalize the ownership system concepts, we first introduce a didactic version of OSL that we will name \osld, which is a fragment of the complete OSL framework cover in \autoref{sec:osl-syntaxandsemantics}. It will help us to introduce more clearly the formalization of the core concepts.
+\osld is composed of only a few operators, which are presented in \autoref{lst:didactic-syntax}. Our previous example \autoref{fig:Didactic-OSL-example} covers mainly this abstract syntax. We add just the statement \term{read} that allows us to read the value of an owner or a reference. For the sake of simplicity, \term{read} will check the validity of the parameter and not return a value.
+
+\begin{lstlisting}[caption=\osld~abstract syntax,style=deno,label=lst:didactic-syntax]
+Exp ::= newResource() | Id
+Stmt ::= Stmt ; Stmt | Id borrow Id | Id mborrow Id
+     | decl Id | transfer Exp Id | read Id | { Stmt }
+\end{lstlisting}
+
+\begin{definition}[State representation]
+A \textbf{state} of \osld~is defined as a triple $\cfg{\confosl , P, t }$, where the \textbf{environment} $\confosl$ is a tuple $\confosld$ with:
+\begin{itemize}[noitemsep]
+    \item[] $\env:Id\mapsto Loc$, a map from variable to location representing an environment for variables .
+    \item[] $\store:Loc\mapsto Value$, a map from location to value storing values for locations.
+\end{itemize}
+The location $Loc$ is defined by a natural number. $P$ is the program to be executed under the configuration $\confosl$ at the time instant: $t$.
+A state is initialized as $\cfg{(\emptyset,\emptyset),P, 0}$ where the environment is are empty and the timer starts at 0.
+\end{definition} 
+
+\subsubsection{Domain value.}
+
+The domain below represents all possible $Value$ that a location can map to in $\store$.
+We use the notation $\bot$ as the least element to describe an uninitialized location.
+The notation $\#rs()$ denotes a resource. The notations $\text{mutRef}(\mathbb{N}, \mathbb{N}, Loc)$,
+$\text{immRef}(\mathbb{N}, \mathbb{N}, Loc)$ represent a mutable and an immutable reference, respectively,
+where the two natural numbers represent a lifetime span.
+
+\begin{equation*}
+    Value = \Big\{~\#rs(),~ \bot,~ \text{mutRef($\mathbb{N}, \mathbb{N}$, Loc)},~ \text{immRef($\mathbb{N}, \mathbb{N}$, Loc)}~\Big\}
+    \label{eqn:value-d}
+\end{equation*}
+
+\subsubsection{Presentation of core concepts.} We use the notation $\oplus$ to represent the update of a state.
+For example, $\store' = \store \oplus [L \mapsto V]$ will update the state $\store$ with the assignment $L = V$  and accordingly we have $\store'[L] = V$.
+\begin{figure}
+    % Declaration =========================
+    \begin{subfigure}{0.5\textwidth}
+        \subcaption{\autour{Decl}}
+        \centering
+        \begin{prooftree}
+            \hypo{\begin{matrix}
+              \textit{l = new\_loc} \\
+              \env' = \env \oplus [x \mapsto l]
+            \end{matrix}}
+            \hypo{
+              \store' = \store \oplus [l \mapsto \bot]
+            }
+            \infer2[]{ \cfg{ \confosld, \term{decl } x;, t} \Rightarrow  \cfg{(\env', \store'), \emptyset, t + 1}}
+        \end{prooftree}
+    \end{subfigure}
+    % NewResource =========================
+    \begin{subfigure}{0.4\textwidth}
+        \centering
+        \subcaption{\autour{ResExp}}
+        \begin{prooftree}
+            \infer0[]{ \cfg{\confosl, \term{newResource(), t}} \Rightarrow \cfg{\confosl, \term{\#rs()}, t} }
+        \end{prooftree}
+    \end{subfigure}
+    \caption{Owner rules of \osld}
+    \label{fig:dec-rule-osld}
+\end{figure}
+
+\begin{definition}[Owner]
+For all $ x \mapsto l \in \env \text{ with } l \mapsto \#rs() \in \store,$ x is called the \textbf{owner} of the resource.
+\end{definition}
+
+\begin{definition}[Unique Owner]
+\label{def:unique-owner}
+For all $x \mapsto l_1 \text{ and } y \mapsto l_2 \in \store, \textbf{ if } \text{ we have }\\  l_1 \mapsto \#rs() ~\land~ l_2 \mapsto \#rs() \text{ with } l_1 = l_2  \text{, then that implies } x = y$.
+\end{definition}
+
+\begin{figure}
+    \begin{subfigure}{\textwidth}
+    \vspace*{-0.5cm}
+    \centering
+        \begin{prooftree}
+            \hypo{
+                \begin{matrix}
+                    (x \mapsto l_1~, y \mapsto l_2) \in \env \\
+                    l_1 \mapsto \#rs() \in \store
+                \end{matrix}
+            }
+            \hypo{
+              \store' = \store \oplus [l_1 \mapsto mutRef(\tagp{t, t}, l_2)]
+            } x
+            \infer2[\autour{Borrow}]{ \cfg{ \confosl, x \term{ mborrow } y;, \tagp{t}} \Rightarrow  \cfg{(\env , \store'), \emptyset, t + 1}}
+        \end{prooftree}
+     \vspace*{0.3cm}
+     \label{Borrow}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+              \hypo{
+                \begin{matrix}
+                    (x \mapsto l_1,~y \mapsto l_2) \in \env \\
+                    l_2 \mapsto \#rs() \in \store
+                \end{matrix}
+            }
+            \hypo{
+              \store' = \store \oplus [l_1 \mapsto immRef(\tagp{t, t}, l_2)]
+            }
+            \infer2[\autour{MBorrow}]{ \cfg{ \confosl, x \term{ borrow } y;, \tagp{t}} \Rightarrow  \cfg{(\env , \store'), \emptyset, t + 1}}
+        \end{prooftree}
+        \label{MBorrow}
+    \end{subfigure}
+    \caption{Borrowing rules of \osld}
+   
+\end{figure}
+
+\begin{definition}[Multiples reference restriction]
+At any given time, you can have either one mutable reference active or any number of immutable references active. 
+\label{def:mult-ref}
+\end{definition}
+
+The lifetime span [\tagp{$t_1, t_2$}] in mutRef(\tagp{$t_1, t_2$}, l) and immRef(\tagp{$t_1, t_2$}, l) defines when the reference is active. Thus the reference has the current timer value as lower and greather bound  as lifetime span in  in \refrule{MBorrow} and respectively \refrule{Borrow}. The semantics of the operators \term{mborrow} and \term{borrow} in \refrule{MBorrow} and respectively \refrule{Borrow} do not restrict us in creating references for an owner. But we will see in the following rule \refrule{ReadRef}, we can only \term{read} through a reference if there are not other active mutable references to the same owner to be in accord with \autoref{def:mult-ref}.
+
+\begin{definition}[Create reference]
+A reference to a resource can only be created through the owner.
+\label{def:create-ref}
+\end{definition}
+
+\begin{definition}[Immutable reference]
+When an immutable reference is active, no writing is allowed to its owner.
+\label{def:imm-ref}
+\end{definition}
+
+\begin{definition}[Active reference freeze owner]
+When a resource has a mutable reference, the resource owner is temporally invalid while the reference is within its lifetime.
+\label{def:freeze-owner}
+\end{definition}
+
+This property allows OSL to prevent a data-race by refusing a potential attempt to access a resource through the owner and a mutable reference to it with intersecting lifetimes.  
+The simple model of \osld~does not allow for covering the \autoref{def:freeze-owner}. But we will present how OSL captures this property in \autoref{sec:osl-syntaxandsemantics}.
+
+\noindent We use the notation $\term{anyRef}(t_b, t_e, L)$ to denote any mutable or immutable reference in $\store$.
+
+\begin{figure}[H]
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{prooftree}
+         \hypo{
+            \begin{matrix}
+            x \in Id \\
+            x \mapsto l_x \in \env  \land l_x \mapsto v \in \store  \\
+             \nexists l \mapsto \term{immRef}(t_b, t_e, l_y) \in \store \land t_e \geq t
+            \end{matrix}
+         }
+        \hypo{
+            \begin{matrix}
+            y \mapsto l_y \in \env \\
+            S'=S \oplus [l_y \mapsto  v,  l_x \mapsto \bot ]
+            \end{matrix}
+         }
+        \infer2[\autour{Tmove}]{ \cfg{ \confosld, \term{ transfer } x~y; , t } \Rightarrow  \cfg{ (\env, \store'), \emptyset, t + 1 } }
+        \end{prooftree}
+        \vspace*{2em}
+        \label{Tmove}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \subcaption{\autour{TMborrow}}
+        \begin{prooftree}
+         \hypo{
+            \begin{matrix}
+                x \in Id \\
+                x \mapsto l_x \in \env  \land l_x \mapsto \tagp{v} \in \store  \\
+                \nexists l \mapsto \term{anyRef}(t_b, t_e,  \tagb{$l_c$}) \in \store \land t_e \geq t
+            \end{matrix}
+         }
+        \hypo{
+            \begin{matrix}
+            y \mapsto l_y \in \env \\
+            l_y \mapsto mutRef(tb_y, te_y, \tagb{$l_c$}) \in \store \\
+            S'=S \oplus [\tagb{$l_c$} \mapsto  \tagp{v}, l_y \mapsto mutRef(tb_y, t, \tagb{$l_c$}) ]
+            \end{matrix}
+         }
+        \infer2[]{ \cfg{ \confosld, \term{ transfer } x\ y; , t } \Rightarrow  \cfg{ (\env, \store'), \emptyset, t + 1 } }
+        \end{prooftree}
+        \label{TMborrow}
+        \vspace*{2em}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        % TRANFER RESOURCE =========================
+        \begin{prooftree}
+         \hypo{
+           \begin{matrix}
+                \cfg{ \confosld, e, t } \Rightarrow  \cfg{ \confosld , \#rs(), t } \\
+                x \mapsto l \in \env
+            \end{matrix}
+         }
+        \hypo{
+            \store' = \store \oplus (l \mapsto \#rs(r))
+         }
+        \infer2[\autour{Tres}]{ \cfg{ \confosld, \term{ transfer } e~x;, t } \Rightarrow  \cfg{ (\env, \store'), \emptyset, t+1 } }
+        \end{prooftree}
+        \label{Tres}
+    \end{subfigure}
+    \caption{Transfer rules of \osld}
+    \label{fig:transfer-rule-osld}
+\end{figure}
+
+\begin{definition}[Transfer owner]
+\label{def:transfer}
+The ownership of a resource can be transferred among owners. 
+\end{definition}
+
+We illustrate this in rule \refrule{Tmove}, where the \textbf{owner} \term{x} of \term{v} is transferred to \term{y}. Then \term{y} maps to v and \term{x} maps to $\bot$.
+This concept can also be found in the literature under the name: \textit{semantic move}. 
+
+\begin{proposition}{}
+Since references do not own the value, they cannot move it.
+\end{proposition}
+
+\begin{figure}[H]
+    % Read Owner =========================
+    \begin{subfigure}{0.5\textwidth}
+        \subcaption{\autour{ReadOwner}}
+            \begin{prooftree}
+             \hypo{
+                x \mapsto l \in \env
+             }
+            \hypo{
+                l \mapsto \#rs() \in \store    
+             }
+            \infer2[]{ \cfg{ \confosld, \term{ read}(x);, t } \Rightarrow  \cfg{ \confosld, \emptyset, t+1 } }
+        \end{prooftree}
+    \label{ReadOwner}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \subcaption{\autour{ReadRef}}
+        \begin{prooftree}
+            \hypo{
+            \begin{matrix}
+                l \mapsto \#ref(\tagb{$t_b, t_e$}, l) \in \store \\
+                \nexists l' \mapsto mutRef(\tagp{$t_b', t_e'$}, l) \in \store, \\
+                \text{with } \tagp{$t_b'$} \leq \tagb{$t_b < t_e$} \leq \tagp{$t_e'$} \\
+                \store' = \store \oplus [ l \mapsto \#ref(t_b, t, l) ]
+            \end{matrix}
+            }
+            \hypo{
+            \begin{matrix}
+                x \mapsto l \in \env
+            \end{matrix}
+            }
+            
+            \infer2[]{ \cfg{ \confosld, \term{ read}(x);, t } \Rightarrow  \cfg{ (\env, \store'), \emptyset, t+1 } }
+        \end{prooftree}
+        \label{ReadRef}
+    \end{subfigure}
+    \caption{Read rules of \osld}
+\end{figure}
+
+As mentioned in an observation of \autoref{def:mult-ref}, the predicate: $\\ \nexists l' \mapsto mutRef(t_b', t_e', l) \in \store ~with~ \tagp{$t_b'$} \leq \tagb{$t_b < t_e$} \leq \tagp{$t_e'$}  $ in the rule \refrule{ReadRef} allow us to respect the definition.
+
+
+\begin{figure}[H]
+    \begin{subfigure}{0.6\textwidth}
+    % Seq =========================
+        \centering
+        \subcaption{\autour{Seq}}
+        \begin{prooftree}
+         \hypo{
+            \cfg{ \confosl, s1, t } \Rightarrow  \cfg{\confosl' , \emptyset, t_1 }
+         }
+        \hypo{
+            \cfg{ \confosl', s2, t_2 } \Rightarrow  \cfg{ \confosl'', \emptyset, t_2 }
+        }
+        \infer2[]{ \cfg{ \confosl, s1 ; s2, t } \Rightarrow  \cfg{ \confosl'', \emptyset, t_2 } }
+        \end{prooftree}
+        \label{Seq}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}{0.3\textwidth}
+        \centering
+      \subcaption{\autour{Block}}
+        \begin{prooftree}
+         \hypo{
+            \cfg{ \confosl, s, t } \Rightarrow  \cfg{\confosl' , \emptyset, \tagb{t'} }
+         }
+        \infer1[]{ \cfg{\tagp{$\confosl$}, \textbf{\{} s \textbf{\}} , t } \Rightarrow  \cfg{\tagp{$\confosl$}, \emptyset, \tagb{t'} } }
+        \end{prooftree}  
+        \label{Block}
+    \end{subfigure}
+    \caption{Sequence and block  rules of \osld}
+\end{figure}
+
+\begin{definition}[Free owner automatically]
+\label{def:free-owner}
+When an \textbf{owner} goes out of scope, its resource will be dropped. Automatically, the resources and their respective owners allocated inside the scope are cleaned up at the end of a block.
+\end{definition}
+
+To illustrate the \autoref{def:free-owner}, we can observe in the rule \refrule{Block} that after we evaluate the statements inside the block, we restore the previous configuration \tagp{$\confosl$}.
+So all the owners and references declared inside will be dropped. 
+
+\begin{definition}[Deallocation restriction]
+Only the resource owner has the authority to free the resource manually.
+\end{definition}
+
+ We keep this advanced concept for \autoref{sec:osl-syntaxandsemantics} where we introduce the \term{free} operator.
+
+\begin{proposition}{}
+The lifetime of a reference is always shorter than its owner's lifetime. In other words, the references do not escape the scope of their referent.
+The scope of a reference must be contained in the owner's scope of the value. Otherwise, the reference may refer to a freed value, causing a use-after-free error.
+\end{proposition}
+
+
+\subsection{Overview of memory safety properties}
+
+In all programming that uses memory, we desire two program properties: \textit{Memory safety} and \textit{Memory containment}.
+Memory safety is the property of a program where memory pointers always point to valid memory.
+Memory safety is a correctness issue, and an unsafe memory program may crash or produce non-deterministic output depending on the bug.
+Memory leaking is a performance issue, and a leaky program may eventually run out of memory is the property of a program where memory does not leak.\\
+A common bug related to pointers and memory management is dangling/wild pointers. Sometimes the programmer fails to initialize the pointer with a valid address, then this type of initialized pointer is known as a dangling pointer in C. OSL (even \osld) will prevent us from dandling pointers. Let us unwind this a bit.
+
+\begin{proposition}[Preventing dandling pointers.]
+Given any state \cfg{($\env, \store$), P, t}, for all possible derivations of program $P$, it satisfies that given any reference $l \in \store$ with $l \mapsto \term{anyRef}([t_b, t_e], l')$
+, there does not exist a state $\cfg{(\env' \store'), P', t'}$ derived from  $\cfg{\confosl, P, t}$, such that  $l \mapsto  \term{anyRef}([t_b, t_e'], l') \in \store'$ hold with  $t' \in [t_b, t_e']$ and $l' \mapsto \bot \in \store'$.
+\end{proposition}
+
+\noindent
+We will cover in more detail the soundness questions in \autoref{sec:properties}.
