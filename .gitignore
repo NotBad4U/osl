@@ -12,8 +12,6 @@ report/main\.synctex\.gz
 
 *.rs~
 
-
-model/osl-kompiled
 model/*.rs
 
 *.blg
