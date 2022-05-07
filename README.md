@@ -1,4 +1,4 @@
-OSL: An Operational Semantics for Rust Language
+# The Ownership System Language (OSL)
 
 [![Build Status](https://travis-ci.com/NotBad4U/osl.svg?branch=master)](https://travis-ci.com/NotBad4U/osl)
 
