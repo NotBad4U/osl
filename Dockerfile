@@ -6,14 +6,25 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt update
 
-RUN apt install --yes curl build-essential m4 openjdk-8-jre libgmp-dev libmpfr-dev pkg-config flex z3 libz3-dev unzip python3 opam perl tar
+RUN apt install -y sudo
+
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+RUN useradd -rm -d /home/alessio -s /bin/bash -g root -G sudo -u 1001 alessio
+
+USER alessio
+
+RUN echo $HOME
+
+RUN sudo apt update
+
+RUN sudo apt install --yes curl build-essential m4 openjdk-8-jre libgmp-dev libmpfr-dev pkg-config flex z3 libz3-dev unzip python3 opam perl tar sudo
 
 # Get Rust; NOTE: using sh for better compatibility with other base images
 #RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 # Add .cargo/bin to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
-
+ENV PATH="$HOME/.cargo/bin:${PATH}"
 
 # Setup K-framework v3.6
 COPY k /k
@@ -29,7 +40,7 @@ WORKDIR /build
 
 COPY build .
 
-RUN tar -xvf 4.03.1+k.tar.xz
+RUN sudo tar -xvf 4.03.1+k.tar.gz
 
 RUN opam init --yes --disable-sandboxing
 
@@ -37,14 +48,11 @@ RUN cp -r 4.03.1+k $HOME/.opam/4.03.1+k
 
 RUN cp config $HOME/.opam/config
 
-RUN opam list
-
 RUN opam switch 4.03.1+k
 
 RUN eval $(opam env)
 
 RUN ocaml --version
-
 
 WORKDIR /osl
 
@@ -54,24 +62,15 @@ WORKDIR /osl/model
 
 RUN eval $(opam env)
 
-RUN opam list
+ENV PATH="/home/alessio/.opam/4.03.1+k/bin:$PATH"
 
-RUN echo $PATH
+RUN ocaml --version
 
-RUN opam list
+RUN echo $LD_LIBRARY_PATH
 
-ENV PATH="$PATH:/root/.opam/4.03.1+k/bin"
+ENV LD_LIBRARY_PATH="/home/alessio/.opam/4.03.1+k/lib/stublibs/:${LD_LIBRARY_PATH}"
 
-RUN ls $HOME/.opam/4.03.1+k/
-
-#RUN kompile --backend ocaml osl.k
-
-RUN opam switch 4.03.1+k
-
-RUN eval $(opam env)
-
-RUN krun test.rs
-
+RUN kompile --backend ocaml osl.k || :
 
 # Build OSL
 
