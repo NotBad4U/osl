@@ -2,7 +2,6 @@ target
 cfrontend/target
 Documentation
 document
-model/osl-kompiled
 .travis.yml
 README.md
 test.c
