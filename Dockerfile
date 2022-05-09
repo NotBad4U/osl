@@ -1,41 +1,36 @@
 
 From ubuntu:20.04
 
+# During a Docker image build – it stops asking to configure the tzdata.
+# To avoid this data-enter request, especially when such build is running on CI like Jenkins – we configure tzdata 
 ENV TZ=Europe/Paris
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt update
 
+# We will need sudo for the non-root user that we will create
 RUN apt install -y sudo
 
+# We inject the opam K-Framework dependencies by hand because the opam switch 4.03.1+k does not exists anymore (see INSTALL.md for more details about this issues).
+# For that we need to create the user alessio because some configuration files have /home/alessio as a path of some parameters. 
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 RUN useradd -rm -d /home/alessio -s /bin/bash -g root -G sudo -u 1001 alessio
 
 USER alessio
 
-RUN echo $HOME
-
 RUN sudo apt update
 
 RUN sudo apt install --yes curl build-essential m4 openjdk-8-jre libgmp-dev libmpfr-dev pkg-config flex z3 libz3-dev unzip python3 opam perl tar sudo
 
-# Get Rust; NOTE: using sh for better compatibility with other base images
-#RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-
-# Add .cargo/bin to PATH
-ENV PATH="$HOME/.cargo/bin:${PATH}"
-
-# Setup K-framework v3.6
+# SETUP K-framework v3.6
 COPY k /k
 
 WORKDIR k
 
-#RUN bin/k-configure-opam
-
 ENV PATH="$PATH:/k/bin"
 
-# Setup K-Framework OPAM package
+# SETUP K-Framework OPAM package
 WORKDIR /build
 
 COPY build .
@@ -52,11 +47,13 @@ RUN opam switch 4.03.1+k
 
 RUN eval $(opam env)
 
-RUN ocaml --version
+# SETUP Osl
 
 WORKDIR /osl
 
 COPY . .
+
+## SETUP the OSL model based on K-Framework
 
 WORKDIR /osl/model
 
@@ -64,18 +61,28 @@ RUN eval $(opam env)
 
 ENV PATH="/home/alessio/.opam/4.03.1+k/bin:$PATH"
 
-RUN ocaml --version
-
-RUN echo $LD_LIBRARY_PATH
-
 ENV LD_LIBRARY_PATH="/home/alessio/.opam/4.03.1+k/lib/stublibs/:${LD_LIBRARY_PATH}"
 
+# The compilation of the model might exit with a non-zero code and make the build stop.
+# We ignore the non-zero code by using "|| :" 
 RUN kompile --backend ocaml osl.k || :
 
-# Build OSL
+# Build OSL-CLI and OSLτ
 
-#RUN rustup default nightly
+# Get Rust; NOTE: using sh for better compatibility with other base images
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-#RUN cargo build --release
+# Add .cargo/bin to PATH
+ENV PATH="/home/alessio/.cargo/bin:${PATH}"
 
-#CMD ./target/release/osl --help
+RUN sudo chown -R $(whoami) /osl
+
+WORKDIR /osl
+
+RUN rustup default nightly
+
+RUN cargo build --release
+
+ENTRYPOINT ./target/release/osl
+
+CMD "--help"
