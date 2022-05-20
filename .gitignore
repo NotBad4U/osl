@@ -26,7 +26,6 @@ model/*.rs
 
 \.DS_Store
 
-k
 
 cfrontend/target
 cfrontend/*.c
