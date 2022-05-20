@@ -54,13 +54,25 @@ More information could be found [here](https://www.rust-lang.org/tools/install).
 ## Build OSLτ and OSL-CLI
 
 
-Run the following in your terminal at the root directory:
+First, you will need the `nightly` version of Rust compiler because OSLτ use unstable feature.
+This project has been developed with the `rustc 1.53.0-nightly` version.
 
+You can install `nightly` allowing `rustup` to downgrade until it finds the components you need:
+```sh
+rustup toolchain install nightly --allow-downgrade --profile minimal --component clippy
+```
+
+and then you can switch to `nightly` version by running the command:
+
+```sh
+rustup default nightly
+```
+
+Finally, run the following in your terminal at the root directory to build OSLτ and OSL-CLI:
 
 ```sh
 cargo build --release
 ```
-
 
 # Test
 
